@@ -1,0 +1,9 @@
+{
+  "revision": 0,
+  "rules": [
+    {
+      "primary-output": "bin/Client/CMakeFiles/client.dir/client.cpp.o"
+    }
+  ],
+  "version": 1
+}

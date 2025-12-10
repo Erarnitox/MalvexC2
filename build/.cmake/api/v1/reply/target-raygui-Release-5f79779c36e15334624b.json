@@ -1,0 +1,41 @@
+{
+	"abstract" : true,
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library"
+		],
+		"files" : 
+		[
+			"Source/Client/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 5,
+				"parent" : 0
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"id" : "raygui::@937bdf5304da16e59b64",
+	"name" : "raygui",
+	"paths" : 
+	{
+		"build" : "bin/Client",
+		"source" : "Source/Client"
+	},
+	"sources" : [],
+	"type" : "INTERFACE_LIBRARY"
+}

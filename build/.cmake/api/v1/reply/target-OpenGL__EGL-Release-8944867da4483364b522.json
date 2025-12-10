@@ -1,0 +1,88 @@
+{
+	"abstract" : true,
+	"backtrace" : 5,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"find_package",
+			"include",
+			"set_target_properties"
+		],
+		"files" : 
+		[
+			"/usr/share/cmake/Modules/FindOpenGL.cmake",
+			"build/_deps/raylib-src/cmake/LibraryConfigurations.cmake",
+			"build/_deps/raylib-src/src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 2
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 49,
+				"parent" : 0
+			},
+			{
+				"file" : 1,
+				"parent" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 30,
+				"parent" : 2
+			},
+			{
+				"file" : 0,
+				"parent" : 3
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 843,
+				"parent" : 4
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 851,
+				"parent" : 4
+			}
+		]
+	},
+	"codemodelVersion" : 
+	{
+		"major" : 2,
+		"minor" : 9
+	},
+	"id" : "OpenGL::EGL::@4dc3a4644cf4ded08c01",
+	"imported" : true,
+	"interfaceCompileDependencies" : 
+	[
+		{
+			"backtrace" : 6,
+			"id" : "OpenGL::OpenGL::@4dc3a4644cf4ded08c01"
+		}
+	],
+	"interfaceLinkLibraries" : 
+	[
+		{
+			"backtrace" : 6,
+			"id" : "OpenGL::OpenGL::@4dc3a4644cf4ded08c01"
+		}
+	],
+	"local" : true,
+	"name" : "OpenGL::EGL",
+	"paths" : 
+	{
+		"build" : "_deps/raylib-build/raylib",
+		"source" : "build/_deps/raylib-src/src"
+	},
+	"sources" : [],
+	"type" : "UNKNOWN_LIBRARY"
+}

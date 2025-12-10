@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/CMakeFiles/raygui-populate"
+		},
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/CMakeFiles/raygui-populate.rule"
+		},
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/CMakeFiles/raygui-populate-complete.rule"
+		},
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/raygui-populate-prefix/src/raygui-populate-stamp/raygui-populate-build.rule"
+		},
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/raygui-populate-prefix/src/raygui-populate-stamp/raygui-populate-configure.rule"
+		},
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/raygui-populate-prefix/src/raygui-populate-stamp/raygui-populate-download.rule"
+		},
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/raygui-populate-prefix/src/raygui-populate-stamp/raygui-populate-install.rule"
+		},
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/raygui-populate-prefix/src/raygui-populate-stamp/raygui-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/raygui-populate-prefix/src/raygui-populate-stamp/raygui-populate-patch.rule"
+		},
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/raygui-populate-prefix/src/raygui-populate-stamp/raygui-populate-test.rule"
+		},
+		{
+			"file" : "/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/raygui-populate-prefix/src/raygui-populate-stamp/raygui-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"raygui-populate"
+		],
+		"name" : "raygui-populate"
+	}
+}

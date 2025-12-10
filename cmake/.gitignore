@@ -1,0 +1,21 @@
+# Ignore the build trees
+debug
+release
+jumbo
+build
+
+# Ignore generaed and user files
+**/CMakeCache.txt
+**/CMakeUserPresets.json
+**/CTestTestfile.cmake
+**/CPackConfig.cmake
+**/cmake_install.cmake
+**/install_manifest.txt
+**/compile_commands.json
+
+# Ignore IDE files
+.vscode
+.cache
+
+# Ignore dependencies
+_deps

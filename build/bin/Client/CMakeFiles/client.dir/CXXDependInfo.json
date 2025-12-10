@@ -1,0 +1,33 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "GNU",
+	"compiler-id" : "Clang",
+	"compiler-simulate-id" : "",
+	"config" : "Release",
+	"cxx-modules" : {},
+	"database-info" : null,
+	"dir-cur-bld" : "/home/me/Projects/CPP/MalvexC2/build/bin/Client",
+	"dir-cur-src" : "/home/me/Projects/CPP/MalvexC2/Source/Client",
+	"dir-top-bld" : "/home/me/Projects/CPP/MalvexC2/build",
+	"dir-top-src" : "/home/me/Projects/CPP/MalvexC2",
+	"exports" : [],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : 
+	[
+		"_deps/raylib-src/src",
+		"_deps/raylib-src/src/external/glfw/include",
+		"_deps/raygui-src/src",
+		"_deps/raygui-src"
+	],
+	"language" : "CXX",
+	"linked-target-dirs" : [],
+	"module-dir" : "/home/me/Projects/CPP/MalvexC2/build/bin/Client/CMakeFiles/client.dir",
+	"sources" : 
+	{
+		"bin/Client/CMakeFiles/client.dir/client.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/home/me/Projects/CPP/MalvexC2/Source/Client/client.cpp"
+		}
+	}
+}

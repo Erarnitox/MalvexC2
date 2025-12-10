@@ -1,0 +1,30 @@
+{
+  "version" : 2,
+  "cmakeMinimumRequired" : {
+      "major" : 4,
+      "minor" : 2,
+      "patch" : 0
+  },
+  "configurePresets" : [
+    {
+      "name" : "default",
+      "displayName" : "default",
+      "description" : "Default Release Build",
+      "generator" : "Ninja",
+      "binaryDir" : "${sourceDir}/build",
+      "cacheVariables" : {
+          "CMAKE_EXPORT_COMPILE_COMMANDS" : true,
+          "CMAKE_BUILD_TYPE" : "Release",
+          "CMAKE_INSTALL_PREFIX" : "${sourceDir}/build",
+          "CMAKE_CXX_COMPILER": "clang++",
+          "CMAKE_CXX_VISIBILITY_PRESET": "hidden"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    }
+  ]
+}

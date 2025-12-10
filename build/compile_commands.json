@@ -1,0 +1,188 @@
+[
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/clang++ -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -DRAYGUI_IMPLEMENTATION -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raygui-src/src -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raygui-src -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -Wall -Wextra -Wpedantic @bin/Client/CMakeFiles/client.dir/client.cpp.o.modmap -o bin/Client/CMakeFiles/client.dir/client.cpp.o -c /home/me/Projects/CPP/MalvexC2/Source/Client/client.cpp",
+  "file": "/home/me/Projects/CPP/MalvexC2/Source/Client/client.cpp",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/bin/Client/CMakeFiles/client.dir/client.cpp.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=gnu99 -o _deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/raudio.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/raudio.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/CMakeFiles/raylib.dir/raudio.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=gnu99 -o _deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/rcore.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/rcore.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/CMakeFiles/raylib.dir/rcore.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=gnu99 -o _deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/rmodels.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/rmodels.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/CMakeFiles/raylib.dir/rmodels.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=gnu99 -o _deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/rshapes.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/rshapes.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/CMakeFiles/raylib.dir/rshapes.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=gnu99 -o _deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/rtext.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/rtext.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtext.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=gnu99 -o _deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/rtextures.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/rtextures.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/CMakeFiles/raylib.dir/rtextures.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src -isystem /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=gnu99 -o _deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/utils.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/utils.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/CMakeFiles/raylib.dir/utils.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/context.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/context.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/context.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/context.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/init.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/init.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/init.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/init.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/input.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/input.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/input.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/input.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/monitor.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/monitor.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/monitor.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/platform.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/platform.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/platform.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/platform.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/vulkan.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/vulkan.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/vulkan.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/window.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/window.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/window.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/window.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/egl_context.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/egl_context.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/egl_context.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/osmesa_context.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/osmesa_context.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/osmesa_context.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/null_init.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/null_init.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_init.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/null_monitor.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/null_monitor.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_monitor.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/null_window.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/null_window.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_window.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/null_joystick.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/null_joystick.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/null_joystick.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/posix_module.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/posix_module.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/posix_module.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/posix_module.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/posix_time.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/posix_time.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/posix_time.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/posix_time.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/posix_thread.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/posix_thread.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/posix_thread.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/posix_thread.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/x11_init.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/x11_init.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/x11_init.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/x11_init.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/x11_monitor.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/x11_monitor.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/x11_monitor.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/x11_monitor.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/x11_window.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/x11_window.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/x11_window.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/x11_window.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/xkb_unicode.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/xkb_unicode.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/xkb_unicode.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/xkb_unicode.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/glx_context.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/glx_context.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/glx_context.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/glx_context.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/linux_joystick.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/linux_joystick.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/linux_joystick.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/linux_joystick.c.o"
+},
+{
+  "directory": "/home/me/Projects/CPP/MalvexC2/build",
+  "command": "/usr/sbin/cc -D_DEFAULT_SOURCE -D_GLFW_X11 -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/include -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src -I/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -fPIC -Wall -o _deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/posix_poll.c.o -c /home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/posix_poll.c",
+  "file": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-src/src/external/glfw/src/posix_poll.c",
+  "output": "/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/CMakeFiles/glfw.dir/posix_poll.c.o"
+}
+]

@@ -1,0 +1,16 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/me/Projects/CPP/MalvexC2/build/cmake_install.cmake",
+		"/home/me/Projects/CPP/MalvexC2/build/bin/cmake_install.cmake",
+		"/home/me/Projects/CPP/MalvexC2/build/bin/Common/cmake_install.cmake",
+		"/home/me/Projects/CPP/MalvexC2/build/bin/Client/cmake_install.cmake",
+		"/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/cmake_install.cmake",
+		"/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/cmake_install.cmake",
+		"/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/cmake_install.cmake",
+		"/home/me/Projects/CPP/MalvexC2/build/_deps/raylib-build/raylib/external/glfw/src/cmake_install.cmake",
+		"/home/me/Projects/CPP/MalvexC2/build/bin/Server/cmake_install.cmake",
+		"/home/me/Projects/CPP/MalvexC2/build/bin/Implant/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
