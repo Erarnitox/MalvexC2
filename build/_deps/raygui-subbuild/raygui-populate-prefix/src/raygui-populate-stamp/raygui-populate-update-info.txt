@@ -1,7 +1,0 @@
-# This is a generated file and its contents are an internal implementation detail.
-# The patch step will be re-executed if anything in this file changes.
-# No other meaning or use of this file is supported.
-
-command (connected)=/usr/sbin/cmake;-Dcan_fetch=YES;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/raygui-populate-prefix/tmp/raygui-populate-gitupdate.cmake
-command (disconnected)=/usr/sbin/cmake;-Dcan_fetch=NO;-DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE;-P;/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-subbuild/raygui-populate-prefix/tmp/raygui-populate-gitupdate.cmake
-work_dir=/home/me/Projects/CPP/MalvexC2/build/_deps/raygui-src
