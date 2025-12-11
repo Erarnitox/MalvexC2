@@ -13,6 +13,7 @@ target_link_libraries(client
     PRIVATE
         raylib
         raygui
+        common
 )
 
 if(UNIX AND NOT APPLE)

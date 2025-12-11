@@ -6,7 +6,7 @@
 
 # Malvex C2
 
-<img src="./Documentation/Logo.png" height="200px" width="auto" align="left" />
+<img src="./Resources/Logo.png" height="200px" width="auto" align="left" />
 
 Welcome to the Repository of Ghetto C2.
 The worst C2 Framework written completely in Rust.
