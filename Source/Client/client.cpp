@@ -1,8 +1,13 @@
 #include "ui_includes.hpp"
 #include <raylib.h>
+#include <vector>
 
 // function prototypes
-void drawConnectionsTab(const Resolution& res);
+void drawConnectionsTab(WindowState& res);
+void drawSettingsTab(WindowState& state);
+void drawLogsTab(WindowState& state);
+void drawBuilderTab(WindowState& state);
+void drawSessionsTab(WindowState& state);
 void drawAbout(WindowState& state);
 
 //-------------------------------------------------
@@ -12,7 +17,9 @@ int main() {
     WindowState state{
         .show_about=false,
         .is_fullscreen=false,
-        .res={ 1200, 800}
+        .res={ 1200, 800},
+        .font={},
+        .current_tab=Tab::CONNECTIONS
     };
 
     Resolution old_res = state.res;
@@ -27,11 +34,8 @@ int main() {
     const auto bg_color = GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR));
 
     // Set custom font
-    const Font customFont = LoadFont("Font.ttf");
-    GuiSetFont(customFont);
-
-    // Layout state
-    int currentTab = Tab::CONNECTIONS;
+    state.font = LoadFont("Font.ttf");
+    GuiSetFont(state.font);
 
     // Render Loop
     while (not WindowShouldClose()) {
@@ -86,15 +90,42 @@ int main() {
             float tabWidth = tabBar.width / tabs.size();
             for (size_t i = 0; i < tabs.size(); i++) {
                 Rectangle r{ tabWidth * i, 28, tabWidth, 28 };
-                if (GuiButton(r, tabs.at(i).c_str())) {
-                    currentTab = i;
+
+                //highlight currently selected tab
+                int originalBase = GuiGetStyle(BUTTON, BASE_COLOR_NORMAL);
+                int originalText = GuiGetStyle(BUTTON, TEXT_COLOR_NORMAL);
+
+                // Apply active colors
+                if (state.current_tab == (Tab)i) {
+                    GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(RED));
+                    GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, ColorToInt(YELLOW));
                 }
+
+                if (GuiButton(r, tabs.at(i).c_str())) {
+                    state.current_tab = (Tab)i;
+                }
+
+                //restore original style
+                GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, originalBase);
+                GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, originalText);
             }
 
             // --- Active Tab ---
-            switch(currentTab) {
+            switch(state.current_tab) {
                 case Tab::CONNECTIONS:
-                    drawConnectionsTab(state.res);
+                    drawConnectionsTab(state);
+                    break;
+                case Tab::LOGS:
+                    drawLogsTab(state);
+                    break;
+                case Tab::SETTINGS:
+                    drawSettingsTab(state);
+                    break;
+                case Tab::BUILDER:
+                    drawBuilderTab(state);
+                    break;
+                case Tab::TERMINAL:
+                    drawSessionsTab(state);
                     break;
             }
         }
@@ -113,7 +144,7 @@ int main() {
 //-------------------------------------------------
 //
 //-------------------------------------------------
-void drawConnectionsTab(const Resolution& res) {
+void drawConnectionsTab(WindowState& state) {
     static Vector2 scroll = {0, 0};
     static Rectangle view = {0, 0, 0, 0};
     static Rectangle content = {0, 0, 0, 30 * 25};
@@ -121,6 +152,8 @@ void drawConnectionsTab(const Resolution& res) {
     static bool menuVisible = false;
     static int selectedRow = -1;
     static int hoveredRow = -1;
+
+    const auto& res{ state.res };
 
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "List of Victim Connections");
 
@@ -209,18 +242,44 @@ void drawConnectionsTab(const Resolution& res) {
     EndScissorMode();
 
     if (menuVisible && selectedRow >= 0) {
-        Rectangle menuRect{menuPos.x, menuPos.y, 300, 500};
-
+        const auto btn_height{ 30 };
+        Rectangle menuRect{menuPos.x, menuPos.y, 300, btn_height*8 + 10};
         GuiPanel(menuRect, GuiIconText(ICON_DEMON, TextFormat("Attack Victim #%d", selectedRow)));
 
-        Rectangle btn1{menuRect.x + 10, menuRect.y + 30, 280, 25};
-        Rectangle btn2{menuRect.x + 10, menuRect.y + 60, 280, 25};
+        Rectangle btn1{menuRect.x + 10, menuRect.y + btn_height*1, 280, 25};
+        Rectangle btn2{menuRect.x + 10, menuRect.y + btn_height*2, 280, 25};
+        Rectangle btn3{menuRect.x + 10, menuRect.y + btn_height*3, 280, 25};
+        Rectangle btn4{menuRect.x + 10, menuRect.y + btn_height*4, 280, 25};
+        Rectangle btn5{menuRect.x + 10, menuRect.y + btn_height*5, 280, 25};
+        Rectangle btn6{menuRect.x + 10, menuRect.y + btn_height*6, 280, 25};
+        Rectangle btn7{menuRect.x + 10, menuRect.y + btn_height*7, 280, 25};
 
-        if (GuiButton(btn1, TextFormat("Action 1 (Row %d)", selectedRow))) {
+        if (GuiButton(btn1, TextFormat("Timeout Client %d for %d min", selectedRow, 10))) {
             // handle action
             menuVisible = false;
         }
-        if (GuiButton(btn2, "Action 2")) {
+        if (GuiButton(btn2, TextFormat("Open Shell (Port: %d)", 4444))) {
+            // handle action
+            menuVisible = false;
+            state.current_tab = Tab::TERMINAL;
+        }
+        if (GuiButton(btn3, "Close open Shells")) {
+            // handle action
+            menuVisible = false;
+        }
+        if (GuiButton(btn4, "Take Screenshot")) {
+            // handle action
+            menuVisible = false;
+        }
+        if (GuiButton(btn5, "Loot Everything!")) {
+            // handle action
+            menuVisible = false;
+        }
+        if (GuiButton(btn6, "Start Keylogger")) {
+            // handle action
+            menuVisible = false;
+        }
+        if (GuiButton(btn7, "Stop Keylogger")) {
             // handle action
             menuVisible = false;
         }
@@ -265,4 +324,370 @@ void drawAbout(WindowState& state) {
     if (GuiButton((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Close")) {
         state.show_about = false;
     }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+void drawLogsTab(WindowState& state) {
+    static const size_t MAX_LOG_SIZE{ 4096 };
+    static char logText[MAX_LOG_SIZE] = "Log started...\n";
+    static Vector2 scrollOffset = { 0, 0 };
+    static Rectangle logBounds = { 0, 0, 0, 0 };
+
+    auto& res = state.res;
+
+    GuiLabel({res.width/2 - 100, 50, 200, 30}, "C2 Event Log");
+
+    if (GuiButton({3, 58, 120, 20}, GuiIconText(ICON_REPEAT_FILL, "Refresh Logs"))) {
+        //TODO: Fetch logs from server
+    }
+
+    Rectangle viewRect{0, 80, res.width, res.height - 90};
+    GuiPanel(viewRect, "");
+
+    // Add log entries on button press
+    if (IsKeyPressed(KEY_SPACE)) {
+        char newEntry[64];
+        snprintf(newEntry, sizeof(newEntry), "Log entry at frame %d\n", GetFrameTime());
+
+        // Append to log (with size check)
+        if (strlen(logText) + strlen(newEntry) < MAX_LOG_SIZE - 1) {
+            strcat(logText, newEntry);
+        }
+    }
+
+    // Use GuiScrollPanel for scrollable content
+    GuiScrollPanel(
+        viewRect,
+        NULL,  // No title
+        (Rectangle){ 0, 0, viewRect.width - 20, 2000 },  // Content area (height estimated)
+        &scrollOffset,
+        &logBounds
+    );
+
+    // Draw the log text with scissor mode (clipping)
+    BeginScissorMode(
+        (int)viewRect.x,
+        (int)viewRect.y,
+        (int)viewRect.width,
+        (int)viewRect.height
+    );
+
+    DrawTextEx(state.font, logText, (Vector2){
+                 (viewRect.x + 5),
+                 (viewRect.y + 5 + scrollOffset.y)
+                }, 16, 1, RAYWHITE
+            );
+
+    EndScissorMode();
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+void drawSettingsTab(WindowState& state) {
+    static Settings settings{
+        .username="user123",
+        .email="user@example.com",
+        .serverUrl="https://api.example.com",
+        .password="123456",
+        .filePath="/tmp/output"
+    };
+    static char displayPassword[MAX_INPUT_CHARS] = {0};
+    static bool showPasswordAsText{ false };
+
+    const auto& res = state.res;
+
+    GuiLabel({res.width/2 - 100, 50, 200, 30}, "Malvex Settings");
+
+    Rectangle tabRect{0, 80, res.width, res.height - 90};
+    GuiPanel(tabRect, "");
+
+    float labelX = tabRect.x + 10;
+    float labelWidth = 100;
+    float inputX = tabRect.x + labelWidth + 5;
+    float labelHeight = 20;
+    float inputWidth = tabRect.width - inputX - 10;
+    float inputHeight = 20;
+    float startY = tabRect.y + 50;
+    float spacing = 30;
+
+    // Username field
+    GuiLabel({labelX, startY + 5, labelWidth, labelHeight }, "Username:");
+    if (GuiTextBox((Rectangle){ inputX, startY, inputWidth, inputHeight },
+                    settings.username, MAX_INPUT_CHARS, settings.usernameEdit))
+    {
+        settings.usernameEdit = !settings.usernameEdit;
+    }
+
+    // Email field
+    GuiLabel({ labelX, startY + spacing + 5, labelWidth, labelHeight }, "Email:");
+    if (GuiTextBox((Rectangle){ inputX, startY + spacing, inputWidth, inputHeight },
+                    settings.email, MAX_INPUT_CHARS, settings.emailEdit))
+    {
+        settings.emailEdit = !settings.emailEdit;
+    }
+
+    // Server URL field
+    GuiLabel({ labelX, startY + spacing * 2 + 5, labelWidth, labelHeight }, "Server URL:");
+    if (GuiTextBox((Rectangle){ inputX, startY + spacing * 2, inputWidth, inputHeight },
+                    settings.serverUrl, MAX_INPUT_CHARS, settings.serverUrlEdit))
+    {
+        settings.serverUrlEdit = !settings.serverUrlEdit;
+    }
+
+    // Password field
+    GuiLabel({ labelX, startY + spacing * 3 + 5, labelWidth, labelHeight }, "Password:");
+
+    // Password input (we edit the actual password but display masked version)
+    Rectangle passwordRect = { inputX, startY + spacing * 3, inputWidth - 50, inputHeight };
+
+    if (settings.passwordEdit)
+    {
+        // When editing, show actual password
+        if (GuiTextBox(passwordRect, settings.password, MAX_INPUT_CHARS, settings.passwordEdit))
+        {
+            settings.passwordEdit = !settings.passwordEdit;
+        }
+    }
+    else
+    {
+        // When not editing, show masked password
+        if (GuiTextBox(passwordRect, displayPassword, MAX_INPUT_CHARS, settings.passwordEdit)) {
+            settings.passwordEdit = !settings.passwordEdit;
+        }
+    }
+
+    // Toggle password visibility button
+    if (GuiButton((Rectangle){ inputX + inputWidth - 40, startY + spacing * 3, 40, inputHeight },
+                    showPasswordAsText ? "#44#" : "#45#"))  // Eye icons
+    {
+        showPasswordAsText = !showPasswordAsText;
+    }
+
+    // File path field with browse button
+    GuiLabel({ labelX, startY + spacing * 4 + 5, labelWidth, labelHeight }, "Config File:");
+    if (GuiTextBox((Rectangle){ inputX, startY + spacing * 4, inputWidth - 110, inputHeight },
+                    settings.filePath, MAX_INPUT_CHARS, settings.filePathEdit))
+    {
+        settings.filePathEdit = !settings.filePathEdit;
+    }
+
+    // Browse button
+    if (GuiButton((Rectangle){ inputX + inputWidth - 100, startY + spacing * 4, 100, inputHeight },
+                    "Browse..."))
+    {
+        // In a real application, you would open a file dialog here
+        // For demonstration, we'll just show it was clicked
+        printf("Browse button clicked!\n");
+        // You could use a library like tinyfiledialogs for actual file selection
+    }
+
+    // Save button
+    Rectangle saveButtonRect = { 350, startY + spacing * 5 + 20, 200, 40 };
+
+    if (GuiButton(saveButtonRect, "Save Settings"))
+    {
+        printf("Settings saved!\n");
+        printf("Username: %s\n", settings.username);
+        printf("Email: %s\n", settings.email);
+        printf("Server URL: %s\n", settings.serverUrl);
+        printf("Password: %s\n", settings.password);
+        printf("File Path: %s\n", settings.filePath);
+    }
+
+    // Reset button
+    if (GuiButton((Rectangle){ 570, startY + spacing * 5 + 20, 200, 40 }, "Reset to Defaults"))
+    {
+        strcpy(settings.username, "user123");
+        strcpy(settings.email, "user@example.com");
+        strcpy(settings.serverUrl, "https://api.example.com");
+        strcpy(settings.password, "");
+        strcpy(settings.filePath, "C:/data/config.json");
+        printf("Settings reset to defaults!\n");
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+void drawBuilderTab(WindowState& state) {
+    const auto& res = state.res;
+
+    GuiLabel({res.width/2 - 100, 50, 200, 30}, "Implant Builder");
+
+    Rectangle viewRect{0, 80, res.width, res.height - 90};
+    GuiPanel(viewRect, "");
+}
+
+//TODO: remove
+struct Session {
+    std::string client;
+    int16_t port;
+    bool open;
+};
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+void drawSessionsTab(WindowState& state) {
+    static int selected_session = -1;
+    static bool commandEditMode = false;
+    static char terminalOutput[4096] = "Terminal started. Type 'help' for commands.\n\n";
+    static char commandInput[1024] = {0};
+    static float scrollOffset = 0;
+
+    const auto& res = state.res;
+
+    GuiLabel({res.width/2 - 100, 50, 200, 30}, "Remote Shell Sessions");
+
+    static std::vector<Session> sessions {
+        {"userName", 4444, true },
+        {"user2", 4444, true },
+        {"user3", 4444, true },
+        {"user4", 4444, true },
+        {"user5", 4444, true }
+    };
+
+    Rectangle viewRect{0, 80, res.width, res.height - 90};
+
+    // if there are no sessions currently
+    if(sessions.empty()) {
+        GuiPanel(viewRect, TextFormat("Currently there are no active Sessions!"));
+        return;
+    } else if(selected_session < 0) {
+        selected_session = 0;
+    }
+
+    for(size_t i{ 0 }; i < sessions.size(); ++i) {
+        //highlight currently selected session
+        int originalBase = GuiGetStyle(BUTTON, BASE_COLOR_NORMAL);
+        int originalText = GuiGetStyle(BUTTON, TEXT_COLOR_NORMAL);
+
+        // Apply active colors
+        if (selected_session == (int)i) {
+            GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(RED));
+            GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, ColorToInt(YELLOW));
+        }
+
+        if (GuiButton({3 + (23*(float)i), 58, 20, 20},  TextFormat("%d", (int)i))) {
+            selected_session = i;
+        }
+
+        //restore original style
+        GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, originalBase);
+        GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, originalText);
+    }
+
+    Session& session = sessions.at(selected_session);
+    GuiPanel(viewRect, TextFormat("Reverse Shell to Client %s on port %d", session.client.c_str(), session.port));
+
+    //close session button
+    if (GuiButton({viewRect.width - 130, viewRect.y + 2, 120, 20},  GuiIconText(ICON_CROSS, "Close Shell"))) {
+        //TODO:
+    }
+
+    // Terminal stuffs
+    if (commandEditMode)
+    {
+        /*
+        if (IsKeyPressed(KEY_UP))
+        {
+            if (history.currentIndex > 0)
+            {
+                history.currentIndex--;
+                strcpy(commandInput, history.commands[history.currentIndex]);
+            }
+        }
+        else if (IsKeyPressed(KEY_DOWN))
+        {
+            if (history.currentIndex < history.count - 1)
+            {
+                history.currentIndex++;
+                strcpy(commandInput, history.commands[history.currentIndex]);
+            }
+            else if (history.currentIndex == history.count - 1)
+            {
+                history.currentIndex = history.count;
+                commandInput[0] = '\0';
+            }
+        }*/
+    }
+
+    // Calculate text height for scrolling
+    Vector2 textSize = MeasureTextEx(guiFont, terminalOutput, 16, 1);
+
+    // Output area
+    Rectangle outputRect = { viewRect.x + 10, viewRect.y + 40, viewRect.width - 20, viewRect.height - 100 };
+
+    // Handle scrolling
+    if (CheckCollisionPointRec(GetMousePosition(), outputRect))
+    {
+        scrollOffset -= GetMouseWheelMove() * 20;
+
+        float maxScroll = textSize.y - outputRect.height;
+        if (maxScroll < 0) maxScroll = 0;
+        if (scrollOffset < 0) scrollOffset = 0;
+        if (scrollOffset > maxScroll) scrollOffset = maxScroll;
+    }
+
+    // Terminal output area
+    GuiGroupBox(outputRect, "Session Output");
+
+    // Draw scrollbar
+    Rectangle scrollBarBounds = { outputRect.x + outputRect.width - 14, outputRect.y,
+                                    14, outputRect.height };
+    float maxScroll = textSize.y - outputRect.height;
+    if (maxScroll < 0) maxScroll = 0;
+
+    if (maxScroll > 0)
+    {
+        GuiScrollBar(scrollBarBounds, (int)scrollOffset, 0, (int)maxScroll);
+    }
+
+    // Draw terminal output with clipping
+    BeginScissorMode((int)outputRect.x, (int)outputRect.y,
+                    (int)outputRect.width - 18, (int)outputRect.height);
+
+    DrawTextEx(state.font,
+                terminalOutput,
+                (Vector2){ outputRect.x + 5, outputRect.y + 5 - scrollOffset },
+                16,
+                1,
+                PINK);  // Green terminal text
+
+    EndScissorMode();
+
+    // Command prompt area
+    DrawText(">", 10, state.res.height - 60, 30, RED);
+
+    Rectangle commandRect = { 30, res.height - 60, res.width - 200, 30 };
+
+    // Execute button
+    if (GuiButton((Rectangle){ res.width - 150, res.height - 60, 55, 30 }, "Run") ||
+       GuiTextBox(commandRect, commandInput, 1024, commandEditMode)) {
+        if (strlen(commandInput) > 0) {
+            //AddToHistory(&history, commandInput);
+            run_terminal_command(commandInput, terminalOutput, 4096);
+            commandInput[0] = '\0';
+
+            // Auto-scroll to bottom after command
+            Vector2 newTextSize = MeasureTextEx(guiFont, terminalOutput, 16, 1);
+            float newMaxScroll = newTextSize.y - outputRect.height;
+            if (newMaxScroll > 0)
+            {
+                scrollOffset = newMaxScroll;
+            }
+        }
+        commandEditMode = true;
+    }
+
+    // Clear button
+    if (GuiButton((Rectangle){ res.width - 75, res.height - 60, 55, 30 }, "Clear")) {
+        terminalOutput[0] = '\0';
+        strcat(terminalOutput, "Terminal cleared.\n\n");
+        scrollOffset = 0;
+    }
+
 }

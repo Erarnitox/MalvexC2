@@ -34,4 +34,43 @@ struct WindowState {
     bool show_about = false;
     bool is_fullscreen = false;
     Resolution res;
+    Font font;
+    Tab current_tab;
 };
+
+constexpr size_t MAX_INPUT_CHARS{ 256 };
+
+struct Settings {
+    char username[MAX_INPUT_CHARS];
+    char email[MAX_INPUT_CHARS];
+    char serverUrl[MAX_INPUT_CHARS];
+    char password[MAX_INPUT_CHARS];
+    char filePath[MAX_INPUT_CHARS];
+
+    bool usernameEdit;
+    bool emailEdit;
+    bool serverUrlEdit;
+    bool passwordEdit;
+    bool filePathEdit;
+};
+
+void run_terminal_command(const char* command, char* output, size_t outputSize) {
+    char tempOutput[1024];
+
+    // Simple command processing (you can expand this)
+    if (strcmp(command, "help") == 0) {
+        snprintf(tempOutput, sizeof(tempOutput),
+                 "> %s\nAvailable commands:\n"
+                 "  help     - Show this help message\n"
+                 "  clear    - Clear terminal output\n"
+                 "  echo     - Echo back text\n"
+                 "  date     - Show current date/time\n"
+                 "  version  - Show version info\n\n",
+                 command);
+    }
+
+    // Append to output
+    if (strlen(output) + strlen(tempOutput) < outputSize - 1) {
+        strcat(output, tempOutput);
+    }
+}
