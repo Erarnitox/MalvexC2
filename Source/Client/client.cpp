@@ -1,4 +1,5 @@
 #include "ui_includes.hpp"
+#include <raylib.h>
 
 // function prototypes
 void drawConnectionsTab(const Resolution& res);
@@ -16,21 +17,23 @@ int main() {
 
     Resolution old_res = state.res;
 
-    std::string title{ GuiIconText(ICON_DEMON, "Malvex C2 - GUI Client") };
+    const std::string title{ GuiIconText(ICON_DEMON, "Malvex C2 - GUI Client") };
 
+    // Set up the window
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(state.res.width, state.res.height, title.c_str());
     SetTargetFPS(30);
+    GuiLoadStyleDark();
+    const auto bg_color = GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR));
+
+    // Set custom font
+    const Font customFont = LoadFont("Font.ttf");
+    GuiSetFont(customFont);
 
     // Layout state
     int currentTab = Tab::CONNECTIONS;
 
-    GuiLoadStyleDark();
-    auto bg_color = GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR));
-
-    Font customFont = LoadFont("Font.ttf");
-    GuiSetFont(customFont);
-
+    // Render Loop
     while (not WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(bg_color);
@@ -72,28 +75,28 @@ int main() {
             }
         }
 
-        // --- Tab Bar ---
-        Rectangle tabBar = {0, 28, state.res.width, 28};
-        GuiGroupBox(tabBar, nullptr);
-
-        float tabWidth = tabBar.width / tabs.size();
-        for (size_t i = 0; i < tabs.size(); i++) {
-            Rectangle r{ tabWidth * i, 28, tabWidth, 28 };
-            if (GuiButton(r, tabs.at(i).c_str())) {
-                currentTab = i;
-            }
-        }
-
-        // --- Victim Table Area ---
-        switch(currentTab) {
-            case Tab::CONNECTIONS:
-                drawConnectionsTab(state.res);
-                break;
-        }
-
         // Draw popup if active
         if (state.show_about) {
             drawAbout(state);
+        } else {
+            // --- Tab Bar ---
+            Rectangle tabBar = {0, 28, state.res.width, 28};
+            GuiGroupBox(tabBar, nullptr);
+
+            float tabWidth = tabBar.width / tabs.size();
+            for (size_t i = 0; i < tabs.size(); i++) {
+                Rectangle r{ tabWidth * i, 28, tabWidth, 28 };
+                if (GuiButton(r, tabs.at(i).c_str())) {
+                    currentTab = i;
+                }
+            }
+
+            // --- Active Tab ---
+            switch(currentTab) {
+                case Tab::CONNECTIONS:
+                    drawConnectionsTab(state.res);
+                    break;
+            }
         }
 
         // --- Status Bar ---
@@ -114,6 +117,10 @@ void drawConnectionsTab(const Resolution& res) {
     static Vector2 scroll = {0, 0};
     static Rectangle view = {0, 0, 0, 0};
     static Rectangle content = {0, 0, 0, 30 * 25};
+    static Vector2 menuPos = {};
+    static bool menuVisible = false;
+    static int selectedRow = -1;
+    static int hoveredRow = -1;
 
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "List of Victim Connections");
 
@@ -146,11 +153,25 @@ void drawConnectionsTab(const Resolution& res) {
         res.width,
         res.height - panelTop
     };
+
+    // Detect hovered row
+    Vector2 mouse = GetMousePosition();
+
+    // Convert mouse into panel local coordinates
+    if (not menuVisible && CheckCollisionPointRec(mouse, panelRect)) {
+        float localY = mouse.y - panelRect.y - scroll.y;
+        if (localY >= 0 && localY < content.height) {
+            hoveredRow = (int)(localY / 25);
+            if (hoveredRow >= 50)
+                hoveredRow = -1;
+        }
+    }
+
     GuiScrollPanel(panelRect, nullptr, content, &scroll, &view);
 
     BeginScissorMode(panelRect.x, panelRect.y, panelRect.width, panelRect.height);
 
-    int clients = 3;
+    int clients = 50;
     const char* values[] = {
         "1", "Laptop", "192.168.0.108", "8.8.8.8", "Linux",
         "erarnitox", "Online"
@@ -160,6 +181,11 @@ void drawConnectionsTab(const Resolution& res) {
     for (int client_id{ 0 }; client_id < clients; ++client_id) {
         auto line_color = client_id % 2 == 0 ? Color{150, 20, 70, 255} : DARKGRAY;
 
+        // Hover highlight
+        if (client_id == hoveredRow) {
+            line_color = RED;
+        }
+
         for (int i = 0; i < colCount; i++) {
             Rectangle r{tableRect.x + i * colWidth, tableRect.y + scroll.y + 26 + (25*client_id), colWidth, 24};
             GuiDrawRectangle(r, 1, BLACK, line_color);
@@ -167,7 +193,38 @@ void drawConnectionsTab(const Resolution& res) {
         }
     }
 
+    if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && hoveredRow >= 0) {
+        menuVisible = true;
+        menuPos = mouse;
+        selectedRow = hoveredRow;
+    }
+
+    if (menuVisible && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        Rectangle menuArea{menuPos.x, menuPos.y, 300, 500};
+        if (not CheckCollisionPointRec(mouse, menuArea)) {
+            menuVisible = false;
+        }
+    }
+
     EndScissorMode();
+
+    if (menuVisible && selectedRow >= 0) {
+        Rectangle menuRect{menuPos.x, menuPos.y, 300, 500};
+
+        GuiPanel(menuRect, GuiIconText(ICON_DEMON, TextFormat("Attack Victim #%d", selectedRow)));
+
+        Rectangle btn1{menuRect.x + 10, menuRect.y + 30, 280, 25};
+        Rectangle btn2{menuRect.x + 10, menuRect.y + 60, 280, 25};
+
+        if (GuiButton(btn1, TextFormat("Action 1 (Row %d)", selectedRow))) {
+            // handle action
+            menuVisible = false;
+        }
+        if (GuiButton(btn2, "Action 2")) {
+            // handle action
+            menuVisible = false;
+        }
+    }
 }
 
 //-------------------------------------------------
