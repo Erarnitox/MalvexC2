@@ -1,4 +1,4 @@
-#include "ui_includes.hpp"
+#include "ui.hpp"
 #include <raylib.h>
 #include <vector>
 
@@ -9,6 +9,7 @@ void drawLogsTab(WindowState& state);
 void drawBuilderTab(WindowState& state);
 void drawSessionsTab(WindowState& state);
 void drawAbout(WindowState& state);
+void drawLogin(WindowState& state);
 
 //-------------------------------------------------
 //
@@ -19,7 +20,8 @@ int main() {
         .is_fullscreen=false,
         .res={ 1200, 800},
         .font={},
-        .current_tab=Tab::CONNECTIONS
+        .current_tab=Tab::CONNECTIONS,
+        .is_connected=false
     };
 
     Resolution old_res = state.res;
@@ -80,7 +82,9 @@ int main() {
         }
 
         // Draw popup if active
-        if (state.show_about) {
+        if (not state.is_connected) {
+            drawLogin(state);
+        } else if (state.show_about) {
             drawAbout(state);
         } else {
             // --- Tab Bar ---
@@ -243,7 +247,7 @@ void drawConnectionsTab(WindowState& state) {
 
     if (menuVisible && selectedRow >= 0) {
         const auto btn_height{ 30 };
-        Rectangle menuRect{menuPos.x, menuPos.y, 300, btn_height*8 + 10};
+        Rectangle menuRect{menuPos.x, menuPos.y, 300, btn_height*9 + 10};
         GuiPanel(menuRect, GuiIconText(ICON_DEMON, TextFormat("Attack Victim #%d", selectedRow)));
 
         Rectangle btn1{menuRect.x + 10, menuRect.y + btn_height*1, 280, 25};
@@ -253,6 +257,7 @@ void drawConnectionsTab(WindowState& state) {
         Rectangle btn5{menuRect.x + 10, menuRect.y + btn_height*5, 280, 25};
         Rectangle btn6{menuRect.x + 10, menuRect.y + btn_height*6, 280, 25};
         Rectangle btn7{menuRect.x + 10, menuRect.y + btn_height*7, 280, 25};
+        Rectangle btn8{menuRect.x + 10, menuRect.y + btn_height*8, 280, 25};
 
         if (GuiButton(btn1, TextFormat("Timeout Client %d for %d min", selectedRow, 10))) {
             // handle action
@@ -283,7 +288,75 @@ void drawConnectionsTab(WindowState& state) {
             // handle action
             menuVisible = false;
         }
+        if (GuiButton(btn8, "Uninstall Implant")) {
+            // handle action
+            menuVisible = false;
+        }
     }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+void drawLogin(WindowState& state) {
+    static const Texture2D texture = LoadTexture("Logo.png");
+
+    Rectangle popupRect = { state.res.width/2 - 300, state.res.height/2 - 130, 600, 250 };
+    GuiPanel(popupRect, GuiIconText(ICON_DEMON, "Connect to MalvexC2 Server"));
+
+    // Draw image inside popup
+    float imageX = popupRect.x + 10;
+    float imageY = popupRect.y + 40;
+    float imageWidth = 200;
+    float imageHeight = 200;
+
+    DrawTexturePro(
+        texture,
+        (Rectangle){ 0, 0, (float)texture.width, (float)texture.height },
+        (Rectangle){ imageX, imageY, imageWidth, imageHeight },
+        (Vector2){ 0, 0 },
+        0.0f,
+        WHITE
+    );
+
+    // Username field
+    GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 40, 90, 20 }, "Username:");
+    if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 40, 200, 20 },
+        "", MAX_INPUT_CHARS, false)) {
+        //settings.username.edited = !settings.username.edited;
+    }
+
+    // Password field
+    GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 10 + 30*2, 90, 20 }, "Password:");
+    if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 10 + 30*2, 200, 20 },
+        "", MAX_INPUT_CHARS, false)) {
+        //settings.username.edited = !settings.username.edited;
+    }
+
+    // Server URL field
+    GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 10 + 30*3, 90, 20 }, "Server:");
+    if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 10 + 30*3, 200, 20 },
+        "", MAX_INPUT_CHARS, false)) {
+        //settings.username.edited = !settings.username.edited;
+    }
+
+    // Server Port field
+    GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 10 + 30*4, 90, 20 }, "Port:");
+    if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 10 + 30*4, 200, 20 },
+        "", MAX_INPUT_CHARS, false)) {
+        //settings.username.edited = !settings.username.edited;
+    }
+
+    // Close Button
+    if (GuiButton((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 }, "Login")) {
+        state.is_connected = true;
+    }
+
+    // Local Server Button
+    if (GuiButton((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Start Local Server")) {
+        state.is_connected = true;
+    }
+
 }
 
 //-------------------------------------------------
@@ -387,12 +460,13 @@ void drawLogsTab(WindowState& state) {
 //
 //-------------------------------------------------
 void drawSettingsTab(WindowState& state) {
-    static Settings settings{
-        .username="user123",
-        .email="user@example.com",
-        .serverUrl="https://api.example.com",
-        .password="123456",
-        .filePath="/tmp/output"
+    static MalvexSettings settings{
+        .username={"user123"},
+        .password={"123456"},
+        .default_timeout={"5"},
+        .server_url={"https://api.example.com"},
+        .server_port={"123456"},
+        .output_file_path={"/tmp/output"}
     };
     static char displayPassword[MAX_INPUT_CHARS] = {0};
     static bool showPasswordAsText{ false };
@@ -416,25 +490,16 @@ void drawSettingsTab(WindowState& state) {
     // Username field
     GuiLabel({labelX, startY + 5, labelWidth, labelHeight }, "Username:");
     if (GuiTextBox((Rectangle){ inputX, startY, inputWidth, inputHeight },
-                    settings.username, MAX_INPUT_CHARS, settings.usernameEdit))
+                    settings.username.text, MAX_INPUT_CHARS, settings.username.edited))
     {
-        settings.usernameEdit = !settings.usernameEdit;
-    }
-
-    // Email field
-    GuiLabel({ labelX, startY + spacing + 5, labelWidth, labelHeight }, "Email:");
-    if (GuiTextBox((Rectangle){ inputX, startY + spacing, inputWidth, inputHeight },
-                    settings.email, MAX_INPUT_CHARS, settings.emailEdit))
-    {
-        settings.emailEdit = !settings.emailEdit;
+        settings.username.edited = !settings.username.edited;
     }
 
     // Server URL field
     GuiLabel({ labelX, startY + spacing * 2 + 5, labelWidth, labelHeight }, "Server URL:");
     if (GuiTextBox((Rectangle){ inputX, startY + spacing * 2, inputWidth, inputHeight },
-                    settings.serverUrl, MAX_INPUT_CHARS, settings.serverUrlEdit))
-    {
-        settings.serverUrlEdit = !settings.serverUrlEdit;
+                    settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edited)) {
+        settings.server_url.edited = !settings.server_url.edited;
     }
 
     // Password field
@@ -443,19 +508,15 @@ void drawSettingsTab(WindowState& state) {
     // Password input (we edit the actual password but display masked version)
     Rectangle passwordRect = { inputX, startY + spacing * 3, inputWidth - 50, inputHeight };
 
-    if (settings.passwordEdit)
-    {
+    if (settings.password.edited) {
         // When editing, show actual password
-        if (GuiTextBox(passwordRect, settings.password, MAX_INPUT_CHARS, settings.passwordEdit))
-        {
-            settings.passwordEdit = !settings.passwordEdit;
+        if (GuiTextBox(passwordRect, settings.password.text, MAX_INPUT_CHARS, settings.password.edited)) {
+            settings.password.edited = !settings.password.edited;
         }
-    }
-    else
-    {
+    } else {
         // When not editing, show masked password
-        if (GuiTextBox(passwordRect, displayPassword, MAX_INPUT_CHARS, settings.passwordEdit)) {
-            settings.passwordEdit = !settings.passwordEdit;
+        if (GuiTextBox(passwordRect, displayPassword, MAX_INPUT_CHARS, settings.password.edited)) {
+            settings.password.edited = !settings.password.edited;
         }
     }
 
@@ -469,9 +530,8 @@ void drawSettingsTab(WindowState& state) {
     // File path field with browse button
     GuiLabel({ labelX, startY + spacing * 4 + 5, labelWidth, labelHeight }, "Config File:");
     if (GuiTextBox((Rectangle){ inputX, startY + spacing * 4, inputWidth - 110, inputHeight },
-                    settings.filePath, MAX_INPUT_CHARS, settings.filePathEdit))
-    {
-        settings.filePathEdit = !settings.filePathEdit;
+                    settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edited)) {
+        settings.output_file_path.edited = !settings.output_file_path.edited;
     }
 
     // Browse button
@@ -487,25 +547,14 @@ void drawSettingsTab(WindowState& state) {
     // Save button
     Rectangle saveButtonRect = { 350, startY + spacing * 5 + 20, 200, 40 };
 
-    if (GuiButton(saveButtonRect, "Save Settings"))
-    {
+    if (GuiButton(saveButtonRect, "Save Settings")) {
         printf("Settings saved!\n");
-        printf("Username: %s\n", settings.username);
-        printf("Email: %s\n", settings.email);
-        printf("Server URL: %s\n", settings.serverUrl);
-        printf("Password: %s\n", settings.password);
-        printf("File Path: %s\n", settings.filePath);
+        printf("Username: %s\n", settings.username.text);
     }
 
     // Reset button
-    if (GuiButton((Rectangle){ 570, startY + spacing * 5 + 20, 200, 40 }, "Reset to Defaults"))
-    {
-        strcpy(settings.username, "user123");
-        strcpy(settings.email, "user@example.com");
-        strcpy(settings.serverUrl, "https://api.example.com");
-        strcpy(settings.password, "");
-        strcpy(settings.filePath, "C:/data/config.json");
-        printf("Settings reset to defaults!\n");
+    if (GuiButton((Rectangle){ 570, startY + spacing * 5 + 20, 200, 40 }, "Reset to Defaults")) {
+        strcpy(settings.username.text, "user123");
     }
 }
 

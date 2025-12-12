@@ -36,22 +36,32 @@ struct WindowState {
     Resolution res;
     Font font;
     Tab current_tab;
+    bool is_connected;
 };
 
 constexpr size_t MAX_INPUT_CHARS{ 256 };
 
-struct Settings {
-    char username[MAX_INPUT_CHARS];
-    char email[MAX_INPUT_CHARS];
-    char serverUrl[MAX_INPUT_CHARS];
-    char password[MAX_INPUT_CHARS];
-    char filePath[MAX_INPUT_CHARS];
+struct InputField {
+    char text[MAX_INPUT_CHARS];
+    bool edited = false;
+};
 
-    bool usernameEdit;
-    bool emailEdit;
-    bool serverUrlEdit;
-    bool passwordEdit;
-    bool filePathEdit;
+struct MalvexSettings {
+    InputField username;
+    InputField password;
+    InputField default_timeout;
+    InputField server_url;
+    InputField server_port;
+    InputField output_file_path;
+};
+
+struct BuilderSettings {
+    InputField username;
+    InputField password;
+    InputField default_timeout;
+    InputField server_url;
+    InputField server_port;
+    InputField output_file_path;
 };
 
 void run_terminal_command(const char* command, char* output, size_t outputSize) {

@@ -7,7 +7,11 @@ target_include_directories(raygui SYSTEM INTERFACE ${raygui_SOURCE_DIR}/src)
 target_include_directories(raygui SYSTEM INTERFACE ${raygui_SOURCE_DIR})
 target_compile_definitions(raygui INTERFACE RAYGUI_IMPLEMENTATION)
 
-add_executable(client client.cpp)
+add_executable(client
+    ui.cpp
+# Headers for IDE
+    ui.hpp
+)
 
 target_link_libraries(client
     PRIVATE
