@@ -51,7 +51,6 @@ struct MalvexSettings {
     InputField password;
     InputField default_timeout;
     InputField server_url;
-    InputField server_port;
     InputField output_file_path;
 };
 
@@ -60,7 +59,6 @@ struct BuilderSettings {
     InputField password;
     InputField default_timeout;
     InputField server_url;
-    InputField server_port;
     InputField output_file_path;
 };
 

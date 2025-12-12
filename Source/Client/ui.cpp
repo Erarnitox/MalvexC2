@@ -340,14 +340,7 @@ void drawLogin(WindowState& state) {
         //settings.username.edited = !settings.username.edited;
     }
 
-    // Server Port field
-    GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 10 + 30*4, 90, 20 }, "Port:");
-    if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 10 + 30*4, 200, 20 },
-        "", MAX_INPUT_CHARS, false)) {
-        //settings.username.edited = !settings.username.edited;
-    }
-
-    // Close Button
+    // Login Button
     if (GuiButton((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 }, "Login")) {
         state.is_connected = true;
     }
@@ -465,7 +458,6 @@ void drawSettingsTab(WindowState& state) {
         .password={"123456"},
         .default_timeout={"5"},
         .server_url={"https://api.example.com"},
-        .server_port={"123456"},
         .output_file_path={"/tmp/output"}
     };
     static char displayPassword[MAX_INPUT_CHARS] = {0};
@@ -485,59 +477,45 @@ void drawSettingsTab(WindowState& state) {
     float inputWidth = tabRect.width - inputX - 10;
     float inputHeight = 20;
     float startY = tabRect.y + 50;
-    float spacing = 30;
+    float spacing = labelHeight + 10;
 
     // Username field
     GuiLabel({labelX, startY + 5, labelWidth, labelHeight }, "Username:");
     if (GuiTextBox((Rectangle){ inputX, startY, inputWidth, inputHeight },
-                    settings.username.text, MAX_INPUT_CHARS, settings.username.edited))
-    {
+                    settings.username.text, MAX_INPUT_CHARS, settings.username.edited)) {
         settings.username.edited = !settings.username.edited;
     }
 
+    // Password field
+    GuiLabel({labelX, startY + 5 + spacing, labelWidth, labelHeight }, "Password:");
+    if (GuiTextBox((Rectangle){ inputX, startY + spacing, inputWidth, inputHeight },
+                    settings.password.text, MAX_INPUT_CHARS, settings.password.edited)) {
+        settings.password.edited = !settings.password.edited;
+    }
+
+    // Timeout field
+    GuiLabel({labelX, startY + 5 + spacing*2, labelWidth, labelHeight }, "Timeout:");
+    if (GuiTextBox((Rectangle){ inputX, startY + spacing*2, inputWidth, inputHeight },
+                    settings.default_timeout.text, MAX_INPUT_CHARS, settings.default_timeout.edited)) {
+        settings.default_timeout.edited = !settings.default_timeout.edited;
+    }
+
     // Server URL field
-    GuiLabel({ labelX, startY + spacing * 2 + 5, labelWidth, labelHeight }, "Server URL:");
-    if (GuiTextBox((Rectangle){ inputX, startY + spacing * 2, inputWidth, inputHeight },
+    GuiLabel({labelX, startY + 5 + spacing*3, labelWidth, labelHeight }, "Server:");
+    if (GuiTextBox((Rectangle){ inputX, startY + spacing*3, inputWidth, inputHeight },
                     settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edited)) {
         settings.server_url.edited = !settings.server_url.edited;
     }
 
-    // Password field
-    GuiLabel({ labelX, startY + spacing * 3 + 5, labelWidth, labelHeight }, "Password:");
-
-    // Password input (we edit the actual password but display masked version)
-    Rectangle passwordRect = { inputX, startY + spacing * 3, inputWidth - 50, inputHeight };
-
-    if (settings.password.edited) {
-        // When editing, show actual password
-        if (GuiTextBox(passwordRect, settings.password.text, MAX_INPUT_CHARS, settings.password.edited)) {
-            settings.password.edited = !settings.password.edited;
-        }
-    } else {
-        // When not editing, show masked password
-        if (GuiTextBox(passwordRect, displayPassword, MAX_INPUT_CHARS, settings.password.edited)) {
-            settings.password.edited = !settings.password.edited;
-        }
-    }
-
-    // Toggle password visibility button
-    if (GuiButton((Rectangle){ inputX + inputWidth - 40, startY + spacing * 3, 40, inputHeight },
-                    showPasswordAsText ? "#44#" : "#45#"))  // Eye icons
-    {
-        showPasswordAsText = !showPasswordAsText;
-    }
-
     // File path field with browse button
-    GuiLabel({ labelX, startY + spacing * 4 + 5, labelWidth, labelHeight }, "Config File:");
-    if (GuiTextBox((Rectangle){ inputX, startY + spacing * 4, inputWidth - 110, inputHeight },
+    GuiLabel({ labelX, startY + spacing*4 + 5, labelWidth, labelHeight }, "Output Dir:");
+    if (GuiTextBox((Rectangle){ inputX, startY + spacing*4, inputWidth - 110, inputHeight },
                     settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edited)) {
         settings.output_file_path.edited = !settings.output_file_path.edited;
     }
 
     // Browse button
-    if (GuiButton((Rectangle){ inputX + inputWidth - 100, startY + spacing * 4, 100, inputHeight },
-                    "Browse..."))
-    {
+    if (GuiButton((Rectangle){ inputX + inputWidth - 100, startY + spacing*4, 100, inputHeight },"Browse...")) {
         // In a real application, you would open a file dialog here
         // For demonstration, we'll just show it was clicked
         printf("Browse button clicked!\n");
@@ -545,16 +523,10 @@ void drawSettingsTab(WindowState& state) {
     }
 
     // Save button
-    Rectangle saveButtonRect = { 350, startY + spacing * 5 + 20, 200, 40 };
-
+    Rectangle saveButtonRect = { inputX, startY + spacing*5, 200, 30 };
     if (GuiButton(saveButtonRect, "Save Settings")) {
         printf("Settings saved!\n");
         printf("Username: %s\n", settings.username.text);
-    }
-
-    // Reset button
-    if (GuiButton((Rectangle){ 570, startY + spacing * 5 + 20, 200, 40 }, "Reset to Defaults")) {
-        strcpy(settings.username.text, "user123");
     }
 }
 

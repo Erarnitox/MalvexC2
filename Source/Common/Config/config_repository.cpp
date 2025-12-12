@@ -1,21 +1,17 @@
-#include "note_repository.hpp"
+#include "config_repository.hpp"
+#include "config_dao.hpp"
+
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 #include <ctime>
-#include "../common/include/common/json.hpp"
 
-using namespace common::model;
-using namespace common::db;
-using namespace common::json;
-
-SqliteNoteRepository::SqliteNoteRepository(const std::string& db_path)
-    : db_(std::make_unique<Database>(db_path))
-{
+ConfigRepository::ConfigRepository(const std::string& db_path)
+    : db_(std::make_unique<Database>(db_path)) {
     ensure_table();
 }
 
-void SqliteNoteRepository::ensure_table() {
+void ConfigRepository::ensure_table() {
     db_->exec(R"(
         CREATE TABLE IF NOT EXISTS notes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,11 +22,11 @@ void SqliteNoteRepository::ensure_table() {
     )");
 }
 
-std::vector<Note> SqliteNoteRepository::list() {
-    std::vector<Note> result;
+std::vector<ConfigDAO> ConfigRepository::list() {
+    std::vector<ConfigDAO> result;
     db_->query("SELECT id, title, body, modified_at FROM notes ORDER BY modified_at DESC;",
         [&](int cols, char** values, char** names){
-            Note n;
+            ConfigDAO n;
             n.id = values[0] ? std::stoll(values[0]) : 0;
             n.title = values[1] ? values[1] : "";
             n.body = values[2] ? values[2] : "";
@@ -40,13 +36,13 @@ std::vector<Note> SqliteNoteRepository::list() {
     return result;
 }
 
-std::optional<Note> SqliteNoteRepository::get(int64_t id) {
-    std::optional<Note> opt;
+std::optional<ConfigDAO> ConfigRepository::get(int64_t id) {
+    std::optional<ConfigDAO> opt;
     std::ostringstream sql;
     sql << "SELECT id, title, body, modified_at FROM notes WHERE id = " << id << " LIMIT 1;";
     db_->query(sql.str(), [&](int cols, char** values, char** names){
         if (cols >= 4) {
-            Note n;
+            ConfigDAO n;
             n.id = values[0] ? std::stoll(values[0]) : 0;
             n.title = values[1] ? values[1] : "";
             n.body = values[2] ? values[2] : "";
@@ -57,7 +53,7 @@ std::optional<Note> SqliteNoteRepository::get(int64_t id) {
     return opt;
 }
 
-Note SqliteNoteRepository::create(const Note& note) {
+ConfigDAO ConfigRepository::create(const ConfigDAO& note) {
     std::string t = timepoint_to_iso(note.modified_at);
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
