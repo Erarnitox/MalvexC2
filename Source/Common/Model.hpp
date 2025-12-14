@@ -1,12 +1,14 @@
 #pragma once
 #include <string>
 #include <chrono>
-#include <vector>
 #include <optional>
 
 using Clock = std::chrono::system_clock;
 using TimePoint = std::chrono::time_point<Clock>;
 
+//--------------------------------
+//
+//--------------------------------
 struct User {
     long long id{0};
     std::string uid; // uuid string
@@ -15,6 +17,9 @@ struct User {
     int clearance{0};
 };
 
+//--------------------------------
+//
+//--------------------------------
 struct VictimTemplate {
     long long id{0};
     std::string uid;
@@ -22,6 +27,9 @@ struct VictimTemplate {
     std::string password;
 };
 
+//--------------------------------
+//
+//--------------------------------
 struct Victim {
     long long id{0};
     std::string uid;
@@ -35,6 +43,9 @@ struct Victim {
     std::optional<long long> template_id;
 };
 
+//--------------------------------
+//
+//--------------------------------
 struct Command {
     long long id{0};
     std::string uid;
@@ -45,18 +56,27 @@ struct Command {
     int status{0};
 };
 
+//--------------------------------
+//
+//--------------------------------
 struct Result {
     long long id{0};
     std::string uid;
     std::string data;
 };
 
+//--------------------------------
+//
+//--------------------------------
 struct Session {
     long long id{0};
     std::string uid;
     int port{0};
 };
 
+//--------------------------------
+//
+//--------------------------------
 struct Log {
     long long id{0};
     std::string uid;

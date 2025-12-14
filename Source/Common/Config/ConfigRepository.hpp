@@ -1,10 +1,12 @@
 #pragma once
-#include <string>
-#include "../i_repository.hpp"
-#include "../database.hpp"
-#include <memory>
 
-#include "config_dao.hpp"
+#include "ConfigDAO.hpp"
+
+#include <IRepository.hpp>
+#include <Database.hpp>
+
+#include <string>
+#include <memory>
 
 class ConfigRepository : public IRepository<ConfigDAO> {
 public:
@@ -19,6 +21,9 @@ public:
     bool remove(int64_t id) override;
 
     std::optional<ConfigDAO> get(const std::string& key);
+    std::optional<ConfigDAO> update(const std::string& key, const ConfigDAO& res);
+    std::optional<ConfigDAO> upsert(const std::string& key, const std::string& value);
+    bool remove(const std::string& key);
 
 private:
     void ensure_table();

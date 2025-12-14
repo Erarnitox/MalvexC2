@@ -1,7 +1,8 @@
-#pragma once
+#include "Database.hpp"
 
-#include "database.hpp"
-
+//--------------------------------
+//
+//--------------------------------
 Database::Database(const std::string& path) {
     int rc = sqlite3_open(path.c_str(), &db_);
     if (rc != SQLITE_OK) {
@@ -14,11 +15,17 @@ Database::Database(const std::string& path) {
     exec("PRAGMA journal_mode=WAL;");
 }
 
+//--------------------------------
+//
+//--------------------------------
 Database::~Database() {
     if (db_)
         sqlite3_close(db_);
 }
 
+//--------------------------------
+//
+//--------------------------------
 void Database::exec(const std::string& sql) {
     char* err = nullptr;
     int rc = sqlite3_exec(db_, sql.c_str(), nullptr, nullptr, &err);
@@ -29,6 +36,9 @@ void Database::exec(const std::string& sql) {
     }
 }
 
+//--------------------------------
+//
+//--------------------------------
 void Database::query(const std::string& sql, const std::function<void(int, char**, char**)>& row_cb) {
     char* err = nullptr;
     auto callback = [](void* user, int cols, char** values, char** names) -> int {

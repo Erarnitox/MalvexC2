@@ -1,9 +1,7 @@
 #pragma once
 #include <sqlite3.h>
 #include <string>
-#include <vector>
 #include <stdexcept>
-#include <optional>
 #include <functional>
 
 class SqliteException : public std::runtime_error {
