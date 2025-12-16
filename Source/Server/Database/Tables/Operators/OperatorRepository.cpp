@@ -82,7 +82,7 @@ std::optional<OperatorDAO> OperatorRepository::get(const std::string& username) 
     std::optional<OperatorDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
-    const char* sql = "SELECT config_id, key, value FROM config WHERE key = ? LIMIT 1;";
+    const char* sql = "SELECT operator_id, operator_uid, username, password, clearance FROM operators WHERE username = ? LIMIT 1;";
 
     if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         throw SqliteException("prepare failed");
@@ -238,4 +238,11 @@ bool OperatorRepository::remove(const std::string& username) {
 
     sqlite3_finalize(stmt);
     return sqlite3_changes(h) > 0;
+}
+
+//--------------------------------
+//
+//--------------------------------
+void OperatorRepository::commit() {
+    db_->commit();
 }

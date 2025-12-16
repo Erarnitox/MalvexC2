@@ -42,34 +42,36 @@ int main() {
 //-------------------------------------------------
 void initial_setup() {
     // Config
-    auto& config = Config::instance(db_file);
+    {
+        auto& config = Config::instance(db_file);
 
-    std::println("This is your first time starting Malvex C2 Server");
-    std::println("To get started, we need to set up some things!\n");
+        std::println("This is your first time starting Malvex C2 Server");
+        std::println("To get started, we need to set up some things!\n");
 
-    // attacker port
-    int16_t attacker_port;
-    std::print("Attacker API Should Listen on Port:");
-    std::cin >> attacker_port;
-    config.set("attacker_api_port", attacker_port);
+        // attacker port
+        int16_t attacker_port;
+        std::print("Attacker API Should Listen on Port:");
+        std::cin >> attacker_port;
+        config.set("attacker_api_port", attacker_port);
 
-    // victim port
-    int16_t victim_port;
-    std::print("Victim API Should Listen on Port:");
-    std::cin >> victim_port;
-    config.set("victim_api_port", victim_port);
+        // victim port
+        int16_t victim_port;
+        std::print("Victim API Should Listen on Port:");
+        std::cin >> victim_port;
+        config.set("victim_api_port", victim_port);
 
-    std::println("Generating Server Certificates...");
+        std::println("Generating Server Certificates...");
 
-    auto [attacker_cert, attacker_key] = cpppwn::Server::generate_self_signed_cert("./attacker");
-    config.set("attacker_cert", attacker_cert);
-    config.set("attacker_key", attacker_key);
+        auto [attacker_cert, attacker_key] = cpppwn::Server::generate_self_signed_cert("./attacker");
+        config.set("attacker_cert", attacker_cert);
+        config.set("attacker_key", attacker_key);
 
-    auto [victim_cert, victim_key] = cpppwn::Server::generate_self_signed_cert("./victim");
-    config.set("victim_cert", victim_cert);
-    config.set("victim_key", victim_key);
+        auto [victim_cert, victim_key] = cpppwn::Server::generate_self_signed_cert("./victim");
+        config.set("victim_cert", victim_cert);
+        config.set("victim_key", victim_key);
 
-    config.save();
+        config.save();
+    }
 
     // Default user(s)
     std::println("You need to have at least one Attacker Account Set up!");
@@ -87,6 +89,7 @@ void initial_setup() {
         std::cin >> attacker.password;
 
         attacker_repo.create(attacker);
+        attacker_repo.commit();
         std::println("user [{}] created!", attacker.username);
 
         std::print("Would you like to create another user? [Y / N]");
@@ -136,6 +139,7 @@ bool basic_auth_middleware(const HttpRequest& request, HttpResponse& response) {
     } catch (...) {
         response.set_status(401);
         response.set_json(R"({"message":"Unauthorized: Invalid credentials format"})");
+        std::println("Unauthorized: Invalid credentials format");
         return false;
     }
 
@@ -144,6 +148,7 @@ bool basic_auth_middleware(const HttpRequest& request, HttpResponse& response) {
     if (colon_pos == std::string::npos) {
         response.set_status(401);
         response.set_json(R"({"message":"Unauthorized: Invalid credentials format"})");
+        std::println("Unauthorized: Invalid credentials format");
         return false;
     }
 
@@ -151,11 +156,13 @@ bool basic_auth_middleware(const HttpRequest& request, HttpResponse& response) {
     std::string password = decoded_credentials.substr(colon_pos + 1);
 
     // Authenticate
-    auto auth_result = operator_repo.get(username)->password == password;
+    const auto usr = operator_repo.get(username);
+    auto auth_result = usr.has_value() && usr->password == password;
 
     if (not auth_result) {
         response.set_status(401);
         response.set_json(R"({"message":"Unauthorized: Invalid username or password"})");
+        std::println("Unauthorized: Invalid username or password [{}:{}] != [{}:{}]", username, password, usr->username, usr->password);
         return false;
     }
 
@@ -242,7 +249,7 @@ void start_attacker_api(int16_t port) {
     // basic auth test endpoint
     attacker_api.get("/auth", [](const HttpRequest& req) {
         (void) req;
-        return HttpResponse().set_json(R"({"auth":"true"})");
+        return HttpResponse().set_json(R"(true)");
     });
 
     //TODO: implement endpoints

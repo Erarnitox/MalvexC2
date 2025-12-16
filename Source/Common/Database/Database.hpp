@@ -20,6 +20,7 @@ public:
 
     void exec(const std::string& sql);
     void query(const std::string& sql, const std::function<void(int cols, char** values, char** names)>& row_cb);
+    void commit();
 
     sqlite3* handle() noexcept { return db_; }
 

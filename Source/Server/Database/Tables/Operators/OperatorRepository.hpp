@@ -23,6 +23,8 @@ public:
     std::optional<OperatorDAO> upsert(const std::string& username, const std::string& password);
     bool remove(const std::string& username);
 
+    void commit();
+
 private:
     void ensure_table();
     std::unique_ptr<Database> db_;

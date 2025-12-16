@@ -39,6 +39,13 @@ void Database::exec(const std::string& sql) {
 //--------------------------------
 //
 //--------------------------------
+void Database::commit() {
+    exec("COMMIT;");
+}
+
+//--------------------------------
+//
+//--------------------------------
 void Database::query(const std::string& sql, const std::function<void(int, char**, char**)>& row_cb) {
     char* err = nullptr;
     auto callback = [](void* user, int cols, char** values, char** names) -> int {
