@@ -9,14 +9,22 @@ target_include_directories(raygui SYSTEM INTERFACE ${raygui_SOURCE_DIR})
 target_compile_definitions(raygui INTERFACE RAYGUI_IMPLEMENTATION)
 
 add_executable(client
-    UI.cpp
-    Client.cpp
-    Builder.cpp
+    "UI.cpp"
+    "Client.cpp"
+    "Builder.cpp"
+    "CommandManager.cpp"
+    "LogManager.cpp"
+    "SessionManager.cpp"
+    "VictimManager.cpp"
 
     # Headers for IDE
-    UI.hpp
-    Client.hpp
-    Builder.hpp
+    "UI.hpp"
+    "Client.hpp"
+    "Builder.hpp"
+    "CommandManager.hpp"
+    "LogManager.hpp"
+    "SessionManager.hpp"
+    "VictimManager.hpp"
 )
 
 target_link_libraries(client

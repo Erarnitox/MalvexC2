@@ -12,6 +12,14 @@
 #include <type_traits>
 #include <unordered_set>
 
+namespace Key {
+    constexpr const char* client_username_key = "malvex_username";
+    constexpr const char* client_password_key = "malvex_password";
+    constexpr const char* client_server_url_key = "malvex_server_url";
+    constexpr const char* client_bearer_token_key = "malvex_bearar_token";
+    constexpr const char* client_output_dir_key = "malvex_out_dir";
+}
+
 class Config {
 public:
     // Delete copy and move constructors/assignments (singleton pattern)

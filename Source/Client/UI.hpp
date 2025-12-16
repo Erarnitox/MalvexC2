@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Client.hpp"
+#include <atomic>
 #include <raylib.h>
 #include <raygui.h>
 
@@ -30,20 +32,11 @@ enum Tab {
     TERMINAL = 4
 };
 
-struct WindowState {
-    bool show_about = false;
-    bool is_fullscreen = false;
-    Resolution res;
-    Font font;
-    Tab current_tab;
-    bool is_connected;
-};
-
 constexpr size_t MAX_INPUT_CHARS{ 256 };
 
 struct InputField {
     char text[MAX_INPUT_CHARS];
-    bool edited = false;
+    bool edit = false;
 };
 
 struct MalvexSettings {
@@ -60,6 +53,20 @@ struct BuilderSettings {
     InputField default_timeout;
     InputField server_url;
     InputField output_file_path;
+};
+
+struct WindowState {
+    bool show_about = false;
+    bool is_fullscreen = false;
+    Resolution res;
+    Font font;
+    Tab current_tab;
+    bool is_connected;
+    MalvexSettings user_settings;
+    BuilderSettings implant_settings;
+    Client& client;
+    std::atomic<bool> wait_for_response;
+    bool login_failed;
 };
 
 void run_terminal_command(const char* command, char* output, size_t outputSize) {

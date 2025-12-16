@@ -1,6 +1,10 @@
 add_executable(server server.cpp)
 
+add_subdirectory(Database)
+
 target_link_libraries(server PRIVATE common)
+target_link_libraries(server PRIVATE server_db)
+target_link_libraries(server PRIVATE cpp_base64)
 
 target_compile_options(server
     PRIVATE

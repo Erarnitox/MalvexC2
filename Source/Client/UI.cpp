@@ -1,6 +1,8 @@
 #include "UI.hpp"
+#include "Client.hpp"
 
 #include <raylib.h>
+#include <thread>
 #include <vector>
 
 // function prototypes
@@ -22,10 +24,25 @@ int main() {
         .res={ 1200, 800},
         .font={},
         .current_tab=Tab::CONNECTIONS,
-        .is_connected=false
+        .is_connected=false,
+        .user_settings={},
+        .implant_settings={},
+        .client=Client::instance(),
+        .wait_for_response=false,
+        .login_failed=false
     };
 
+    // load malvex config:
+    strncpy(state.user_settings.username.text, state.client.getUsername().c_str(), sizeof(state.user_settings.username.text));
+    strncpy(state.user_settings.password.text, state.client.getPassword().c_str(), sizeof(state.user_settings.password.text));
+    strncpy(state.user_settings.server_url.text, state.client.getServerUrl().c_str(), sizeof(state.user_settings.server_url.text));
+    strncpy(state.user_settings.output_file_path.text, state.client.getOutputPath().c_str(), sizeof(state.user_settings.output_file_path.text));
+
+    // load builder settings:
+
+
     Resolution old_res = state.res;
+    auto& client = Client::instance();
 
     const std::string title{ GuiIconText(ICON_DEMON, "Malvex C2 - GUI Client") };
 
@@ -39,6 +56,11 @@ int main() {
     // Set custom font
     state.font = LoadFont("Font.ttf");
     GuiSetFont(state.font);
+
+    // Check if we already have a bearer token
+    if (client.hasServerSession()) {
+        state.is_connected = true;
+    }
 
     // Render Loop
     while (not WindowShouldClose()) {
@@ -320,36 +342,60 @@ void drawLogin(WindowState& state) {
         WHITE
     );
 
+    if(state.wait_for_response) {
+        GuiTextBox((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 }, "Connecting! Please Stand by ...", 0, false);
+        return;
+    }
+
     // Username field
     GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 40, 90, 20 }, "Username:");
     if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 40, 200, 20 },
-        "", MAX_INPUT_CHARS, false)) {
-        //settings.username.edited = !settings.username.edited;
+        state.user_settings.username.text, MAX_INPUT_CHARS, state.user_settings.username.edit)) {
+            state.user_settings.username.edit = not state.user_settings.username.edit;
     }
 
     // Password field
     GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 10 + 30*2, 90, 20 }, "Password:");
     if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 10 + 30*2, 200, 20 },
-        "", MAX_INPUT_CHARS, false)) {
-        //settings.username.edited = !settings.username.edited;
+        state.user_settings.password.text, MAX_INPUT_CHARS, state.user_settings.password.edit)) {
+            state.user_settings.password.edit = not state.user_settings.password.edit;
     }
 
     // Server URL field
     GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 10 + 30*3, 90, 20 }, "Server:");
     if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 10 + 30*3, 200, 20 },
-        "", MAX_INPUT_CHARS, false)) {
-        //settings.username.edited = !settings.username.edited;
+        state.user_settings.server_url.text, MAX_INPUT_CHARS, state.user_settings.server_url.edit)) {
+            state.user_settings.server_url.edit = not state.user_settings.server_url.edit;
     }
 
     // Login Button
     if (GuiButton((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 }, "Login")) {
-        state.is_connected = true;
+        state.client.setUsername(state.user_settings.username.text);
+        state.client.setPassword(state.user_settings.password.text);
+        state.client.setServerUrl(state.user_settings.server_url.text);
+
+        state.login_failed = false;
+        state.wait_for_response = true;
+
+        std::thread([&state]{
+            state.is_connected = state.client.login();
+            if(not state.is_connected) {
+                state.login_failed = true;
+            }
+            state.wait_for_response = false;
+        }).detach();
     }
 
+    if (state.login_failed) {
+        GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Login Failed!");
+    }
+
+    /*
     // Local Server Button
     if (GuiButton((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Start Local Server")) {
         state.is_connected = true;
     }
+    */
 
 }
 
@@ -454,15 +500,7 @@ void drawLogsTab(WindowState& state) {
 //
 //-------------------------------------------------
 void drawSettingsTab(WindowState& state) {
-    static MalvexSettings settings{
-        .username={"user123"},
-        .password={"123456"},
-        .default_timeout={"5"},
-        .server_url={"https://api.example.com"},
-        .output_file_path={"/tmp/output"}
-    };
-    static char displayPassword[MAX_INPUT_CHARS] = {0};
-    static bool showPasswordAsText{ false };
+    auto& settings = state.user_settings;
 
     const auto& res = state.res;
 
@@ -483,36 +521,36 @@ void drawSettingsTab(WindowState& state) {
     // Username field
     GuiLabel({labelX, startY + 5, labelWidth, labelHeight }, "Username:");
     if (GuiTextBox((Rectangle){ inputX, startY, inputWidth, inputHeight },
-                    settings.username.text, MAX_INPUT_CHARS, settings.username.edited)) {
-        settings.username.edited = !settings.username.edited;
+                    settings.username.text, MAX_INPUT_CHARS, settings.username.edit)) {
+        settings.username.edit = !settings.username.edit;
     }
 
     // Password field
     GuiLabel({labelX, startY + 5 + spacing, labelWidth, labelHeight }, "Password:");
     if (GuiTextBox((Rectangle){ inputX, startY + spacing, inputWidth, inputHeight },
-                    settings.password.text, MAX_INPUT_CHARS, settings.password.edited)) {
-        settings.password.edited = !settings.password.edited;
+                    settings.password.text, MAX_INPUT_CHARS, settings.password.edit)) {
+        settings.password.edit = !settings.password.edit;
     }
 
     // Timeout field
     GuiLabel({labelX, startY + 5 + spacing*2, labelWidth, labelHeight }, "Timeout:");
     if (GuiTextBox((Rectangle){ inputX, startY + spacing*2, inputWidth, inputHeight },
-                    settings.default_timeout.text, MAX_INPUT_CHARS, settings.default_timeout.edited)) {
-        settings.default_timeout.edited = !settings.default_timeout.edited;
+                    settings.default_timeout.text, MAX_INPUT_CHARS, settings.default_timeout.edit)) {
+        settings.default_timeout.edit = !settings.default_timeout.edit;
     }
 
     // Server URL field
     GuiLabel({labelX, startY + 5 + spacing*3, labelWidth, labelHeight }, "Server:");
     if (GuiTextBox((Rectangle){ inputX, startY + spacing*3, inputWidth, inputHeight },
-                    settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edited)) {
-        settings.server_url.edited = !settings.server_url.edited;
+                    settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edit)) {
+        settings.server_url.edit = !settings.server_url.edit;
     }
 
     // File path field with browse button
     GuiLabel({ labelX, startY + spacing*4 + 5, labelWidth, labelHeight }, "Output Dir:");
     if (GuiTextBox((Rectangle){ inputX, startY + spacing*4, inputWidth - 110, inputHeight },
-                    settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edited)) {
-        settings.output_file_path.edited = !settings.output_file_path.edited;
+                    settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edit)) {
+        settings.output_file_path.edit = !settings.output_file_path.edit;
     }
 
     // Browse button
