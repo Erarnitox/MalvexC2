@@ -23,6 +23,11 @@ private:
     SessionManager& m_sess_man;
 
     cpppwn::RESTClient m_rest_client;
+    std::string m_status_text;
+
+    mutable size_t victim_count;
+
+    void updateStatusText() noexcept;
 
 public:
     // Delete copy and move constructors/assignments (singleton pattern)
@@ -57,8 +62,12 @@ public:
 
     void setOutputPath(const std::string& output_path) noexcept;
 
+    const char* getStatusText() const noexcept;
 
+    const std::vector<Victim>& getVictims() const noexcept;
 
     // REST Methods
-    [[nodiscard]] bool login();
+    [[nodiscard]] bool login() noexcept;
+
+    [[nodiscard]] bool fetchVictims() noexcept;
 };

