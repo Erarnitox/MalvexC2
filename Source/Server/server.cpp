@@ -1,6 +1,5 @@
 #include <cpppwn.hpp>
 #include <SQLiteCpp/SQLiteCpp.h>
-#include <base64.h>
 
 #include <cstdint>
 #include <iostream>

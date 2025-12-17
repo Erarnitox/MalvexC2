@@ -4,7 +4,7 @@
 #include <cstdint>
 
 using UUID = std::string;
-using Timestamp = std::chrono::system_clock::time_point;
+using TimePoint = size_t; // unix timestamp
 
 // Helper functions for UUID generation
 inline UUID generate_uuid() { //TODO: implement

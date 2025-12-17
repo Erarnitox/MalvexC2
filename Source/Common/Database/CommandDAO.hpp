@@ -1,6 +1,10 @@
 #pragma once
+
 #include "Types.hpp"
 
+//--------------------------------
+//
+//--------------------------------
 struct CommandDAO {
     int64_t command_id{0};
     UUID command_uid;

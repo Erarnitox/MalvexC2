@@ -3,7 +3,6 @@ add_library(operator_repo STATIC
 
     # header files for IDEs
     OperatorRepository.hpp
-    OperatorDAO.hpp
 )
 
 target_link_libraries(operator_repo PRIVATE database)

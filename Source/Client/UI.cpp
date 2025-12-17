@@ -245,7 +245,7 @@ void drawConnectionsTab(WindowState& state) {
 
         const auto& vic{ victims[client_id] };
         const std::string values[colCount]{
-            std::to_string(vic.id),
+            std::to_string(vic.victim_id),
             vic.hostname,
             vic.internal_ip,
             vic.external_ip,
@@ -343,42 +343,42 @@ void drawLogin(WindowState& state) {
 
     DrawTexturePro(
         texture,
-        (Rectangle){ 0, 0, (float)texture.width, (float)texture.height },
-        (Rectangle){ imageX, imageY, imageWidth, imageHeight },
-        (Vector2){ 0, 0 },
+        Rectangle{ 0, 0, (float)texture.width, (float)texture.height },
+        Rectangle{ imageX, imageY, imageWidth, imageHeight },
+        Vector2{ 0, 0 },
         0.0f,
         WHITE
     );
 
     if (state.wait_for_response) {
-        GuiTextBox((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 },
-            "Connecting! Please Stand by ...", 0, false);
+        GuiTextBox(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 },
+            const_cast<char*>("Connecting! Please Stand by ..."), 0, false);
         return;
     }
 
     // Username field
-    GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 40, 90, 20 }, "Username:");
-    if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 40, 200, 20 },
+    GuiLabel(Rectangle{ popupRect.x + 250, popupRect.y + 40, 90, 20 }, "Username:");
+    if (GuiTextBox(Rectangle{ popupRect.x + 350, popupRect.y + 40, 200, 20 },
         state.user_settings.username.text, MAX_INPUT_CHARS, state.user_settings.username.edit)) {
             state.user_settings.username.edit = not state.user_settings.username.edit;
     }
 
     // Password field
-    GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 10 + 30*2, 90, 20 }, "Password:");
-    if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 10 + 30*2, 200, 20 },
+    GuiLabel(Rectangle{ popupRect.x + 250, popupRect.y + 10 + 30*2, 90, 20 }, "Password:");
+    if (GuiTextBox(Rectangle{ popupRect.x + 350, popupRect.y + 10 + 30*2, 200, 20 },
         state.user_settings.password.text, MAX_INPUT_CHARS, state.user_settings.password.edit)) {
             state.user_settings.password.edit = not state.user_settings.password.edit;
     }
 
     // Server URL field
-    GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + 10 + 30*3, 90, 20 }, "Server:");
-    if (GuiTextBox((Rectangle){ popupRect.x + 350, popupRect.y + 10 + 30*3, 200, 20 },
+    GuiLabel(Rectangle{ popupRect.x + 250, popupRect.y + 10 + 30*3, 90, 20 }, "Server:");
+    if (GuiTextBox(Rectangle{ popupRect.x + 350, popupRect.y + 10 + 30*3, 200, 20 },
         state.user_settings.server_url.text, MAX_INPUT_CHARS, state.user_settings.server_url.edit)) {
             state.user_settings.server_url.edit = not state.user_settings.server_url.edit;
     }
 
     // Login Button
-    if (GuiButton((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 }, "Login")) {
+    if (GuiButton(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 }, "Login")) {
         state.client.setUsername(state.user_settings.username.text);
         state.client.setPassword(state.user_settings.password.text);
         state.client.setServerUrl(state.user_settings.server_url.text);
@@ -396,7 +396,7 @@ void drawLogin(WindowState& state) {
     }
 
     if (state.login_failed) {
-        GuiLabel((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Login Failed!");
+        GuiLabel(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Login Failed!");
     }
 
     /*
@@ -425,9 +425,9 @@ void drawAbout(WindowState& state) {
 
     DrawTexturePro(
         texture,
-        (Rectangle){ 0, 0, (float)texture.width, (float)texture.height },
-        (Rectangle){ imageX, imageY, imageWidth, imageHeight },
-        (Vector2){ 0, 0 },
+        Rectangle{ 0, 0, (float)texture.width, (float)texture.height },
+        Rectangle{ imageX, imageY, imageWidth, imageHeight },
+        Vector2{ 0, 0 },
         0.0f,
         WHITE
     );
@@ -443,7 +443,7 @@ void drawAbout(WindowState& state) {
     GuiLabel({ popupRect.x + 270, popupRect.y + 100, 300, 30 }, popupText);
 
     // Close button
-    if (GuiButton((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Close")) {
+    if (GuiButton(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Close")) {
         state.show_about = false;
     }
 }
@@ -471,7 +471,7 @@ void drawLogsTab(WindowState& state) {
     // Add log entries on button press
     if (IsKeyPressed(KEY_SPACE)) {
         char newEntry[64];
-        snprintf(newEntry, sizeof(newEntry), "Log entry at frame %d\n", GetFrameTime());
+        snprintf(newEntry, sizeof(newEntry), "Log entry at frame %f\n", GetFrameTime());
 
         // Append to log (with size check)
         if (strlen(logText) + strlen(newEntry) < MAX_LOG_SIZE - 1) {
@@ -483,7 +483,7 @@ void drawLogsTab(WindowState& state) {
     GuiScrollPanel(
         viewRect,
         NULL,  // No title
-        (Rectangle){ 0, 0, viewRect.width - 20, 2000 },  // Content area (height estimated)
+        Rectangle{ 0, 0, viewRect.width - 20, 2000 },  // Content area (height estimated)
         &scrollOffset,
         &logBounds
     );
@@ -496,7 +496,7 @@ void drawLogsTab(WindowState& state) {
         (int)viewRect.height
     );
 
-    DrawTextEx(state.font, logText, (Vector2){
+    DrawTextEx(state.font, logText, Vector2{
                  (viewRect.x + 5),
                  (viewRect.y + 5 + scrollOffset.y)
                 }, 16, 1, RAYWHITE
@@ -529,41 +529,41 @@ void drawSettingsTab(WindowState& state) {
 
     // Username field
     GuiLabel({labelX, startY + 5, labelWidth, labelHeight }, "Username:");
-    if (GuiTextBox((Rectangle){ inputX, startY, inputWidth, inputHeight },
+    if (GuiTextBox(Rectangle{ inputX, startY, inputWidth, inputHeight },
                     settings.username.text, MAX_INPUT_CHARS, settings.username.edit)) {
         settings.username.edit = !settings.username.edit;
     }
 
     // Password field
     GuiLabel({labelX, startY + 5 + spacing, labelWidth, labelHeight }, "Password:");
-    if (GuiTextBox((Rectangle){ inputX, startY + spacing, inputWidth, inputHeight },
+    if (GuiTextBox(Rectangle{ inputX, startY + spacing, inputWidth, inputHeight },
                     settings.password.text, MAX_INPUT_CHARS, settings.password.edit)) {
         settings.password.edit = !settings.password.edit;
     }
 
     // Timeout field
     GuiLabel({labelX, startY + 5 + spacing*2, labelWidth, labelHeight }, "Timeout:");
-    if (GuiTextBox((Rectangle){ inputX, startY + spacing*2, inputWidth, inputHeight },
+    if (GuiTextBox(Rectangle{ inputX, startY + spacing*2, inputWidth, inputHeight },
                     settings.default_timeout.text, MAX_INPUT_CHARS, settings.default_timeout.edit)) {
         settings.default_timeout.edit = !settings.default_timeout.edit;
     }
 
     // Server URL field
     GuiLabel({labelX, startY + 5 + spacing*3, labelWidth, labelHeight }, "Server:");
-    if (GuiTextBox((Rectangle){ inputX, startY + spacing*3, inputWidth, inputHeight },
+    if (GuiTextBox(Rectangle{ inputX, startY + spacing*3, inputWidth, inputHeight },
                     settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edit)) {
         settings.server_url.edit = !settings.server_url.edit;
     }
 
     // File path field with browse button
     GuiLabel({ labelX, startY + spacing*4 + 5, labelWidth, labelHeight }, "Output Dir:");
-    if (GuiTextBox((Rectangle){ inputX, startY + spacing*4, inputWidth - 110, inputHeight },
+    if (GuiTextBox(Rectangle{ inputX, startY + spacing*4, inputWidth - 110, inputHeight },
                     settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edit)) {
         settings.output_file_path.edit = !settings.output_file_path.edit;
     }
 
     // Browse button
-    if (GuiButton((Rectangle){ inputX + inputWidth - 100, startY + spacing*4, 100, inputHeight },"Browse...")) {
+    if (GuiButton(Rectangle{ inputX + inputWidth - 100, startY + spacing*4, 100, inputHeight },"Browse...")) {
         // In a real application, you would open a file dialog here
         // For demonstration, we'll just show it was clicked
         printf("Browse button clicked!\n");
@@ -639,7 +639,7 @@ void drawSessionsTab(WindowState& state) {
     }
 
     Session& session = sessions.at(selected_session);
-    GuiPanel(viewRect, TextFormat("Reverse Shell to Client %s on port %d", session.uid.c_str(), session.port));
+    GuiPanel(viewRect, TextFormat("Session %d on port %d", session.session_id, session.port));
 
     //close session button
     if (GuiButton({viewRect.width - 130, viewRect.y + 2, 120, 20},  GuiIconText(ICON_CROSS, "Close Shell"))) {
@@ -710,7 +710,7 @@ void drawSessionsTab(WindowState& state) {
 
     DrawTextEx(state.font,
                 terminalOutput,
-                (Vector2){ outputRect.x + 5, outputRect.y + 5 - scrollOffset },
+                Vector2{ outputRect.x + 5, outputRect.y + 5 - scrollOffset },
                 16,
                 1,
                 PINK);  // Green terminal text
@@ -723,7 +723,7 @@ void drawSessionsTab(WindowState& state) {
     Rectangle commandRect = { 30, res.height - 60, res.width - 200, 30 };
 
     // Execute button
-    if (GuiButton((Rectangle){ res.width - 150, res.height - 60, 55, 30 }, "Run") ||
+    if (GuiButton(Rectangle{ res.width - 150, res.height - 60, 55, 30 }, "Run") ||
        GuiTextBox(commandRect, commandInput, 1024, commandEditMode)) {
         if (strlen(commandInput) > 0) {
             //AddToHistory(&history, commandInput);
@@ -733,8 +733,7 @@ void drawSessionsTab(WindowState& state) {
             // Auto-scroll to bottom after command
             Vector2 newTextSize = MeasureTextEx(guiFont, terminalOutput, 16, 1);
             float newMaxScroll = newTextSize.y - outputRect.height;
-            if (newMaxScroll > 0)
-            {
+            if (newMaxScroll > 0) {
                 scrollOffset = newMaxScroll;
             }
         }
@@ -742,10 +741,9 @@ void drawSessionsTab(WindowState& state) {
     }
 
     // Clear button
-    if (GuiButton((Rectangle){ res.width - 75, res.height - 60, 55, 30 }, "Clear")) {
+    if (GuiButton(Rectangle{ res.width - 75, res.height - 60, 55, 30 }, "Clear")) {
         terminalOutput[0] = '\0';
         strcat(terminalOutput, "Terminal cleared.\n\n");
         scrollOffset = 0;
     }
-
 }
