@@ -51,7 +51,7 @@ static inline void register_operator_endpoints(cpppwn::RESTServer& server) {
     server.del("/api/operator", [&](const HttpRequest& req) {
         int16_t id;
         try{
-            id = std::atol(cpppwn::RESTServer::extract_id_from_path(req.path, "/api/operator/").c_str());
+            id = std::atol(req.query_params.at("id").c_str());
         } catch (...) {
             id = -1;
         }
@@ -67,7 +67,7 @@ static inline void register_operator_endpoints(cpppwn::RESTServer& server) {
         if (not success) {
             return HttpResponse()
                 .set_status(404)
-                .set_json(R"({"error":"Victim not found"})");
+                .set_json(R"({"error":"Operator not found"})");
         }
 
         return HttpResponse()
