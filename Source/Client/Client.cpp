@@ -150,7 +150,7 @@ bool Client::fetchVictims() noexcept {
 
     // make request
     try{
-        auto victim_list = m_rest_client.list<Victim>("/victim");
+        auto victim_list = m_rest_client.list<Victim>("/victims");
         victim_count = victim_list.size();
         m_vic_man.setList(std::move(victim_list));
         updateStatusText();

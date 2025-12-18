@@ -1,3 +1,4 @@
+#include <RESTServer.hpp>
 #include <cpppwn.hpp>
 #include <SQLiteCpp/SQLiteCpp.h>
 

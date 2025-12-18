@@ -1,4 +1,5 @@
 #pragma once
+#include "VictimDAO.hpp"
 #include "VictimRepository.hpp"
 #include <memory>
 #include <mutex>
@@ -63,7 +64,7 @@ public:
         victim.hostname = hostname;
         victim.username = username;
         victim.operating_system = os;
-        victim.last_update = std::chrono::system_clock::now();
+        victim.last_update = 0;
         victim.status = 1;  // Online
 
         try {
