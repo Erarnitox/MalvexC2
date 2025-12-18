@@ -17,4 +17,5 @@ add_library(database STATIC
 )
 
 target_link_libraries(database PUBLIC SQLiteCpp)
+target_link_libraries(database PUBLIC glaze::glaze)
 target_include_directories(database PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
