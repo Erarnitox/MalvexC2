@@ -6,7 +6,7 @@
 //--------------------------------
 //
 //--------------------------------
-struct CommandDAO : public IDao {
+struct CommandDAO : public IDao<CommandDAO> {
     int64_t command_id{0};
     UUID command_uid;
     int64_t prev{0};

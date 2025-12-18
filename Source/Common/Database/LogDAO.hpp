@@ -6,7 +6,7 @@
 //--------------------------------
 //
 //--------------------------------
-struct LogDAO : public IDao {
+struct LogDAO : public IDao<LogDAO> {
     int64_t log_id{0};
     UUID log_uid;
     std::string key;

@@ -6,7 +6,7 @@
 //--------------------------------
 //
 //--------------------------------
-struct OperatorDAO : public IDao {
+struct OperatorDAO : public IDao<OperatorDAO> {
     int64_t operator_id{0};
     UUID operator_uid;
     std::string username;

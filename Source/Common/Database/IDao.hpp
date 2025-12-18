@@ -8,9 +8,10 @@
 //--------------------------------
 //
 //--------------------------------
+template<typename T>
 struct IDao {
     std::string to_json() const {
-        return glz::write_json(*this).value_or("{}");
+        return glz::write_json(*((T*)this)).value_or("{}");
     }
 };
 

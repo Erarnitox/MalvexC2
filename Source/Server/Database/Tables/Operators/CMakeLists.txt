@@ -1,9 +1,9 @@
-add_library(victim_repo STATIC
-    VictimRepository.cpp
+add_library(operator_repo STATIC
+    OperatorRepository.cpp
 
     # header files for IDEs
-    VictimRepository.hpp
+    OperatorRepository.hpp
 )
 
-target_link_libraries(victim_repo PRIVATE database)
-target_include_directories(victim_repo PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
+target_link_libraries(operator_repo PRIVATE database)
+target_include_directories(operator_repo PUBLIC "${CMAKE_CURRENT_LIST_DIR}")

@@ -22,10 +22,10 @@ static inline void register_operator_endpoints(cpppwn::RESTServer& server) {
     });
 
     // ===== GET /api/operator/:id - Get single operator by ID =====
-    server.get("/api/operator/", [&](const HttpRequest& req) {
+    server.get("/api/operator", [&](const HttpRequest& req) {
         int16_t id;
         try{
-            id = std::atol(cpppwn::RESTServer::extract_id_from_path(req.path, "/api/operator/").c_str());
+            id = std::atol(req.query_params.at("id").c_str());
         } catch (...) {
             id = -1;
         }
@@ -33,7 +33,7 @@ static inline void register_operator_endpoints(cpppwn::RESTServer& server) {
         if (id == -1) {
             return HttpResponse()
                 .set_status(400)
-                .set_json(R"({"error":"Invalid victim ID"})");
+                .set_json(R"({"error":"Invalid opearator ID"})");
         }
 
         OperatorDAO* oper = operators.getOperator(id);
@@ -44,12 +44,11 @@ static inline void register_operator_endpoints(cpppwn::RESTServer& server) {
                 .set_json(R"({"error":"Operator not found"})");
         }
 
-        std::string json = oper->to_json();
-        return HttpResponse().set_json(json);
+        return HttpResponse().set_json(oper->to_json());
     });
 
-    // ===== DELETE /api/operator/:id - Remove victim =====
-    server.del("/api/operator/", [&](const HttpRequest& req) {
+    // ===== DELETE /api/operator/:id - Remove operator =====
+    server.del("/api/operator", [&](const HttpRequest& req) {
         int16_t id;
         try{
             id = std::atol(cpppwn::RESTServer::extract_id_from_path(req.path, "/api/operator/").c_str());
@@ -60,7 +59,7 @@ static inline void register_operator_endpoints(cpppwn::RESTServer& server) {
         if (id == -1) {
             return HttpResponse()
                 .set_status(400)
-                .set_json(R"({"error":"Invalid victim ID"})");
+                .set_json(R"({"error":"Invalid operator ID"})");
         }
 
         bool success = operators.removeOperator(id);

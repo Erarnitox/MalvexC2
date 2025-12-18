@@ -6,7 +6,7 @@
 //--------------------------------
 //
 //--------------------------------
-struct VictimDAO : public IDao {
+struct VictimDAO : public IDao<VictimDAO> {
     int64_t victim_id{0};
     UUID victim_uid;
     std::string internal_ip;

@@ -71,14 +71,13 @@ std::optional<OperatorDAO> OperatorRepository::get(int64_t id) {
     std::optional<OperatorDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
-    const char* sql = "SELECT operator_id, operator_uid, username, password, clearance "
-                        "FROM operators WHERE operator_id = ? LIMIT 1;";
+    const char* sql = "SELECT operator_id, operator_uid, username, password, clearance FROM operators WHERE operator_id = ? LIMIT 1;";
 
     if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         throw SqliteException("prepare failed");
     }
 
-    sqlite3_bind_int64(stmt, 1, id);
+    sqlite3_bind_int(stmt, 1, id);
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         OperatorDAO op;

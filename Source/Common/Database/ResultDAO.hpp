@@ -6,7 +6,7 @@
 //--------------------------------
 //
 //--------------------------------
-struct ResultDAO : public IDao {
+struct ResultDAO : public IDao<ResultDAO> {
     int64_t result_id{0};
     UUID result_uid;
     std::string data;
