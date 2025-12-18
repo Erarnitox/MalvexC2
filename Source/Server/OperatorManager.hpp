@@ -13,7 +13,7 @@ public:
     //-------------------------------------------------
     //
     //-------------------------------------------------
-    static OperatorManager& instance(const std::string& db_path = "sever.db") {
+    static OperatorManager& instance(const std::string& db_path = "server.db") {
         static OperatorManager instance(db_path);
         return instance;
     }

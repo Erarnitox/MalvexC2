@@ -48,13 +48,17 @@ void Database::commit() {
 //--------------------------------
 void Database::query(const std::string& sql, const std::function<void(int, char**, char**)>& row_cb) {
     char* err = nullptr;
+
+    // Create a wrapper that's safe to pass to C callback
     auto callback = [](void* user, int cols, char** values, char** names) -> int {
-        auto cb = reinterpret_cast<std::function<void(int, char**, char**)>*>(user);
+        auto* cb = static_cast<const std::function<void(int, char**, char**)>*>(user);
         (*cb)(cols, values, names);
         return 0;
     };
-    std::function<void(int, char**, char**)> cb = row_cb;
-    int rc = sqlite3_exec(db_, sql.c_str(), callback, &cb, &err);
+
+    // Pass the address of row_cb directly (it's a const reference, so it's stable)
+    int rc = sqlite3_exec(db_, sql.c_str(), callback, const_cast<void*>(static_cast<const void*>(&row_cb)), &err);
+
     if (rc != SQLITE_OK) {
         std::string msg = err ? err : "sqlite query error";
         sqlite3_free(err);

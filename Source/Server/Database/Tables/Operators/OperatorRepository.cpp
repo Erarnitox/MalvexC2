@@ -31,18 +31,37 @@ void OperatorRepository::ensure_table() {
 //
 //--------------------------------
 std::vector<OperatorDAO> OperatorRepository::list() {
-   std::vector<OperatorDAO> result;
-    db_->query("SELECT operator_id, operator_uid, username, password, clearance FROM operators;",
-        [&](int cols, char** values, char** names) {
-            OperatorDAO op;
-            op.operator_id = values[0] ? std::stoll(values[0]) : 0;
-            op.operator_uid = values[1] ? values[1] : "";
-            op.username = values[2] ? values[2] : "";
-            op.password = values[3] ? values[3] : "";
-            op.clearance = values[4] ? std::stoi(values[4]) : 0;
-            result.push_back(std::move(op));
-        });
-    return result;
+    std::vector<OperatorDAO> results;
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+
+    const char* sql = "SELECT operator_id, operator_uid, username, password, clearance FROM operators;";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed: " + std::string(sqlite3_errmsg(h)));
+    }
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        OperatorDAO op;
+
+        op.operator_id = sqlite3_column_int64(stmt, 0);
+
+        const char* uid_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        op.operator_uid = uid_ptr ? uid_ptr : "";
+
+        const char* user_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        op.username = user_ptr ? user_ptr : "";
+
+        const char* pass_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+        op.password = pass_ptr ? pass_ptr : "";
+
+        op.clearance = sqlite3_column_int(stmt, 4);
+
+        results.push_back(std::move(op));
+    }
+
+    sqlite3_finalize(stmt);
+    return results;
 }
 
 //--------------------------------

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <IRepository.hpp>
 #include <Database.hpp>
 

@@ -12,6 +12,8 @@
 #include "Types.hpp"
 #include "Config.hpp"
 
+#include "OperatorEndpoints.hpp"
+
 static inline const std::string db_file{ "server.db" };
 
 // function protos
@@ -89,7 +91,7 @@ void initial_setup() {
         std::cin >> attacker.password;
 
         attacker_repo.create(attacker);
-        attacker_repo.commit();
+
         std::println("user [{}] created!", attacker.username);
 
         std::print("Would you like to create another user? [Y / N]");
@@ -253,6 +255,7 @@ void start_attacker_api(int16_t port) {
     });
 
     //TODO: implement endpoints
+    register_operator_endpoints(attacker_api);
 
     attacker_api.start();
 }
