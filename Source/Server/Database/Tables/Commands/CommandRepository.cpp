@@ -1,0 +1,199 @@
+#include "CommandRepository.hpp"
+#include "CommandDAO.hpp"
+
+#include <sstream>
+#include <iostream>
+
+//--------------------------------
+//
+//--------------------------------
+CommandRepository::CommandRepository(const std::string& db_path)
+    : db_(std::make_unique<Database>(db_path)) {
+    ensure_table();
+}
+
+//--------------------------------
+//
+//--------------------------------
+void CommandRepository::ensure_table() {
+    db_->exec(R"(
+        CREATE TABLE IF NOT EXISTS commands (
+            command_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            command_uid TEXT UNIQUE NOT NULL,
+            prev INTEGER,
+            nonce INTEGER,
+            command TEXT NOT NULL,
+            signature TEXT,
+            status INTEGER
+        );
+    )");
+}
+
+//--------------------------------
+//
+//--------------------------------
+std::vector<CommandDAO> CommandRepository::list() {
+    std::vector<CommandDAO> results;
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+
+    const char* sql = "SELECT command_id, command_uid, prev, nonce, command, signature, status "
+                      "FROM commands ORDER BY command_id DESC;";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed: " + std::string(sqlite3_errmsg(h)));
+    }
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        CommandDAO cmd;
+
+        cmd.command_id = sqlite3_column_int64(stmt, 0);
+
+        const char* uid_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        cmd.command_uid = uid_ptr ? uid_ptr : "";
+
+        cmd.prev = sqlite3_column_int64(stmt, 2);
+        cmd.nonce = sqlite3_column_int64(stmt, 3);
+
+        const char* command_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+        cmd.command = command_ptr ? command_ptr : "";
+
+        const char* sig_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+        cmd.signature = sig_ptr ? sig_ptr : "";
+
+        cmd.status = sqlite3_column_int(stmt, 6);
+
+        results.push_back(std::move(cmd));
+    }
+
+    sqlite3_finalize(stmt);
+    return results;
+}
+
+//--------------------------------
+//
+//--------------------------------
+std::optional<CommandDAO> CommandRepository::get(int64_t id) {
+    std::optional<CommandDAO> opt;
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "SELECT command_id, command_uid, prev, nonce, command, signature, status "
+                      "FROM commands WHERE command_id = ? LIMIT 1;";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed");
+    }
+
+    sqlite3_bind_int64(stmt, 1, id);
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        CommandDAO cmd;
+        cmd.command_id = sqlite3_column_int64(stmt, 0);
+        cmd.command_uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        cmd.prev = sqlite3_column_int64(stmt, 2);
+        cmd.nonce = sqlite3_column_int64(stmt, 3);
+        cmd.command = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+        cmd.signature = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+        cmd.status = sqlite3_column_int(stmt, 6);
+        opt = cmd;
+    }
+
+    sqlite3_finalize(stmt);
+    return opt;
+}
+
+//--------------------------------
+//
+//--------------------------------
+CommandDAO CommandRepository::create(const CommandDAO& cmd) {
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "INSERT INTO commands (command_uid, prev, nonce, command, signature, status) "
+                      "VALUES (?, ?, ?, ?, ?, ?);";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed");
+    }
+
+    UUID uid = cmd.command_uid.empty() ? generate_uuid() : cmd.command_uid;
+
+    sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(stmt, 2, cmd.prev);
+    sqlite3_bind_int64(stmt, 3, cmd.nonce);
+    sqlite3_bind_text(stmt, 4, cmd.command.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 5, cmd.signature.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 6, cmd.status);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        throw SqliteException("insert failed");
+    }
+
+    sqlite3_finalize(stmt);
+    int64_t id = sqlite3_last_insert_rowid(h);
+
+    CommandDAO result = cmd;
+    result.command_id = id;
+    result.command_uid = uid;
+    return result;
+}
+
+//--------------------------------
+//
+//--------------------------------
+std::optional<CommandDAO> CommandRepository::update(int64_t id, const CommandDAO& cmd) {
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "UPDATE commands SET prev = ?, nonce = ?, command = ?, "
+                      "signature = ?, status = ? WHERE command_id = ?;";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed");
+    }
+
+    sqlite3_bind_int64(stmt, 1, cmd.prev);
+    sqlite3_bind_int64(stmt, 2, cmd.nonce);
+    sqlite3_bind_text(stmt, 3, cmd.command.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 4, cmd.signature.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 5, cmd.status);
+    sqlite3_bind_int64(stmt, 6, id);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        return std::nullopt;
+    }
+
+    sqlite3_finalize(stmt);
+    return get(id);
+}
+
+
+//--------------------------------
+//
+//--------------------------------
+bool CommandRepository::remove(int64_t id) {
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "DELETE FROM commands WHERE command_id = ?;";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed");
+    }
+
+    sqlite3_bind_int64(stmt, 1, id);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    sqlite3_finalize(stmt);
+    return sqlite3_changes(h) > 0;
+}
+
+//--------------------------------
+//
+//--------------------------------
+void CommandRepository::commit() {
+    db_->commit();
+}

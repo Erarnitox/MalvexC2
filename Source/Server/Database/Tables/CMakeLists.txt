@@ -1,2 +1,5 @@
 add_subdirectory(Operators)
 add_subdirectory(Victims)
+add_subdirectory(Commands)
+add_subdirectory(Logs)
+add_subdirectory(Results)

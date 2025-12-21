@@ -7,7 +7,8 @@
 #include <print>
 #include <thread>
 
-#include "Database/Tables/Operators/OperatorRepository.hpp"
+#include "OperatorRepository.hpp"
+#include "VictimRepository.hpp"
 #include "HttpUtils.hpp"
 #include "Types.hpp"
 #include "Config.hpp"
