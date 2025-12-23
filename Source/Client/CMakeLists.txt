@@ -45,3 +45,19 @@ target_compile_options(client
         -Wextra
         -Wpedantic
 )
+
+add_custom_command(TARGET client POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/Resources"
+        "$<TARGET_FILE_DIR:client>/Resources"
+    COMMENT "Copying resources to client build directory..."
+)
+
+# Install interface
+
+include(GNUInstallDirs)
+
+install(TARGETS client RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Resources/"
+        DESTINATION "${CMAKE_INSTALL_BINDIR}/Resources")

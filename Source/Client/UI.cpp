@@ -55,7 +55,7 @@ int main() {
     const auto bg_color = GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR));
 
     // Set custom font
-    state.font = LoadFont("Font.ttf");
+    state.font = LoadFont("Resources/Font.ttf");
     GuiSetFont(state.font);
 
     // Check if we already have a bearer token
@@ -330,7 +330,7 @@ void drawConnectionsTab(WindowState& state) {
 //
 //-------------------------------------------------
 void drawLogin(WindowState& state) {
-    static const Texture2D texture = LoadTexture("Logo.png");
+    static const Texture2D texture = LoadTexture("Resources/Logo.png");
 
     Rectangle popupRect = { state.res.width/2 - 300, state.res.height/2 - 130, 600, 250 };
     GuiPanel(popupRect, GuiIconText(ICON_DEMON, "Connect to MalvexC2 Server"));
@@ -412,7 +412,7 @@ void drawLogin(WindowState& state) {
 //
 //-------------------------------------------------
 void drawAbout(WindowState& state) {
-    static const Texture2D texture = LoadTexture("Logo.png");
+    static const Texture2D texture = LoadTexture("Resources/Logo.png");
 
     Rectangle popupRect = { state.res.width/2 - 300, state.res.height/2 - 130, 600, 250 };
     GuiPanel(popupRect, GuiIconText(ICON_DEMON, "About MalvexC2"));

@@ -1,9 +1,9 @@
-add_library(operator_repo STATIC
-    OperatorRepository.cpp
+add_library(session_repo STATIC
+    SessionRepository.cpp
 
     # header files for IDEs
-    OperatorRepository.hpp
+    SessionRepository.hpp
 )
 
-target_link_libraries(operator_repo PRIVATE database)
-target_include_directories(operator_repo PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
+target_link_libraries(session_repo PRIVATE database)
+target_include_directories(session_repo PUBLIC "${CMAKE_CURRENT_LIST_DIR}")

@@ -1,6 +1,8 @@
 #pragma once
-#include "VictimDAO.hpp"
-#include "VictimRepository.hpp"
+#include "Database.hpp"
+#include <VictimDAO.hpp>
+#include <VictimRepository.hpp>
+
 #include <memory>
 #include <mutex>
 #include <unordered_map>
