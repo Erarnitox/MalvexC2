@@ -4,6 +4,7 @@
 
 #include <IManager.hpp>
 
+#include <stacktrace>
 #include <string>
 #include <optional>
 #include <functional>
@@ -69,7 +70,7 @@ private:
     // GET /api/resources - List all
     //-------------------------------------------------
     static void register_list(cpppwn::RESTServer& server, const Config& config) {
-        server.get(config.base_path, [&config](const HttpRequest& req) {
+        server.get(config.base_path, [config](const HttpRequest& req) {
             (void)req;
 
             try {
@@ -88,7 +89,7 @@ private:
     static void register_get(cpppwn::RESTServer& server, const Config& config) {
         std::string path = config.base_path.substr(0, config.base_path.length() - 1);
 
-        server.get(path, [&config](const HttpRequest& req) {
+        server.get(path, [config](const HttpRequest& req) {
             auto id = extract_id(req);
 
             if (not id) {
@@ -113,7 +114,7 @@ private:
     // POST /api/resources - Create new
     //-------------------------------------------------
     static void register_create(cpppwn::RESTServer& server, const Config& config) {
-        server.post(config.base_path, [&config](const HttpRequest& req) {
+        server.post(config.base_path, [config](const HttpRequest& req) {
             try {
                 DAO item = DAO::from_json(req.body);
                 auto created = config.manager.create(item);
@@ -133,7 +134,7 @@ private:
     static void register_delete(cpppwn::RESTServer& server, const Config& config) {
         std::string path = config.base_path.substr(0, config.base_path.length() - 1);
 
-        server.del(path, [&config](const HttpRequest& req) {
+        server.del(path, [config](const HttpRequest& req) {
             auto id = extract_id(req);
 
             if (not id) {
