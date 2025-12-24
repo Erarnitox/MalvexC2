@@ -39,6 +39,10 @@ So it might be used as a base for your very own C2 framework. The Ccurrent Impla
 
 ![Screenshot](./Resources/Architecture.png)
 
+### Database Overview
+
+![Screenshot](./Resources/Database.png)
+
 ## Extending
 This section might be populated later if there is enough legitimate interest.
 
