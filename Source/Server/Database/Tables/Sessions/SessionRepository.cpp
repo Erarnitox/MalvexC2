@@ -42,10 +42,10 @@ std::vector<SessionDAO> SessionRepository::list() {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         SessionDAO session;
 
-        session.session_id = sqlite3_column_int64(stmt, 0);
+        session.id = sqlite3_column_int64(stmt, 0);
 
         const char* uid_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        session.session_uid = uid_ptr ? uid_ptr : "";
+        session.uid = uid_ptr ? uid_ptr : "";
 
         session.port = sqlite3_column_int(stmt, 2);
 
@@ -74,8 +74,8 @@ std::vector<SessionDAO> SessionRepository::list_by_port(int port) {
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         SessionDAO session;
-        session.session_id = sqlite3_column_int64(stmt, 0);
-        session.session_uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        session.id = sqlite3_column_int64(stmt, 0);
+        session.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         session.port = sqlite3_column_int(stmt, 2);
 
         results.push_back(std::move(session));
@@ -102,8 +102,8 @@ std::optional<SessionDAO> SessionRepository::get(int64_t id) {
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         SessionDAO session;
-        session.session_id = sqlite3_column_int64(stmt, 0);
-        session.session_uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        session.id = sqlite3_column_int64(stmt, 0);
+        session.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         session.port = sqlite3_column_int(stmt, 2);
         opt = session;
     }
@@ -124,7 +124,7 @@ SessionDAO SessionRepository::create(const SessionDAO& session) {
         throw SqliteException("prepare failed");
     }
 
-    UUID uid = session.session_uid.empty() ? generate_uuid() : session.session_uid;
+    UUID uid = session.uid.empty() ? generate_uuid() : session.uid;
 
     sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 2, session.port);
@@ -138,8 +138,8 @@ SessionDAO SessionRepository::create(const SessionDAO& session) {
     int64_t id = sqlite3_last_insert_rowid(h);
 
     SessionDAO result = session;
-    result.session_id = id;
-    result.session_uid = uid;
+    result.id = id;
+    result.uid = uid;
     return result;
 }
 

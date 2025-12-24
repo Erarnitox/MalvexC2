@@ -44,10 +44,10 @@ std::vector<OperatorDAO> OperatorRepository::list() {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         OperatorDAO op;
 
-        op.operator_id = sqlite3_column_int64(stmt, 0);
+        op.id = sqlite3_column_int64(stmt, 0);
 
         const char* uid_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        op.operator_uid = uid_ptr ? uid_ptr : "";
+        op.uid = uid_ptr ? uid_ptr : "";
 
         const char* user_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         op.username = user_ptr ? user_ptr : "";
@@ -81,8 +81,8 @@ std::optional<OperatorDAO> OperatorRepository::get(int64_t id) {
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         OperatorDAO op;
-        op.operator_id = sqlite3_column_int64(stmt, 0);
-        op.operator_uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        op.id = sqlite3_column_int64(stmt, 0);
+        op.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         op.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         op.password = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
         op.clearance = sqlite3_column_int(stmt, 4);
@@ -110,8 +110,8 @@ std::optional<OperatorDAO> OperatorRepository::get(const std::string& username) 
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         OperatorDAO op;
-        op.operator_id = sqlite3_column_int64(stmt, 0);
-        op.operator_uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        op.id = sqlite3_column_int64(stmt, 0);
+        op.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         op.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         op.password = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
         op.clearance = sqlite3_column_int(stmt, 4);
@@ -135,7 +135,7 @@ OperatorDAO OperatorRepository::create(const OperatorDAO& op) {
             throw SqliteException("prepare failed");
         }
 
-        UUID uid = op.operator_uid.empty() ? generate_uuid() : op.operator_uid;
+        UUID uid = op.uid.empty() ? generate_uuid() : op.uid;
 
         sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
         sqlite3_bind_text(stmt, 2, op.username.c_str(), -1, SQLITE_TRANSIENT);
@@ -151,8 +151,8 @@ OperatorDAO OperatorRepository::create(const OperatorDAO& op) {
         int64_t id = sqlite3_last_insert_rowid(h);
 
         OperatorDAO result = op;
-        result.operator_id = id;
-        result.operator_uid = uid;
+        result.id = id;
+        result.uid = uid;
         return result;
 }
 

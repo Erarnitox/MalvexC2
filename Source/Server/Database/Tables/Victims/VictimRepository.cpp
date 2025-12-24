@@ -53,10 +53,10 @@ std::vector<VictimDAO> VictimRepository::list() {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         VictimDAO victim;
 
-        victim.victim_id = sqlite3_column_int64(stmt, 0);
+        victim.id = sqlite3_column_int64(stmt, 0);
 
         const char* uid_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        victim.victim_uid = uid_ptr ? uid_ptr : "";
+        victim.uid = uid_ptr ? uid_ptr : "";
 
         const char* internal_ip_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         victim.internal_ip = internal_ip_ptr ? internal_ip_ptr : "";
@@ -103,8 +103,8 @@ std::optional<VictimDAO> VictimRepository::get(int64_t id) {
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         VictimDAO victim;
-        victim.victim_id = sqlite3_column_int64(stmt, 0);
-        victim.victim_uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        victim.id = sqlite3_column_int64(stmt, 0);
+        victim.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         victim.internal_ip = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         victim.external_ip = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
         victim.hostname = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
@@ -133,7 +133,7 @@ VictimDAO VictimRepository::create(const VictimDAO& victim) {
         throw SqliteException("prepare failed");
     }
 
-    UUID uid = victim.victim_uid.empty() ? generate_uuid() : victim.victim_uid;
+    UUID uid = victim.uid.empty() ? generate_uuid() : victim.uid;
 
     sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, victim.internal_ip.c_str(), -1, SQLITE_TRANSIENT);
@@ -153,8 +153,8 @@ VictimDAO VictimRepository::create(const VictimDAO& victim) {
     int64_t id = sqlite3_last_insert_rowid(h);
 
     VictimDAO result = victim;
-    result.victim_id = id;
-    result.victim_uid = uid;
+    result.id = id;
+    result.uid = uid;
     return result;
 }
 

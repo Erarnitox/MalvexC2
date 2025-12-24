@@ -42,10 +42,10 @@ std::vector<ResultDAO> ResultRepository::list() {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         ResultDAO result;
 
-        result.result_id = sqlite3_column_int64(stmt, 0);
+        result.id = sqlite3_column_int64(stmt, 0);
 
         const char* uid_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        result.result_uid = uid_ptr ? uid_ptr : "";
+        result.uid = uid_ptr ? uid_ptr : "";
 
         const char* data_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         result.data = data_ptr ? data_ptr : "";
@@ -74,8 +74,8 @@ std::optional<ResultDAO> ResultRepository::get(int64_t id) {
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         ResultDAO result;
-        result.result_id = sqlite3_column_int64(stmt, 0);
-        result.result_uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        result.id = sqlite3_column_int64(stmt, 0);
+        result.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         result.data = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         opt = result;
     }
@@ -96,7 +96,7 @@ ResultDAO ResultRepository::create(const ResultDAO& result) {
         throw SqliteException("prepare failed");
     }
 
-    UUID uid = result.result_uid.empty() ? generate_uuid() : result.result_uid;
+    UUID uid = result.uid.empty() ? generate_uuid() : result.uid;
 
     sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 2, result.data.c_str(), -1, SQLITE_TRANSIENT);
@@ -110,8 +110,8 @@ ResultDAO ResultRepository::create(const ResultDAO& result) {
     int64_t id = sqlite3_last_insert_rowid(h);
 
     ResultDAO created = result;
-    created.result_id = id;
-    created.result_uid = uid;
+    created.id = id;
+    created.uid = uid;
     return created;
 }
 

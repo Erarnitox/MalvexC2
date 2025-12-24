@@ -13,6 +13,10 @@ struct IDao {
     std::string to_json() const {
         return glz::write_json(*((T*)this)).value_or("{}");
     }
+
+    static T from_json(const std::string& json) {
+        return glz::read_json<T>(json).value_or({});
+    }
 };
 
 //--------------------------------

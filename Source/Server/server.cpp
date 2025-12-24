@@ -13,7 +13,7 @@
 #include "Types.hpp"
 #include "Config.hpp"
 
-#include "OperatorEndpoints.hpp"
+#include "Endpoints.hpp"
 
 static inline const std::string db_file{ "server.db" };
 
@@ -82,7 +82,7 @@ void initial_setup() {
     OperatorRepository attacker_repo(db_file);
     do {
         OperatorDAO attacker;
-        attacker.operator_uid = generate_uuid();
+        attacker.uid = generate_uuid();
         attacker.clearance = 100;
 
         std::print("Attacker Username:");
@@ -255,8 +255,7 @@ void start_attacker_api(int16_t port) {
         return HttpResponse().set_json(R"(true)");
     });
 
-    //TODO: implement endpoints
-    register_operator_endpoints(attacker_api);
+    register_attacker_endpoints(attacker_api);
 
     attacker_api.start();
 }

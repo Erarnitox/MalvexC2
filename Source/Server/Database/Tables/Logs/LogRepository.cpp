@@ -49,10 +49,10 @@ std::vector<LogDAO> LogRepository::list() {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         LogDAO log;
 
-        log.log_id = sqlite3_column_int64(stmt, 0);
+        log.id = sqlite3_column_int64(stmt, 0);
 
         const char* uid_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        log.log_uid = uid_ptr ? uid_ptr : "";
+        log.uid = uid_ptr ? uid_ptr : "";
 
         const char* key_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         log.key = key_ptr ? key_ptr : "";
@@ -89,8 +89,8 @@ std::vector<LogDAO> LogRepository::list_recent(int limit) {
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         LogDAO log;
-        log.log_id = sqlite3_column_int64(stmt, 0);
-        log.log_uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        log.id = sqlite3_column_int64(stmt, 0);
+        log.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         log.key = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         log.value = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
         log.time = sqlite3_column_int64(stmt, 4);
@@ -120,8 +120,8 @@ std::optional<LogDAO> LogRepository::get(int64_t id) {
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         LogDAO log;
-        log.log_id = sqlite3_column_int64(stmt, 0);
-        log.log_uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        log.id = sqlite3_column_int64(stmt, 0);
+        log.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         log.key = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
         log.value = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
         log.time = sqlite3_column_int64(stmt, 4);
@@ -144,7 +144,7 @@ LogDAO LogRepository::create(const LogDAO& log) {
         throw SqliteException("prepare failed");
     }
 
-    UUID uid = log.log_uid.empty() ? generate_uuid() : log.log_uid;
+    UUID uid = log.uid.empty() ? generate_uuid() : log.uid;
     TimePoint timestamp = log.time;
 
     sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
@@ -161,8 +161,8 @@ LogDAO LogRepository::create(const LogDAO& log) {
     int64_t id = sqlite3_last_insert_rowid(h);
 
     LogDAO result = log;
-    result.log_id = id;
-    result.log_uid = uid;
+    result.id = id;
+    result.uid = uid;
     return result;
 }
 

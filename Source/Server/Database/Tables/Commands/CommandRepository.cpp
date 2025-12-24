@@ -47,10 +47,10 @@ std::vector<CommandDAO> CommandRepository::list() {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         CommandDAO cmd;
 
-        cmd.command_id = sqlite3_column_int64(stmt, 0);
+        cmd.id = sqlite3_column_int64(stmt, 0);
 
         const char* uid_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        cmd.command_uid = uid_ptr ? uid_ptr : "";
+        cmd.uid = uid_ptr ? uid_ptr : "";
 
         cmd.prev = sqlite3_column_int64(stmt, 2);
         cmd.nonce = sqlite3_column_int64(stmt, 3);
@@ -88,8 +88,8 @@ std::optional<CommandDAO> CommandRepository::get(int64_t id) {
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         CommandDAO cmd;
-        cmd.command_id = sqlite3_column_int64(stmt, 0);
-        cmd.command_uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        cmd.id = sqlite3_column_int64(stmt, 0);
+        cmd.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
         cmd.prev = sqlite3_column_int64(stmt, 2);
         cmd.nonce = sqlite3_column_int64(stmt, 3);
         cmd.command = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
@@ -115,7 +115,7 @@ CommandDAO CommandRepository::create(const CommandDAO& cmd) {
         throw SqliteException("prepare failed");
     }
 
-    UUID uid = cmd.command_uid.empty() ? generate_uuid() : cmd.command_uid;
+    UUID uid = cmd.uid.empty() ? generate_uuid() : cmd.uid;
 
     sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int64(stmt, 2, cmd.prev);
@@ -133,8 +133,8 @@ CommandDAO CommandRepository::create(const CommandDAO& cmd) {
     int64_t id = sqlite3_last_insert_rowid(h);
 
     CommandDAO result = cmd;
-    result.command_id = id;
-    result.command_uid = uid;
+    result.id = id;
+    result.uid = uid;
     return result;
 }
 

@@ -7,8 +7,8 @@
 //
 //--------------------------------
 struct VictimDAO : public IDao<VictimDAO> {
-    int64_t victim_id{0};
-    UUID victim_uid;
+    int64_t id{0};
+    UUID uid;
     std::string internal_ip;
     std::string external_ip;
     std::string hostname;
@@ -25,8 +25,8 @@ template <>
 struct glz::meta<VictimDAO> {
     using T = VictimDAO;
     static constexpr auto value = object(
-        "victim_id", &T::victim_id,
-        "victim_uid", &T::victim_uid,
+        "victim_id", &T::id,
+        "victim_uid", &T::uid,
         "internal_ip", &T::internal_ip,
         "external_ip", &T::external_ip,
         "hostname", &T::hostname,
