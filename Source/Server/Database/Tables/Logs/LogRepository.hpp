@@ -16,6 +16,7 @@ public:
 
     std::vector<LogDAO> list() override;
     std::optional<LogDAO> get(int64_t id) override;
+    std::optional<LogDAO> get(const UUID& id) override;
     LogDAO create(const LogDAO& log) override;
     std::optional<LogDAO> update(int64_t id, const LogDAO& log) override;
     bool remove(int64_t id) override;

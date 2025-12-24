@@ -122,6 +122,41 @@ std::optional<VictimDAO> VictimRepository::get(int64_t id) {
 //--------------------------------
 //
 //--------------------------------
+std::optional<VictimDAO> VictimRepository::get(const UUID& uid) {
+    std::optional<VictimDAO> opt;
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "SELECT victim_id, victim_uid, internal_ip, external_ip, hostname, "
+                      "username, operating_system, last_update, status "
+                      "FROM victims WHERE victim_uid = ? LIMIT 1;";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed");
+    }
+
+    sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        VictimDAO victim;
+        victim.id = sqlite3_column_int64(stmt, 0);
+        victim.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        victim.internal_ip = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        victim.external_ip = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+        victim.hostname = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+        victim.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+        victim.operating_system = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
+        victim.last_update = sqlite3_column_int64(stmt, 7);
+        victim.status = sqlite3_column_int(stmt, 8);
+        opt = victim;
+    }
+
+    sqlite3_finalize(stmt);
+    return opt;
+}
+
+//--------------------------------
+//
+//--------------------------------
 VictimDAO VictimRepository::create(const VictimDAO& victim) {
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;

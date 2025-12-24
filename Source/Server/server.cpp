@@ -13,7 +13,8 @@
 #include "Types.hpp"
 #include "Config.hpp"
 
-#include "Endpoints.hpp"
+#include <Endpoints.hpp>
+#include <BeaconEndpoint.hpp>
 
 static inline const std::string db_file{ "server.db" };
 
@@ -275,7 +276,7 @@ void start_victim_api(int16_t port) {
     RESTServer victim_api(port, tls_conf);
     victim_api.use_middleware(victim_auth_middleware);
 
-    //TODO: implement Endpoints
+    register_all_beacon_endpoints(victim_api);
 
     victim_api.start();
 }

@@ -20,7 +20,7 @@ public:
     std::optional<ConfigDAO> update(int64_t id, const ConfigDAO& res) override;
     bool remove(int64_t id) override;
 
-    std::optional<ConfigDAO> get(const std::string& key);
+    std::optional<ConfigDAO> get(const std::string& key) override;
     std::optional<ConfigDAO> update(const std::string& key, const ConfigDAO& res);
     std::optional<ConfigDAO> upsert(const std::string& key, const std::string& value);
     bool remove(const std::string& key);

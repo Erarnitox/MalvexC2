@@ -16,11 +16,11 @@ public:
 
     std::vector<VictimDAO> list() override;
     std::optional<VictimDAO> get(int64_t id) override;
+    std::optional<VictimDAO> get(const UUID& uid) override;
     VictimDAO create(const VictimDAO& op) override;
     std::optional<VictimDAO> update(int64_t id, const VictimDAO& op) override;
     bool remove(int64_t id) override;
 
-    std::optional<VictimDAO> get(const std::string& username);
     std::optional<VictimDAO> update(const std::string& username, const VictimDAO& op);
     std::optional<VictimDAO> upsert(const std::string& username, const std::string& password);
     bool remove(const std::string& username);

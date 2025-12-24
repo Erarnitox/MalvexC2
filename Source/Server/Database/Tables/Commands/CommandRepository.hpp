@@ -16,6 +16,7 @@ public:
 
     std::vector<CommandDAO> list() override;
     std::optional<CommandDAO> get(int64_t id) override;
+    std::optional<CommandDAO> get(const UUID& id) override;
     CommandDAO create(const CommandDAO& comm) override;
     std::optional<CommandDAO> update(int64_t id, const CommandDAO& op) override;
     bool remove(int64_t id) override;

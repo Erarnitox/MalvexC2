@@ -105,6 +105,38 @@ std::optional<CommandDAO> CommandRepository::get(int64_t id) {
 //--------------------------------
 //
 //--------------------------------
+std::optional<CommandDAO> CommandRepository::get(const UUID& uid) {
+    std::optional<CommandDAO> opt;
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "SELECT command_id, command_uid, prev, nonce, command, signature, status "
+                      "FROM commands WHERE command_uid = ? LIMIT 1;";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed");
+    }
+
+    sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        CommandDAO cmd;
+        cmd.id = sqlite3_column_int64(stmt, 0);
+        cmd.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        cmd.prev = sqlite3_column_int64(stmt, 2);
+        cmd.nonce = sqlite3_column_int64(stmt, 3);
+        cmd.command = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+        cmd.signature = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+        cmd.status = sqlite3_column_int(stmt, 6);
+        opt = cmd;
+    }
+
+    sqlite3_finalize(stmt);
+    return opt;
+}
+
+//--------------------------------
+//
+//--------------------------------
 CommandDAO CommandRepository::create(const CommandDAO& cmd) {
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;

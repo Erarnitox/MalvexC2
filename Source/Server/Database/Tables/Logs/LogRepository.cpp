@@ -135,6 +135,36 @@ std::optional<LogDAO> LogRepository::get(int64_t id) {
 //--------------------------------
 //
 //--------------------------------
+std::optional<LogDAO> LogRepository::get(const UUID& uid) {
+    std::optional<LogDAO> opt;
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "SELECT log_id, log_uid, key, value, time "
+                      "FROM logs WHERE log_uid = ? LIMIT 1;";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed");
+    }
+
+    sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        LogDAO log;
+        log.id = sqlite3_column_int64(stmt, 0);
+        log.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        log.key = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        log.value = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+        log.time = sqlite3_column_int64(stmt, 4);
+        opt = log;
+    }
+
+    sqlite3_finalize(stmt);
+    return opt;
+}
+
+//--------------------------------
+//
+//--------------------------------
 LogDAO LogRepository::create(const LogDAO& log) {
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;

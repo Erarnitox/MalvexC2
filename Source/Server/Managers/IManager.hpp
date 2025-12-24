@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Types.hpp"
 #include <IDao.hpp>
 #include <IRepository.hpp>
 
@@ -81,6 +82,34 @@ public:
         }
 
         return std::nullopt;
+    }
+
+    //-------------------------------------------------
+    //
+    //-------------------------------------------------
+    std::optional<DAO> get_by_uid(UUID uid) {
+        std::lock_guard<std::mutex> lock(mutex_);
+
+        if (auto opt = repo_->get(uid)) {
+            cache_[opt.value().id] = opt.value();
+            return opt.value();
+        }
+
+        return std::nullopt;
+    }
+
+    //-------------------------------------------------
+    //
+    //-------------------------------------------------
+    std::optional<DAO> update(int64_t id, DAO dao) {
+        std::lock_guard<std::mutex> lock(mutex_);
+
+        const auto updated = repo_->update(id, dao).value();
+        if (auto it = cache_.find(id); it != cache_.end()) {
+            cache_[id] = updated;
+        }
+
+        return updated;
     }
 
     //-------------------------------------------------

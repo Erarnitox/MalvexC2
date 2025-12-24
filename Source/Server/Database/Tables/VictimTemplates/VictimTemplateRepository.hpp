@@ -16,6 +16,7 @@ public:
 
     std::vector<VictimTemplateDAO> list() override;
     std::optional<VictimTemplateDAO> get(int64_t id) override;
+    std::optional<VictimTemplateDAO> get(const UUID& uid) override;
     VictimTemplateDAO create(const VictimTemplateDAO& op) override;
     std::optional<VictimTemplateDAO> update(int64_t id, const VictimTemplateDAO& op) override;
     bool remove(int64_t id) override;

@@ -16,6 +16,7 @@ public:
 
     std::vector<ResultDAO> list() override;
     std::optional<ResultDAO> get(int64_t id) override;
+    std::optional<ResultDAO> get(const UUID& uid) override;
     ResultDAO create(const ResultDAO& op) override;
     std::optional<ResultDAO> update(int64_t id, const ResultDAO& op) override;
     bool remove(int64_t id) override;

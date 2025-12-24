@@ -1,5 +1,6 @@
 #include "VictimTemplateRepository.hpp"
 #include "VictimTemplateDAO.hpp"
+#include "sqlite3.h"
 
 #include <sstream>
 #include <iostream>
@@ -75,6 +76,34 @@ std::optional<VictimTemplateDAO> VictimTemplateRepository::get(int64_t id) {
     }
 
     sqlite3_bind_int(stmt, 1, id);
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        VictimTemplateDAO op;
+        op.id = sqlite3_column_int64(stmt, 0);
+        op.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        op.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        op.password = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+        opt = op;
+    }
+
+    sqlite3_finalize(stmt);
+    return opt;
+}
+
+//--------------------------------
+//
+//--------------------------------
+std::optional<VictimTemplateDAO> VictimTemplateRepository::get(const UUID& uid) {
+    std::optional<VictimTemplateDAO> opt;
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "SELECT victim_template_id, victim_template_uid, username, password FROM victim_templates WHERE victim_template_uid = ? LIMIT 1;";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed");
+    }
+
+    sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
 
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         VictimTemplateDAO op;

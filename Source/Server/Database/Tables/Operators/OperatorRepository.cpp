@@ -1,5 +1,6 @@
 #include "OperatorRepository.hpp"
 #include "OperatorDAO.hpp"
+#include "sqlite3.h"
 
 #include <sstream>
 #include <iostream>
@@ -96,7 +97,36 @@ std::optional<OperatorDAO> OperatorRepository::get(int64_t id) {
 //--------------------------------
 //
 //--------------------------------
-std::optional<OperatorDAO> OperatorRepository::get(const std::string& username) {
+std::optional<OperatorDAO> OperatorRepository::get(const UUID& uid) {
+    std::optional<OperatorDAO> opt;
+    sqlite3* h = db_->handle();
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "SELECT operator_id, operator_uid, username, password, clearance FROM operators WHERE operator_uid = ? LIMIT 1;";
+
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed");
+    }
+
+    sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        OperatorDAO op;
+        op.id = sqlite3_column_int64(stmt, 0);
+        op.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        op.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        op.password = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+        op.clearance = sqlite3_column_int(stmt, 4);
+        opt = op;
+    }
+
+    sqlite3_finalize(stmt);
+    return opt;
+}
+
+//--------------------------------
+//
+//--------------------------------
+std::optional<OperatorDAO> OperatorRepository::get_username(const std::string& username) {
     std::optional<OperatorDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
