@@ -8,8 +8,8 @@
 //--------------------------------
 //
 //--------------------------------
-ResultRepository::ResultRepository(const std::string& db_path)
-    : db_(std::make_unique<Database>(db_path)) {
+ResultRepository::ResultRepository(const std::string& db_path) {
+    set_db_path(db_path);
     ensure_table();
 }
 
@@ -17,7 +17,9 @@ ResultRepository::ResultRepository(const std::string& db_path)
 //
 //--------------------------------
 void ResultRepository::ensure_table() {
-    db_->exec(R"(
+    auto db = open_readwrite();
+
+    db.exec(R"(
         CREATE TABLE IF NOT EXISTS results (
             result_id INTEGER PRIMARY KEY AUTOINCREMENT,
             result_uid TEXT UNIQUE NOT NULL,
@@ -30,8 +32,10 @@ void ResultRepository::ensure_table() {
 //
 //--------------------------------
 std::vector<ResultDAO> ResultRepository::list() const {
+    auto db = open_readonly();
+
     std::vector<ResultDAO> results;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
 
     const char* sql = "SELECT result_id, result_uid, data FROM results;";
@@ -62,8 +66,10 @@ std::vector<ResultDAO> ResultRepository::list() const {
 //
 //--------------------------------
 std::optional<ResultDAO> ResultRepository::get(int64_t id) const {
+    auto db = open_readonly();
+
     std::optional<ResultDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT result_id, result_uid, data FROM results WHERE result_id = ? LIMIT 1;";
 
@@ -89,8 +95,10 @@ std::optional<ResultDAO> ResultRepository::get(int64_t id) const {
 //
 //--------------------------------
 std::optional<ResultDAO> ResultRepository::get(const UUID& uid) const {
+    auto db = open_readonly();
+
     std::optional<ResultDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT result_id, result_uid, data FROM results WHERE result_uid = ? LIMIT 1;";
 
@@ -116,7 +124,9 @@ std::optional<ResultDAO> ResultRepository::get(const UUID& uid) const {
 //
 //--------------------------------
 ResultDAO ResultRepository::create(const ResultDAO& result) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "INSERT INTO results (result_uid, data) VALUES (?, ?);";
 
@@ -147,7 +157,9 @@ ResultDAO ResultRepository::create(const ResultDAO& result) {
 //
 //--------------------------------
 std::optional<ResultDAO> ResultRepository::update(int64_t id, const ResultDAO& result) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "UPDATE results SET data = ? WHERE result_id = ?;";
 
@@ -171,7 +183,9 @@ std::optional<ResultDAO> ResultRepository::update(int64_t id, const ResultDAO& r
 //
 //--------------------------------
 bool ResultRepository::remove(int64_t id) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "DELETE FROM results WHERE result_id = ?;";
 
@@ -194,5 +208,4 @@ bool ResultRepository::remove(int64_t id) {
 //
 //--------------------------------
 void ResultRepository::commit() {
-    db_->commit();
 }

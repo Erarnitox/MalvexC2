@@ -8,8 +8,8 @@
 //--------------------------------
 //
 //--------------------------------
-VictimTemplateRepository::VictimTemplateRepository(const std::string& db_path)
-    : db_(std::make_unique<Database>(db_path)) {
+VictimTemplateRepository::VictimTemplateRepository(const std::string& db_path) {
+    set_db_path(db_path);
     ensure_table();
 }
 
@@ -17,7 +17,9 @@ VictimTemplateRepository::VictimTemplateRepository(const std::string& db_path)
 //
 //--------------------------------
 void VictimTemplateRepository::ensure_table() {
-    db_->exec(R"(
+    auto db = open_readwrite();
+
+    db.exec(R"(
         CREATE TABLE IF NOT EXISTS victim_templates (
             victim_template_id INTEGER PRIMARY KEY AUTOINCREMENT,
             victim_template_uid TEXT UNIQUE NOT NULL,
@@ -31,8 +33,10 @@ void VictimTemplateRepository::ensure_table() {
 //
 //--------------------------------
 std::vector<VictimTemplateDAO> VictimTemplateRepository::list() const {
+    auto db = open_readonly();
+
     std::vector<VictimTemplateDAO> results;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
 
     const char* sql = "SELECT victim_template_id, victim_template_uid, username, password FROM victim_templates;";
@@ -66,8 +70,10 @@ std::vector<VictimTemplateDAO> VictimTemplateRepository::list() const {
 //
 //--------------------------------
 std::optional<VictimTemplateDAO> VictimTemplateRepository::get(int64_t id) const {
+    auto db = open_readonly();
+
     std::optional<VictimTemplateDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT victim_template_id, victim_template_uid, username, password FROM victim_templates WHERE victim_template_id = ? LIMIT 1;";
 
@@ -94,8 +100,10 @@ std::optional<VictimTemplateDAO> VictimTemplateRepository::get(int64_t id) const
 //
 //--------------------------------
 std::optional<VictimTemplateDAO> VictimTemplateRepository::get(const UUID& uid) const {
+    auto db = open_readonly();
+
     std::optional<VictimTemplateDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT victim_template_id, victim_template_uid, username, password FROM victim_templates WHERE victim_template_uid = ? LIMIT 1;";
 
@@ -122,8 +130,10 @@ std::optional<VictimTemplateDAO> VictimTemplateRepository::get(const UUID& uid) 
 //
 //--------------------------------
 std::optional<VictimTemplateDAO> VictimTemplateRepository::get_username(const std::string& username) {
+    auto db = open_readonly();
+
     std::optional<VictimTemplateDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT victim_template_id, victim_template_uid, username, password FROM victim_templates WHERE username = ? LIMIT 1;";
 
@@ -150,40 +160,44 @@ std::optional<VictimTemplateDAO> VictimTemplateRepository::get_username(const st
 //
 //--------------------------------
 VictimTemplateDAO VictimTemplateRepository::create(const VictimTemplateDAO& op) {
-    sqlite3* h = db_->handle();
-        sqlite3_stmt* stmt = nullptr;
-        const char* sql = "INSERT INTO victim_templates (victim_template_uid, username, password) "
-                         "VALUES (?, ?, ?);";
+    auto db = open_readwrite();
 
-        if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-            throw SqliteException("prepare failed");
-        }
+    sqlite3* h = db.getHandle();
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "INSERT INTO victim_templates (victim_template_uid, username, password) "
+                        "VALUES (?, ?, ?);";
 
-        UUID uid = op.uid.empty() ? generate_uuid() : op.uid;
+    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw SqliteException("prepare failed");
+    }
 
-        sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 2, op.username.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 3, op.password.c_str(), -1, SQLITE_TRANSIENT);
+    UUID uid = op.uid.empty() ? generate_uuid() : op.uid;
 
-        if (sqlite3_step(stmt) != SQLITE_DONE) {
-            sqlite3_finalize(stmt);
-            throw SqliteException("insert failed");
-        }
+    sqlite3_bind_text(stmt, 1, uid.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, op.username.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 3, op.password.c_str(), -1, SQLITE_TRANSIENT);
 
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
         sqlite3_finalize(stmt);
-        int64_t id = sqlite3_last_insert_rowid(h);
+        throw SqliteException("insert failed");
+    }
 
-        VictimTemplateDAO result = op;
-        result.id = id;
-        result.uid = uid;
-        return result;
+    sqlite3_finalize(stmt);
+    int64_t id = sqlite3_last_insert_rowid(h);
+
+    VictimTemplateDAO result = op;
+    result.id = id;
+    result.uid = uid;
+    return result;
 }
 
 //--------------------------------
 //
 //--------------------------------
 std::optional<VictimTemplateDAO> VictimTemplateRepository::update(int64_t id, const VictimTemplateDAO& op) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "UPDATE victim_templates SET username = ?, password = ? "
                         "WHERE victim_template_id = ?;";
@@ -209,7 +223,9 @@ std::optional<VictimTemplateDAO> VictimTemplateRepository::update(int64_t id, co
 //
 //--------------------------------
 bool VictimTemplateRepository::remove(int64_t id) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "DELETE FROM victim_templates WHERE victim_template_id = ?;";
 
@@ -232,5 +248,4 @@ bool VictimTemplateRepository::remove(int64_t id) {
 //
 //--------------------------------
 void VictimTemplateRepository::commit() {
-    db_->commit();
 }

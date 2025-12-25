@@ -29,5 +29,4 @@ public:
 
 private:
     void ensure_table();
-    std::unique_ptr<Database> db_;
 };

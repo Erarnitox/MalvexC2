@@ -12,8 +12,8 @@
 //--------------------------------
 //
 //--------------------------------
-LogRepository::LogRepository(const std::string& db_path)
-    : db_(std::make_unique<Database>(db_path)) {
+LogRepository::LogRepository(const std::string& db_path) {
+    set_db_path(db_path);
     ensure_table();
 }
 
@@ -21,7 +21,9 @@ LogRepository::LogRepository(const std::string& db_path)
 //
 //--------------------------------
 void LogRepository::ensure_table() {
-    db_->exec(R"(
+    auto db = open_readwrite();
+
+    db.exec(R"(
         CREATE TABLE IF NOT EXISTS logs (
             log_id INTEGER PRIMARY KEY AUTOINCREMENT,
             log_uid TEXT UNIQUE NOT NULL,
@@ -36,8 +38,10 @@ void LogRepository::ensure_table() {
 //
 //--------------------------------
 std::vector<LogDAO> LogRepository::list() const {
+    auto db = open_readonly();
+
     std::vector<LogDAO> results;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
 
     const char* sql = "SELECT log_id, log_uid, key, value, time FROM logs ORDER BY time DESC;";
@@ -74,8 +78,10 @@ std::vector<LogDAO> LogRepository::list() const {
 //
 //--------------------------------
 std::vector<LogDAO> LogRepository::list_recent(int limit) {
+    auto db = open_readonly();
+
     std::vector<LogDAO> results;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
 
     const char* sql = "SELECT log_id, log_uid, key, value, time FROM logs "
@@ -106,8 +112,10 @@ std::vector<LogDAO> LogRepository::list_recent(int limit) {
 //
 //--------------------------------
 std::optional<LogDAO> LogRepository::get(int64_t id) const {
+    auto db = open_readonly();
+
     std::optional<LogDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT log_id, log_uid, key, value, time "
                       "FROM logs WHERE log_id = ? LIMIT 1;";
@@ -136,8 +144,10 @@ std::optional<LogDAO> LogRepository::get(int64_t id) const {
 //
 //--------------------------------
 std::optional<LogDAO> LogRepository::get(const UUID& uid) const {
+    auto db = open_readonly();
+
     std::optional<LogDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT log_id, log_uid, key, value, time "
                       "FROM logs WHERE log_uid = ? LIMIT 1;";
@@ -166,7 +176,9 @@ std::optional<LogDAO> LogRepository::get(const UUID& uid) const {
 //
 //--------------------------------
 LogDAO LogRepository::create(const LogDAO& log) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "INSERT INTO logs (log_uid, key, value, time) VALUES (?, ?, ?, ?);";
 
@@ -200,7 +212,8 @@ LogDAO LogRepository::create(const LogDAO& log) {
 //
 //--------------------------------
 std::optional<LogDAO> LogRepository::update(int64_t id, const LogDAO& log) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "UPDATE logs SET key = ?, value = ?, time = ? WHERE log_id = ?;";
 
@@ -228,7 +241,8 @@ std::optional<LogDAO> LogRepository::update(int64_t id, const LogDAO& log) {
 //
 //--------------------------------
 bool LogRepository::remove(int64_t id) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "DELETE FROM logs WHERE log_id = ?;";
 
@@ -251,5 +265,5 @@ bool LogRepository::remove(int64_t id) {
 //
 //--------------------------------
 void LogRepository::commit() {
-    db_->commit();
+
 }

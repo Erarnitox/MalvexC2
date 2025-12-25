@@ -30,7 +30,7 @@ struct IRepository {
 protected:
     std::string db_path_;
 
-    void configure_db(SQLite::Database& db) {
+    void configure_db(SQLite::Database& db) const {
         db.setBusyTimeout(3000);
         db.exec("PRAGMA journal_mode=WAL;");
         db.exec("PRAGMA synchronous=NORMAL;");

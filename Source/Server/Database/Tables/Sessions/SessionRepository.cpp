@@ -8,8 +8,8 @@
 //--------------------------------
 //
 //--------------------------------
-SessionRepository::SessionRepository(const std::string& db_path)
-    : db_(std::make_unique<Database>(db_path)) {
+SessionRepository::SessionRepository(const std::string& db_path) {
+    set_db_path(db_path);
     ensure_table();
 }
 
@@ -17,7 +17,9 @@ SessionRepository::SessionRepository(const std::string& db_path)
 //
 //--------------------------------
 void SessionRepository::ensure_table() {
-    db_->exec(R"(
+    auto db = open_readwrite();
+
+    db.exec(R"(
         CREATE TABLE IF NOT EXISTS sessions (
             session_id INTEGER PRIMARY KEY AUTOINCREMENT,
             session_uid TEXT UNIQUE NOT NULL,
@@ -30,8 +32,10 @@ void SessionRepository::ensure_table() {
 //
 //--------------------------------
 std::vector<SessionDAO> SessionRepository::list() const {
+    auto db = open_readonly();
+
     std::vector<SessionDAO> results;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
 
     const char* sql = "SELECT session_id, session_uid, port FROM sessions;";
@@ -61,8 +65,10 @@ std::vector<SessionDAO> SessionRepository::list() const {
 //
 //--------------------------------
 std::vector<SessionDAO> SessionRepository::list_by_port(int port) {
+    auto db = open_readonly();
+
     std::vector<SessionDAO> results;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
 
     const char* sql = "SELECT session_id, session_uid, port FROM sessions WHERE port = ?;";
@@ -90,8 +96,10 @@ std::vector<SessionDAO> SessionRepository::list_by_port(int port) {
 //
 //--------------------------------
 std::optional<SessionDAO> SessionRepository::get(int64_t id) const {
+    auto db = open_readonly();
+
     std::optional<SessionDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT session_id, session_uid, port FROM sessions WHERE session_id = ? LIMIT 1;";
 
@@ -117,8 +125,10 @@ std::optional<SessionDAO> SessionRepository::get(int64_t id) const {
 //
 //--------------------------------
 std::optional<SessionDAO> SessionRepository::get(const UUID& uid) const {
+    auto db = open_readonly();
+
     std::optional<SessionDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT session_id, session_uid, port FROM sessions WHERE session_id = ? LIMIT 1;";
 
@@ -144,7 +154,9 @@ std::optional<SessionDAO> SessionRepository::get(const UUID& uid) const {
 //
 //--------------------------------
 SessionDAO SessionRepository::create(const SessionDAO& session) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "INSERT INTO sessions (session_uid, port) VALUES (?, ?);";
 
@@ -175,7 +187,9 @@ SessionDAO SessionRepository::create(const SessionDAO& session) {
 //
 //--------------------------------
 std::optional<SessionDAO> SessionRepository::update(int64_t id, const SessionDAO& session) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "UPDATE sessions SET port = ? WHERE session_id = ?;";
 
@@ -199,7 +213,9 @@ std::optional<SessionDAO> SessionRepository::update(int64_t id, const SessionDAO
 //
 //--------------------------------
 bool SessionRepository::remove(int64_t id) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "DELETE FROM sessions WHERE session_id = ?;";
 
@@ -222,7 +238,9 @@ bool SessionRepository::remove(int64_t id) {
 //
 //--------------------------------
 bool SessionRepository::remove_by_port(int port) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "DELETE FROM sessions WHERE port = ?;";
 
@@ -245,7 +263,9 @@ bool SessionRepository::remove_by_port(int port) {
 //
 //--------------------------------
 int SessionRepository::count() {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT COUNT(*) FROM sessions;";
 
@@ -266,5 +286,5 @@ int SessionRepository::count() {
 //
 //--------------------------------
 void SessionRepository::commit() {
-    db_->commit();
+
 }

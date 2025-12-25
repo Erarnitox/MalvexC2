@@ -8,8 +8,8 @@
 //--------------------------------
 //
 //--------------------------------
-OperatorRepository::OperatorRepository(const std::string& db_path)
-    : db_(std::make_unique<Database>(db_path)) {
+OperatorRepository::OperatorRepository(const std::string& db_path) {
+    set_db_path(db_path);
     ensure_table();
 }
 
@@ -17,7 +17,9 @@ OperatorRepository::OperatorRepository(const std::string& db_path)
 //
 //--------------------------------
 void OperatorRepository::ensure_table() {
-    db_->exec(R"(
+    auto db = open_readwrite();
+
+    db.exec(R"(
         CREATE TABLE IF NOT EXISTS operators (
             operator_id INTEGER PRIMARY KEY AUTOINCREMENT,
             operator_uid TEXT UNIQUE NOT NULL,
@@ -32,8 +34,10 @@ void OperatorRepository::ensure_table() {
 //
 //--------------------------------
 std::vector<OperatorDAO> OperatorRepository::list() const {
+    auto db = open_readonly();
+
     std::vector<OperatorDAO> results;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
 
     const char* sql = "SELECT operator_id, operator_uid, username, password, clearance FROM operators;";
@@ -69,8 +73,10 @@ std::vector<OperatorDAO> OperatorRepository::list() const {
 //
 //--------------------------------
 std::optional<OperatorDAO> OperatorRepository::get(int64_t id) const {
+    auto db = open_readonly();
+
     std::optional<OperatorDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT operator_id, operator_uid, username, password, clearance FROM operators WHERE operator_id = ? LIMIT 1;";
 
@@ -98,8 +104,9 @@ std::optional<OperatorDAO> OperatorRepository::get(int64_t id) const {
 //
 //--------------------------------
 std::optional<OperatorDAO> OperatorRepository::get(const UUID& uid) const {
+    auto db = open_readonly();
     std::optional<OperatorDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT operator_id, operator_uid, username, password, clearance FROM operators WHERE operator_uid = ? LIMIT 1;";
 
@@ -127,8 +134,9 @@ std::optional<OperatorDAO> OperatorRepository::get(const UUID& uid) const {
 //
 //--------------------------------
 std::optional<OperatorDAO> OperatorRepository::get_username(const std::string& username) {
+    auto db = open_readonly();
     std::optional<OperatorDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT operator_id, operator_uid, username, password, clearance FROM operators WHERE username = ? LIMIT 1;";
 
@@ -156,7 +164,8 @@ std::optional<OperatorDAO> OperatorRepository::get_username(const std::string& u
 //
 //--------------------------------
 OperatorDAO OperatorRepository::create(const OperatorDAO& op) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+    sqlite3* h = db.getHandle();
         sqlite3_stmt* stmt = nullptr;
         const char* sql = "INSERT INTO operators (operator_uid, username, password, clearance) "
                          "VALUES (?, ?, ?, ?);";
@@ -190,7 +199,8 @@ OperatorDAO OperatorRepository::create(const OperatorDAO& op) {
 //
 //--------------------------------
 std::optional<OperatorDAO> OperatorRepository::update(int64_t id, const OperatorDAO& op) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "UPDATE operators SET username = ?, password = ?, clearance = ? "
                         "WHERE operator_id = ?;";
@@ -221,7 +231,9 @@ std::optional<OperatorDAO> OperatorRepository::upsert(const std::string& usernam
     std::cout << ("OperatorRepository::upsert was called! This shouldn't be used yet!");
     std::terminate();
 
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "INSERT INTO operators (username, password) VALUES (?, ?) "
                       "ON CONFLICT(username) DO UPDATE SET password = excluded.password;";
@@ -246,7 +258,8 @@ std::optional<OperatorDAO> OperatorRepository::upsert(const std::string& usernam
 //
 //--------------------------------
 bool OperatorRepository::remove(int64_t id) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "DELETE FROM operators WHERE operator_id = ?;";
 
@@ -269,7 +282,9 @@ bool OperatorRepository::remove(int64_t id) {
 //
 //--------------------------------
 bool OperatorRepository::remove(const std::string& username) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "DELETE FROM operators WHERE username = ?;";
 
@@ -292,5 +307,5 @@ bool OperatorRepository::remove(const std::string& username) {
 //
 //--------------------------------
 void OperatorRepository::commit() {
-    db_->commit();
+
 }

