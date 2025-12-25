@@ -124,7 +124,7 @@ public:
     //-------------------------------------------------
     //
     //-------------------------------------------------
-    DAO create(DAO& obj) {
+    DAO create(const DAO& obj) {
         std::lock_guard<std::mutex> lock(mutex_);
         const auto& res = repo_->create(obj);
         cache_[obj.id] = obj;

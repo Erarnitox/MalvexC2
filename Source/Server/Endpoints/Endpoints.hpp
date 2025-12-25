@@ -1,5 +1,7 @@
 #pragma once
 
+#include "VictimTemplateDAO.hpp"
+#include "VictimTemplateRepository.hpp"
 #include <cpppwn.hpp>
 
 #include <IManager.hpp>
@@ -9,6 +11,7 @@
 #include <optional>
 #include <functional>
 #include <stdexcept>
+#include <print>
 
 //-------------------------------------------------
 // Helper Functions
@@ -70,11 +73,13 @@ private:
     // GET /api/resources - List all
     //-------------------------------------------------
     static void register_list(cpppwn::RESTServer& server, const Config& config) {
-        server.get(config.base_path, [config](const HttpRequest& req) {
+        auto& manager = config.manager;
+
+        server.get(config.base_path, [&manager](const HttpRequest& req) {
             (void)req;
 
             try {
-                auto items = config.manager.get_all();
+                auto items = manager.get_all();
                 std::string json = to_json_array(items);
                 return HttpResponse().set_json(json);
             } catch (const std::exception& e) {
@@ -88,25 +93,13 @@ private:
     //-------------------------------------------------
     static void register_get(cpppwn::RESTServer& server, const Config& config) {
         std::string path = config.base_path.substr(0, config.base_path.length() - 1);
+        auto& manager = config.manager;
+        std::string resource_name = config.resource_name;
 
-        server.get(path, [config](const HttpRequest& req) {
+        server.get<std::optional<DAO>>(path, [&manager](const HttpRequest& req) -> std::optional<DAO> {
             auto id = extract_id(req);
-
-            if (not id) {
-                return error_response(400, "Invalid " + config.resource_name + " ID");
-            }
-
-            try {
-                auto item = config.manager.get(*id);
-
-                if (not item) {
-                    return error_response(404, config.resource_name + " not found");
-                }
-
-                return HttpResponse().set_json(item->to_json());
-            } catch (const std::exception& e) {
-                return error_response(500, std::string("Internal error: ") + e.what());
-            }
+            if (not id) return std::nullopt;
+            return manager.get(*id);
         });
     }
 
@@ -114,18 +107,15 @@ private:
     // POST /api/resources - Create new
     //-------------------------------------------------
     static void register_create(cpppwn::RESTServer& server, const Config& config) {
-        server.post(config.base_path, [config](const HttpRequest& req) {
-            try {
-                DAO item = DAO::from_json(req.body);
-                auto created = config.manager.create(item);
+        auto& manager = config.manager;
+        std::string resource_name = config.resource_name;
 
-                return HttpResponse()
-                    .set_status(201)
-                    .set_json(created.to_json());
-            } catch (const std::exception& e) {
-                return error_response(400, std::string("Invalid request: ") + e.what());
-            }
-        });
+        server.post<DAO, DAO>(config.base_path,
+            [&manager, resource_name](const HttpRequest& req, const DAO& item) -> DAO {
+                (void)req;
+                std::println("Creating new {}: {}", resource_name, item.to_json());
+                return manager.create(const_cast<DAO&>(item));
+            });
     }
 
     //-------------------------------------------------
@@ -133,19 +123,21 @@ private:
     //-------------------------------------------------
     static void register_delete(cpppwn::RESTServer& server, const Config& config) {
         std::string path = config.base_path.substr(0, config.base_path.length() - 1);
+        auto& manager = config.manager;
+        std::string resource_name = config.resource_name;
 
-        server.del(path, [config](const HttpRequest& req) {
+        server.del(path, [&manager, resource_name](const HttpRequest& req) {
             auto id = extract_id(req);
 
             if (not id) {
-                return error_response(400, "Invalid " + config.resource_name + " ID");
+                return error_response(400, "Invalid " + resource_name + " ID");
             }
 
             try {
-                bool success = config.manager.remove(*id);
+                bool success = manager.remove(*id);
 
                 if (not success) {
-                    return error_response(404, config.resource_name + " not found");
+                    return error_response(404, resource_name + " not found");
                 }
 
                 return HttpResponse().set_status(204).set_json("{}");
@@ -244,4 +236,6 @@ inline void register_attacker_endpoints(cpppwn::RESTServer& server) {
     register_session_endpoints(server);
     register_log_endpoints(server);
     register_result_endpoints(server);
+
+    server.http_server().debug_routes();
 }
