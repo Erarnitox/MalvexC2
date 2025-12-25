@@ -21,6 +21,7 @@ public:
     std::optional<CommandDAO> update(int64_t id, const CommandDAO& op) override;
     bool remove(int64_t id) override;
 
+    std::optional<CommandDAO> get_for_client(const UUID& client_id);
     void commit();
 
 private:

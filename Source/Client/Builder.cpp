@@ -69,7 +69,7 @@ void Builder::setServiceDesc(const std::string& service_description) {
 bool Builder::buildImplant(const std::string& output_path) {
     using namespace ELFIO;
 
-    std::filesystem::path input_file("implant.elf");
+    std::filesystem::path input_file("implant");
 
     // check if the template file exists
     if (not std::filesystem::exists(input_file)) {
@@ -92,7 +92,7 @@ bool Builder::buildImplant(const std::string& output_path) {
     }
 
     // locate the custom section
-    Elf_Word section_index{ 0 };
+    //Elf_Word section_index{ 0 };
     std::string config_section_name = std::string(MALVEX_CONFIG_SECTION_NAME);
     section* config_section = nullptr;
 

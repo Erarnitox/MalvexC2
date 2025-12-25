@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 class LogManager {
 public:
     // Delete copy and move constructors/assignments (singleton pattern)
@@ -11,4 +14,11 @@ public:
 
     static LogManager& instance();
 
+    void local_log(const std::string& log);
+    void attack_log(const std::string& log);
+    std::vector<std::string> get_logs();
+    std::vector<std::string> refresh();
+
+private:
+    std::vector<std::string> logs;
 };

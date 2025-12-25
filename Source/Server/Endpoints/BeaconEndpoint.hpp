@@ -203,9 +203,8 @@ inline void register_victim_commands_endpoint(cpppwn::RESTServer& server) {
         std::string victim_uid = victim_uid_opt->second;
 
         // Get pending commands for this victim
-        // Note: You'll need to add victim_uid to CommandDAO to filter by victim
         auto pending_commands = commands.find([&](const CommandDAO& cmd) {
-            return cmd.status == 0;  // All pending commands
+            return cmd.client == victim_uid && cmd.status == 0;  // All pending commands
         });
 
         std::string json = to_json_array(pending_commands);

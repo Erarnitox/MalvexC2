@@ -15,6 +15,7 @@ public:
     static VictimManager& instance();
 
     const std::vector<Victim>& getVictims() const noexcept;
+    const Victim getVictim(int64_t id) const noexcept;
     void addVictim(const Victim& victim) noexcept;
     void setList(std::vector<Victim>&& victim_list) noexcept;
 };

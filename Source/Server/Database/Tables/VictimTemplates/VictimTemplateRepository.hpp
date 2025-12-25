@@ -21,6 +21,8 @@ public:
     std::optional<VictimTemplateDAO> update(int64_t id, const VictimTemplateDAO& op) override;
     bool remove(int64_t id) override;
 
+    std::optional<VictimTemplateDAO> get_username(const std::string& username);
+
     void commit();
 
 private:

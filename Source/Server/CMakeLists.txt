@@ -14,4 +14,12 @@ target_compile_options(server
         -Wall
         -Wextra
         -Wpedantic
+        -Werror
+)
+
+add_custom_command(TARGET server POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:server>
+        $<TARGET_FILE_DIR:client>/$<TARGET_FILE_NAME:server>
+    COMMENT "Copying server binary to client directory"
 )

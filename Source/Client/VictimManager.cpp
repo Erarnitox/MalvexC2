@@ -28,3 +28,18 @@ void VictimManager::addVictim(const Victim& victim) noexcept {
 void VictimManager::setList(std::vector<Victim>&& victim_list) noexcept {
     m_victims = std::move(victim_list);
 }
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+const Victim VictimManager::getVictim(int64_t id) const noexcept {
+    auto it = std::find_if(m_victims.begin(), m_victims.end(), [id](const Victim& v) {
+        return v.id == id;
+    });
+
+    if (it != m_victims.end()) {
+        return *it;
+    }
+
+    return Victim{};
+}

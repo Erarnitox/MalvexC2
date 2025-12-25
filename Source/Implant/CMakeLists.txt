@@ -7,4 +7,12 @@ target_compile_options(implant
         -Wall
         -Wextra
         -Wpedantic
+        -Werror
+)
+
+add_custom_command(TARGET implant POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:implant>
+        $<TARGET_FILE_DIR:client>/$<TARGET_FILE_NAME:implant>
+    COMMENT "Copying implant binary to client directory"
 )

@@ -9,6 +9,7 @@
 struct CommandDAO : public IDao<CommandDAO> {
     int64_t id{0};
     UUID uid;
+    UUID client;
     int64_t prev{0};
     int64_t nonce{0};
     std::string command;
@@ -25,6 +26,7 @@ struct glz::meta<CommandDAO> {
     static constexpr auto value = object(
         "command_id", &T::id,
         "command_uid", &T::uid,
+        "client", &T::client,
         "prev", &T::prev,
         "nonce", &T::nonce,
         "command", &T::command,

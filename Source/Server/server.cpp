@@ -12,27 +12,37 @@
 #include "HttpUtils.hpp"
 #include "Types.hpp"
 #include "Config.hpp"
+#include "VictimTemplateRepository.hpp"
 
 #include <Endpoints.hpp>
 #include <BeaconEndpoint.hpp>
 
 static inline const std::string db_file{ "server.db" };
+bool is_locally_run = false;
 
 // function protos
 void initial_setup();
 void start_attacker_api(int16_t port);
 void start_victim_api(int16_t port);
 
-int main() {
+int main(int argc, char* argv[]) {
     // Load / Initialize Cofnig
     auto& config = Config::instance(db_file);
 
-    if (not config.has("attacker_api_port")) {
+    // Parse command line arguments
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--local") {
+            is_locally_run = true;
+            break;
+        }
+    }
+
+    if (not is_locally_run && not config.has("attacker_api_port")) {
         initial_setup();
     }
 
-    const int16_t attacker_port{ config.get<int16_t>("attacker_api_port", 1337) } ;
-    const int16_t victim_port{ config.get<int16_t>("victim_api_port", 3000) };
+    const int16_t attacker_port{ is_locally_run ? static_cast<int16_t>(1337) : config.get<int16_t>("attacker_api_port", 1337) } ;
+    const int16_t victim_port{ is_locally_run ? static_cast<int16_t>(3000) : config.get<int16_t>("victim_api_port", 3000) };
 
     std::println("Staring Attacker API on Port: {}", attacker_port);
     std::jthread attacker_api(start_attacker_api, attacker_port);
@@ -160,7 +170,7 @@ bool basic_auth_middleware(const HttpRequest& request, HttpResponse& response) {
     std::string password = decoded_credentials.substr(colon_pos + 1);
 
     // Authenticate
-    const auto usr = operator_repo.get(username);
+    const auto usr = operator_repo.get_username(username);
     auto auth_result = usr.has_value() && usr->password == password;
 
     if (not auth_result) {
@@ -178,11 +188,10 @@ bool basic_auth_middleware(const HttpRequest& request, HttpResponse& response) {
 //
 //-------------------------------------------------
 bool victim_auth_middleware(const HttpRequest& request, HttpResponse& response) {
-    return true; //TODO: implement later
 
     // Get Authorization header
     auto auth_header = request.get_header("Authorization");
-    OperatorRepository operator_repo(db_file);
+    VictimTemplateRepository victim_template_repo(db_file);
 
     // Check if Authorization header exists
     if (auth_header.empty()) {
@@ -223,7 +232,7 @@ bool victim_auth_middleware(const HttpRequest& request, HttpResponse& response) 
     std::string password = decoded_credentials.substr(colon_pos + 1);
 
     // Authenticate
-    auto auth_result = operator_repo.get(username)->password == password;
+    auto auth_result = victim_template_repo.get_username(username)->password == password;
 
     if (not auth_result) {
         response.set_status(401);
@@ -248,7 +257,10 @@ void start_attacker_api(int16_t port) {
     };
 
     RESTServer attacker_api(port, tls_conf);
-    attacker_api.use_middleware(basic_auth_middleware);
+
+    if (not is_locally_run) {
+        attacker_api.use_middleware(basic_auth_middleware);
+    }
 
     // basic auth test endpoint
     attacker_api.get("/auth", [](const HttpRequest& req) {
@@ -274,7 +286,10 @@ void start_victim_api(int16_t port) {
     };
 
     RESTServer victim_api(port, tls_conf);
-    victim_api.use_middleware(victim_auth_middleware);
+
+    if (not is_locally_run) {
+        victim_api.use_middleware(victim_auth_middleware);
+    }
 
     register_all_beacon_endpoints(victim_api);
 

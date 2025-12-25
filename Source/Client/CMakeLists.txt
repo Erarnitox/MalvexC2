@@ -44,6 +44,7 @@ target_compile_options(client
         -Wall
         -Wextra
         -Wpedantic
+        -Werror
 )
 
 add_custom_command(TARGET client POST_BUILD
