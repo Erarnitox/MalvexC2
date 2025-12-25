@@ -1,14 +1,11 @@
 #include "CommandRepository.hpp"
 #include "CommandDAO.hpp"
 
-#include <sstream>
-#include <iostream>
-
 //--------------------------------
 //
 //--------------------------------
-CommandRepository::CommandRepository(const std::string& db_path)
-    : db_(std::make_unique<Database>(db_path)) {
+CommandRepository::CommandRepository(const std::string& db_path) {
+    set_db_path(db_path);
     ensure_table();
 }
 
@@ -16,7 +13,9 @@ CommandRepository::CommandRepository(const std::string& db_path)
 //
 //--------------------------------
 void CommandRepository::ensure_table() {
-    db_->exec(R"(
+    auto db = open_readwrite();
+
+    db.exec(R"(
         CREATE TABLE IF NOT EXISTS commands (
             command_id INTEGER PRIMARY KEY AUTOINCREMENT,
             command_uid TEXT UNIQUE NOT NULL,
@@ -33,9 +32,11 @@ void CommandRepository::ensure_table() {
 //--------------------------------
 //
 //--------------------------------
-std::vector<CommandDAO> CommandRepository::list() {
+std::vector<CommandDAO> CommandRepository::list() const {
+    auto db = open_readonly();
+
     std::vector<CommandDAO> results;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
 
     const char* sql = "SELECT command_id, command_uid, client, prev, nonce, command, signature, status "
@@ -77,9 +78,11 @@ std::vector<CommandDAO> CommandRepository::list() {
 //--------------------------------
 //
 //--------------------------------
-std::optional<CommandDAO> CommandRepository::get(int64_t id) {
+std::optional<CommandDAO> CommandRepository::get(int64_t id) const {
+    auto db = open_readonly();
+
     std::optional<CommandDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT command_id, command_uid, client, prev, nonce, command, signature, status "
                       "FROM commands WHERE command_id = ? LIMIT 1;";
@@ -110,9 +113,11 @@ std::optional<CommandDAO> CommandRepository::get(int64_t id) {
 //--------------------------------
 //
 //--------------------------------
-std::optional<CommandDAO> CommandRepository::get(const UUID& uid) {
+std::optional<CommandDAO> CommandRepository::get(const UUID& uid) const {
+    auto db = open_readonly();
+
     std::optional<CommandDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT command_id, command_uid, client, prev, nonce, command, signature, status "
                       "FROM commands WHERE command_uid = ? LIMIT 1;";
@@ -144,7 +149,8 @@ std::optional<CommandDAO> CommandRepository::get(const UUID& uid) {
 //
 //--------------------------------
 CommandDAO CommandRepository::create(const CommandDAO& cmd) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "INSERT INTO commands (command_uid, client, prev, nonce, command, signature, status) "
                       "VALUES (?, ?, ?, ?, ?, ?, ?);";
@@ -181,7 +187,8 @@ CommandDAO CommandRepository::create(const CommandDAO& cmd) {
 //
 //--------------------------------
 std::optional<CommandDAO> CommandRepository::update(int64_t id, const CommandDAO& cmd) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "UPDATE commands SET prev = ?, nonce = ?, command = ?, "
                       "signature = ?, status = ? WHERE command_id = ?;";
@@ -211,7 +218,8 @@ std::optional<CommandDAO> CommandRepository::update(int64_t id, const CommandDAO
 //
 //--------------------------------
 bool CommandRepository::remove(int64_t id) {
-    sqlite3* h = db_->handle();
+    auto db = open_readwrite();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "DELETE FROM commands WHERE command_id = ?;";
 
@@ -234,15 +242,16 @@ bool CommandRepository::remove(int64_t id) {
 //
 //--------------------------------
 void CommandRepository::commit() {
-    db_->commit();
 }
 
 //--------------------------------
 //
 //--------------------------------
-std::optional<CommandDAO> CommandRepository::get_for_client(const UUID& client_id) {
+std::optional<CommandDAO> CommandRepository::get_for_client(const UUID& client_id) const {
+    auto db = open_readwrite();
+
     std::optional<CommandDAO> opt;
-    sqlite3* h = db_->handle();
+    sqlite3* h = db.getHandle();
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT command_id, command_uid, client, prev, nonce, command, signature, status "
                       "FROM commands WHERE client = ? LIMIT 1;";

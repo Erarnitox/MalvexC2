@@ -29,7 +29,7 @@ void SessionRepository::ensure_table() {
 //--------------------------------
 //
 //--------------------------------
-std::vector<SessionDAO> SessionRepository::list() {
+std::vector<SessionDAO> SessionRepository::list() const {
     std::vector<SessionDAO> results;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
@@ -89,7 +89,7 @@ std::vector<SessionDAO> SessionRepository::list_by_port(int port) {
 //--------------------------------
 //
 //--------------------------------
-std::optional<SessionDAO> SessionRepository::get(int64_t id) {
+std::optional<SessionDAO> SessionRepository::get(int64_t id) const {
     std::optional<SessionDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
@@ -116,7 +116,7 @@ std::optional<SessionDAO> SessionRepository::get(int64_t id) {
 //--------------------------------
 //
 //--------------------------------
-std::optional<SessionDAO> SessionRepository::get(const UUID& uid) {
+std::optional<SessionDAO> SessionRepository::get(const UUID& uid) const {
     std::optional<SessionDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;

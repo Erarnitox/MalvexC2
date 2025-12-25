@@ -4,9 +4,9 @@
 #include <Database.hpp>
 
 #include "CommandDAO.hpp"
+#include "SQLiteCpp/Database.h"
 
 #include <string>
-#include <memory>
 
 class CommandRepository : public IRepository<CommandDAO> {
 public:
@@ -14,17 +14,23 @@ public:
 
     ~CommandRepository() override = default;
 
-    std::vector<CommandDAO> list() override;
-    std::optional<CommandDAO> get(int64_t id) override;
-    std::optional<CommandDAO> get(const UUID& id) override;
+    [[nodiscard]]
+    std::vector<CommandDAO> list() const override;
+
+    [[nodiscard]]
+    std::optional<CommandDAO> get(int64_t id) const override;
+
+    [[nodiscard]]
+    std::optional<CommandDAO> get(const UUID& id) const override;
+
     CommandDAO create(const CommandDAO& comm) override;
     std::optional<CommandDAO> update(int64_t id, const CommandDAO& op) override;
     bool remove(int64_t id) override;
 
-    std::optional<CommandDAO> get_for_client(const UUID& client_id);
+    [[nodiscard]]
+    std::optional<CommandDAO> get_for_client(const UUID& client_id) const;
     void commit();
 
 private:
     void ensure_table();
-    std::unique_ptr<Database> db_;
 };

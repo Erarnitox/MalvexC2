@@ -29,7 +29,7 @@ void ResultRepository::ensure_table() {
 //--------------------------------
 //
 //--------------------------------
-std::vector<ResultDAO> ResultRepository::list() {
+std::vector<ResultDAO> ResultRepository::list() const {
     std::vector<ResultDAO> results;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
@@ -61,7 +61,7 @@ std::vector<ResultDAO> ResultRepository::list() {
 //--------------------------------
 //
 //--------------------------------
-std::optional<ResultDAO> ResultRepository::get(int64_t id) {
+std::optional<ResultDAO> ResultRepository::get(int64_t id) const {
     std::optional<ResultDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
@@ -88,7 +88,7 @@ std::optional<ResultDAO> ResultRepository::get(int64_t id) {
 //--------------------------------
 //
 //--------------------------------
-std::optional<ResultDAO> ResultRepository::get(const UUID& uid) {
+std::optional<ResultDAO> ResultRepository::get(const UUID& uid) const {
     std::optional<ResultDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;

@@ -10,6 +10,7 @@ using TimePoint = size_t; // unix timestamp
 //--------------------------------
 //
 //--------------------------------
+[[nodiscard]]
 inline UUID generate_uuid() {
     std::random_device rd;
     std::mt19937_64 gen(rd());
@@ -38,4 +39,19 @@ inline UUID generate_uuid() {
     oss << std::setw(12) << node;
 
     return oss.str();
+}
+
+//--------------------------------
+//
+//--------------------------------
+[[nodiscard]]
+inline unsigned generate_nonce() {
+    static thread_local std::random_device rd;
+    static thread_local std::mt19937_64 gen(rd());
+
+    static constexpr unsigned min = std::numeric_limits<unsigned>::min();
+    static constexpr unsigned max = std::numeric_limits<unsigned>::max();
+
+    std::uniform_int_distribution<unsigned> dist(min, max);
+    return dist(gen);
 }

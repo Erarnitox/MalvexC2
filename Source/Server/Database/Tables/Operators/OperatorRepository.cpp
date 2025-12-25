@@ -31,7 +31,7 @@ void OperatorRepository::ensure_table() {
 //--------------------------------
 //
 //--------------------------------
-std::vector<OperatorDAO> OperatorRepository::list() {
+std::vector<OperatorDAO> OperatorRepository::list() const {
     std::vector<OperatorDAO> results;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
@@ -68,7 +68,7 @@ std::vector<OperatorDAO> OperatorRepository::list() {
 //--------------------------------
 //
 //--------------------------------
-std::optional<OperatorDAO> OperatorRepository::get(int64_t id) {
+std::optional<OperatorDAO> OperatorRepository::get(int64_t id) const {
     std::optional<OperatorDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
@@ -97,7 +97,7 @@ std::optional<OperatorDAO> OperatorRepository::get(int64_t id) {
 //--------------------------------
 //
 //--------------------------------
-std::optional<OperatorDAO> OperatorRepository::get(const UUID& uid) {
+std::optional<OperatorDAO> OperatorRepository::get(const UUID& uid) const {
     std::optional<OperatorDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;

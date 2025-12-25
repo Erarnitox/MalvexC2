@@ -37,7 +37,7 @@ void VictimRepository::ensure_table() {
 //--------------------------------
 //
 //--------------------------------
-std::vector<VictimDAO> VictimRepository::list() {
+std::vector<VictimDAO> VictimRepository::list() const {
     std::vector<VictimDAO> results;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
@@ -87,7 +87,7 @@ std::vector<VictimDAO> VictimRepository::list() {
 //--------------------------------
 //
 //--------------------------------
-std::optional<VictimDAO> VictimRepository::get(int64_t id) {
+std::optional<VictimDAO> VictimRepository::get(int64_t id) const {
     std::optional<VictimDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
@@ -122,7 +122,7 @@ std::optional<VictimDAO> VictimRepository::get(int64_t id) {
 //--------------------------------
 //
 //--------------------------------
-std::optional<VictimDAO> VictimRepository::get(const UUID& uid) {
+std::optional<VictimDAO> VictimRepository::get(const UUID& uid) const {
     std::optional<VictimDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;

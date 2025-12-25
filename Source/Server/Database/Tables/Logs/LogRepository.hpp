@@ -14,9 +14,9 @@ public:
 
     ~LogRepository() override = default;
 
-    std::vector<LogDAO> list() override;
-    std::optional<LogDAO> get(int64_t id) override;
-    std::optional<LogDAO> get(const UUID& id) override;
+    std::vector<LogDAO> list() const override;
+    std::optional<LogDAO> get(int64_t id) const override;
+    std::optional<LogDAO> get(const UUID& id) const override;
     LogDAO create(const LogDAO& log) override;
     std::optional<LogDAO> update(int64_t id, const LogDAO& log) override;
     bool remove(int64_t id) override;

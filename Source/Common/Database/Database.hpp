@@ -1,14 +1,21 @@
 #pragma once
+
 #include <sqlite3.h>
 #include <string>
 #include <stdexcept>
 #include <functional>
 
+//--------------------------------
+//
+//--------------------------------
 class SqliteException : public std::runtime_error {
 public:
     explicit SqliteException(std::string m) : std::runtime_error(std::move(m)) {}
 };
 
+//--------------------------------
+//
+//--------------------------------
 class Database {
 public:
     explicit Database(const std::string& path);

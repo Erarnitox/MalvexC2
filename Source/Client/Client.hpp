@@ -25,6 +25,8 @@ private:
     cpppwn::RESTClient m_rest_client;
     std::string m_status_text;
 
+    size_t m_last_id;
+
     mutable size_t victim_count;
 
     void updateStatusText() noexcept;

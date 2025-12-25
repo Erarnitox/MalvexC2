@@ -14,9 +14,9 @@ public:
 
     ~VictimRepository() override = default;
 
-    std::vector<VictimDAO> list() override;
-    std::optional<VictimDAO> get(int64_t id) override;
-    std::optional<VictimDAO> get(const UUID& uid) override;
+    std::vector<VictimDAO> list() const override;
+    std::optional<VictimDAO> get(int64_t id) const override;
+    std::optional<VictimDAO> get(const UUID& uid) const override;
     VictimDAO create(const VictimDAO& op) override;
     std::optional<VictimDAO> update(int64_t id, const VictimDAO& op) override;
     bool remove(int64_t id) override;

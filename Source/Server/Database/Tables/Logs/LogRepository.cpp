@@ -35,7 +35,7 @@ void LogRepository::ensure_table() {
 //--------------------------------
 //
 //--------------------------------
-std::vector<LogDAO> LogRepository::list() {
+std::vector<LogDAO> LogRepository::list() const {
     std::vector<LogDAO> results;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
@@ -105,7 +105,7 @@ std::vector<LogDAO> LogRepository::list_recent(int limit) {
 //--------------------------------
 //
 //--------------------------------
-std::optional<LogDAO> LogRepository::get(int64_t id) {
+std::optional<LogDAO> LogRepository::get(int64_t id) const {
     std::optional<LogDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;
@@ -135,7 +135,7 @@ std::optional<LogDAO> LogRepository::get(int64_t id) {
 //--------------------------------
 //
 //--------------------------------
-std::optional<LogDAO> LogRepository::get(const UUID& uid) {
+std::optional<LogDAO> LogRepository::get(const UUID& uid) const {
     std::optional<LogDAO> opt;
     sqlite3* h = db_->handle();
     sqlite3_stmt* stmt = nullptr;

@@ -1,22 +1,49 @@
 #include "ConfigRepository.hpp"
-#include "ConfigDAO.hpp"
 
-#include <sstream>
-#include <iostream>
+#include <SQLiteCpp/Transaction.h>
+
+namespace {
+
+void configure_db(SQLite::Database& db) {
+    db.setBusyTimeout(3000);
+    db.exec("PRAGMA journal_mode=WAL;");
+    db.exec("PRAGMA synchronous=NORMAL;");
+}
+
+}
 
 //--------------------------------
 //
 //--------------------------------
-ConfigRepository::ConfigRepository(const std::string& db_path)
-    : db_(std::make_unique<Database>(db_path)) {
+ConfigRepository::ConfigRepository(std::string db_path)
+    : db_path_(std::move(db_path)) {
     ensure_table();
 }
 
 //--------------------------------
 //
 //--------------------------------
+SQLite::Database ConfigRepository::open_readonly() const {
+    SQLite::Database db(db_path_, SQLite::OPEN_READONLY);
+    configure_db(db);
+    return db;
+}
+
+//--------------------------------
+//
+//--------------------------------
+SQLite::Database ConfigRepository::open_readwrite() const {
+    SQLite::Database db(db_path_, SQLite::OPEN_READWRITE);
+    configure_db(db);
+    return db;
+}
+
+//--------------------------------
+//
+//--------------------------------
 void ConfigRepository::ensure_table() {
-    db_->exec(R"(
+    auto db = open_readwrite();
+    db.exec(R"(
         CREATE TABLE IF NOT EXISTS config (
             config_id INTEGER PRIMARY KEY AUTOINCREMENT,
             key TEXT NOT NULL UNIQUE,
@@ -28,187 +55,160 @@ void ConfigRepository::ensure_table() {
 //--------------------------------
 //
 //--------------------------------
-std::vector<ConfigDAO> ConfigRepository::list() {
+std::vector<ConfigDAO> ConfigRepository::list() const {
+    auto db = open_readonly();
+
+    SQLite::Statement stmt(
+        db,
+        "SELECT config_id, key, value FROM config ORDER BY key;"
+    );
+
     std::vector<ConfigDAO> result;
-    db_->query("SELECT config_id, key, value FROM config ORDER BY key;",
-        [&](int cols, char** values, char** names) {
-            ConfigDAO c;
-            c.id = values[0] ? std::stoll(values[0]) : 0;
-            c.key = values[1] ? values[1] : "";
-            c.value = values[2] ? values[2] : "";
-            result.push_back(std::move(c));
+    while (stmt.executeStep()) {
+        result.push_back({
+            stmt.getColumn(0).getInt(),
+            stmt.getColumn(1).getString(),
+            stmt.getColumn(2).getString()
         });
+    }
     return result;
 }
 
 //--------------------------------
 //
 //--------------------------------
-std::optional<ConfigDAO> ConfigRepository::get(int64_t config_id) {
-    std::optional<ConfigDAO> opt;
-    std::ostringstream sql;
-    sql << "SELECT config_id, key, value FROM config WHERE config_id = "
-        << config_id << " LIMIT 1;";
+std::optional<ConfigDAO> ConfigRepository::get(int64_t id) const {
+    auto db = open_readonly();
 
-    db_->query(sql.str(), [&](int cols, char** values, char** names) {
-        if (cols >= 3) {
-            ConfigDAO c;
-            c.id = values[0] ? std::stoll(values[0]) : 0;
-            c.key = values[1] ? values[1] : "";
-            c.value = values[2] ? values[2] : "";
-            opt = c;
-        }
-    });
-    return opt;
+    SQLite::Statement stmt(
+        db,
+        "SELECT config_id, key, value FROM config WHERE config_id = ? LIMIT 1;"
+    );
+    stmt.bind(1, id);
+
+    if (!stmt.executeStep())
+        return std::nullopt;
+
+    return ConfigDAO{
+        stmt.getColumn(0).getInt(),
+        stmt.getColumn(1).getString(),
+        stmt.getColumn(2).getString()
+    };
 }
 
 //--------------------------------
 //
 //--------------------------------
-std::optional<ConfigDAO> ConfigRepository::get(const std::string& key) {
-    std::optional<ConfigDAO> opt;
-    sqlite3* h = db_->handle();
-    sqlite3_stmt* stmt = nullptr;
-    const char* sql = "SELECT config_id, key, value FROM config WHERE key = ? LIMIT 1;";
+std::optional<ConfigDAO> ConfigRepository::get(const std::string& key) const {
+    auto db = open_readonly();
 
-    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw SqliteException("prepare failed");
-    }
+    SQLite::Statement stmt(
+        db,
+        "SELECT config_id, key, value FROM config WHERE key = ? LIMIT 1;"
+    );
+    stmt.bind(1, key);
 
-    sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
+    if (!stmt.executeStep())
+        return std::nullopt;
 
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-        ConfigDAO c;
-        c.id = sqlite3_column_int64(stmt, 0);
-        c.key = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        c.value = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-        opt = c;
-    }
-
-    sqlite3_finalize(stmt);
-    return opt;
+    return ConfigDAO{
+        stmt.getColumn(0).getInt(),
+        stmt.getColumn(1).getString(),
+        stmt.getColumn(2).getString()
+    };
 }
 
 //--------------------------------
 //
 //--------------------------------
 ConfigDAO ConfigRepository::create(const ConfigDAO& config) {
-    sqlite3* h = db_->handle();
-    sqlite3_stmt* stmt = nullptr;
-    const char* sql = "INSERT INTO config (key, value) VALUES (?, ?);";
+    auto db = open_readwrite();
 
-    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw SqliteException("prepare failed");
-    }
+    SQLite::Statement stmt(
+        db,
+        "INSERT INTO config (key, value) VALUES (?, ?);"
+    );
+    stmt.bind(1, config.key);
+    stmt.bind(2, config.value);
+    stmt.exec();
 
-    sqlite3_bind_text(stmt, 1, config.key.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, config.value.c_str(), -1, SQLITE_TRANSIENT);
-
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        sqlite3_finalize(stmt);
-        throw SqliteException("insert step failed");
-    }
-
-    sqlite3_finalize(stmt);
-    int64_t id = sqlite3_last_insert_rowid(h);
-
-    ConfigDAO copy = config;
-    copy.id = id;
-    return copy;
+    ConfigDAO result = config;
+    result.id = db.getLastInsertRowid();
+    return result;
 }
 
 //--------------------------------
 //
 //--------------------------------
-std::optional<ConfigDAO> ConfigRepository::update(int64_t id, const ConfigDAO& config) {
-    sqlite3* h = db_->handle();
-    sqlite3_stmt* stmt = nullptr;
-    const char* sql = "UPDATE config SET key = ?, value = ? WHERE config_id = ?;";
+std::optional<ConfigDAO> ConfigRepository::update(
+    int64_t id,
+    const ConfigDAO& config
+) {
+    auto db = open_readwrite();
 
-    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw SqliteException("prepare failed");
-    }
+    SQLite::Statement stmt(
+        db,
+        "UPDATE config SET key = ?, value = ? WHERE config_id = ?;"
+    );
+    stmt.bind(1, config.key);
+    stmt.bind(2, config.value);
+    stmt.bind(3, id);
 
-    sqlite3_bind_text(stmt, 1, config.key.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, config.value.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int64(stmt, 3, id);
-
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        sqlite3_finalize(stmt);
+    if (stmt.exec() == 0)
         return std::nullopt;
-    }
 
-    sqlite3_finalize(stmt);
     return get(id);
 }
 
 //--------------------------------
 //
 //--------------------------------
-std::optional<ConfigDAO> ConfigRepository::upsert(const std::string& key, const std::string& value) {
-    sqlite3* h = db_->handle();
-    sqlite3_stmt* stmt = nullptr;
-    const char* sql = "INSERT INTO config (key, value) VALUES (?, ?) "
-                      "ON CONFLICT(key) DO UPDATE SET value = excluded.value;";
+std::optional<ConfigDAO> ConfigRepository::upsert(
+    const std::string& key,
+    const std::string& value
+) {
+    auto db = open_readwrite();
 
-    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw SqliteException("prepare failed");
-    }
+    SQLite::Statement stmt(
+        db,
+        "INSERT INTO config (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value;"
+    );
+    stmt.bind(1, key);
+    stmt.bind(2, value);
+    stmt.exec();
 
-    sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, value.c_str(), -1, SQLITE_TRANSIENT);
-
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        sqlite3_finalize(stmt);
-        return std::nullopt;
-    }
-
-    sqlite3_finalize(stmt);
     return get(key);
 }
 
 //--------------------------------
 //
 //--------------------------------
-bool ConfigRepository::remove(int64_t config_id) {
-    sqlite3* h = db_->handle();
-    sqlite3_stmt* stmt = nullptr;
-    const char* sql = "DELETE FROM config WHERE config_id = ?;";
+bool ConfigRepository::remove(int64_t id) {
+    auto db = open_readwrite();
 
-    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw SqliteException("prepare failed");
-    }
+    SQLite::Statement stmt(
+        db,
+        "DELETE FROM config WHERE config_id = ?;"
+    );
+    stmt.bind(1, id);
+    stmt.exec();
 
-    sqlite3_bind_int64(stmt, 1, config_id);
-
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        sqlite3_finalize(stmt);
-        return false;
-    }
-
-    sqlite3_finalize(stmt);
-    return sqlite3_changes(h) > 0;
+    return db.getChanges() > 0;
 }
 
 //--------------------------------
 //
 //--------------------------------
 bool ConfigRepository::remove(const std::string& key) {
-    sqlite3* h = db_->handle();
-    sqlite3_stmt* stmt = nullptr;
-    const char* sql = "DELETE FROM config WHERE key = ?;";
+    auto db = open_readwrite();
 
-    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw SqliteException("prepare failed");
-    }
+    SQLite::Statement stmt(
+        db,
+        "DELETE FROM config WHERE key = ?;"
+    );
+    stmt.bind(1, key);
+    stmt.exec();
 
-    sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
-
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        sqlite3_finalize(stmt);
-        return false;
-    }
-
-    sqlite3_finalize(stmt);
-    return sqlite3_changes(h) > 0;
+    return db.getChanges() > 0;
 }
