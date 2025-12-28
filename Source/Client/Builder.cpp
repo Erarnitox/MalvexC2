@@ -1,4 +1,5 @@
 #include "Builder.hpp"
+#include "LogManager.hpp"
 #include "Types.hpp"
 #include <ImplantConfig.hpp>
 
@@ -20,7 +21,8 @@ Builder& Builder::instance(const std::string& db_path) {
 //
 //-------------------------------------------------
 Builder::Builder(const std::string& db_path) :
-    m_conf( Config::instance(db_path))
+    m_conf( Config::instance(db_path)),
+    m_log_man( LogManager::instance())
 {
 
 }
@@ -126,12 +128,13 @@ void Builder::setServiceDesc(const std::string& service_description) {
 //--------------------------------
 bool Builder::buildImplant(const std::string& output_path) {
     using namespace ELFIO;
+    auto& log = m_log_man;
 
     std::filesystem::path input_file("implant");
 
     // check if the template file exists
     if (not std::filesystem::exists(input_file)) {
-        //TODO: add logging
+        log.local_log("Builder Error: failed to find implant template!");
         return false;
     }
 
@@ -145,13 +148,13 @@ bool Builder::buildImplant(const std::string& output_path) {
 
     // copy the template file to the output location
     if (not std::filesystem::copy_file(input_file, output_file)) {
-        //TODO: add logging
+        log.local_log("Builder Error: failed to copy implant template to new path!");
         return false;
     }
 
     elfio reader;
     if (not reader.load(output_file)) {
-        //TODO: add logging
+        log.local_log("Builder Error: failed to load output file!");
         return false;
     }
 
@@ -163,13 +166,13 @@ bool Builder::buildImplant(const std::string& output_path) {
     for (int i{ 0 }; i < reader.sections.size(); ++i) {
         if (reader.sections[i]->get_name() == config_section_name) {
             config_section = reader.sections[i];
-            //TODO: add logging about the found section
+            log.local_log("Builder: Config section found!");
             break;
         }
     }
 
     if (not config_section) {
-        //TODO: logging: no section found
+        log.local_log("Builder Error: No Config section was found!");
         return false;
     }
 
@@ -198,7 +201,7 @@ bool Builder::buildImplant(const std::string& output_path) {
 
     // Verify size match
     if (config_section->get_size() != sizeof(ImplantConfig)) {
-        // TODO: logging size missmatch
+        log.local_log("Builder Error: New Section Size Missmatch!");
         return false;
     }
 
@@ -208,7 +211,7 @@ bool Builder::buildImplant(const std::string& output_path) {
 
     std::fstream file(output_file, std::ios::in | std::ios::out | std::ios::binary);
     if (not file.is_open()) {
-        //TODO: logging
+        log.local_log("Builder Error: Can't open output file for writing!");
         return false;
     }
 
@@ -219,12 +222,12 @@ bool Builder::buildImplant(const std::string& output_path) {
     file.write(reinterpret_cast<const char*>(&new_config), sizeof(ImplantConfig));
 
     if (file.fail()) {
-        //TODO: logging
+        log.local_log("Builder Error: failed to write to output implant file!");
         return false;
     }
 
     file.close();
 
-    //TODO: logging (where was the file written?)
+    log.local_log("Builder: Saved implant: " + output_file.string());
     return true;
 }

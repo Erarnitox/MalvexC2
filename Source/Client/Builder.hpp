@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Config.hpp"
+#include "LogManager.hpp"
 #include <ImplantConfig.hpp>
 
 #include <string>
@@ -8,6 +9,8 @@
 class Builder {
     ImplantConfig m_config;
     Config& m_conf;
+    LogManager& m_log_man;
+
 public:
     Builder(const Builder&) = delete;
     Builder& operator=(const Builder&) = delete;
