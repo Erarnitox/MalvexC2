@@ -8,7 +8,7 @@
 //-------------------------------------------------
 //
 //-------------------------------------------------
-[[nodiscard]] std::vector<CommandDAO> sendBeacon(cpppwn::RESTClient& rest_client) {
+[[nodiscard]] inline std::vector<CommandDAO> sendBeacon(cpppwn::RESTClient& rest_client) noexcept {
 
     // send command to commands endpoint
     try{

