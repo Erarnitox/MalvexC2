@@ -55,3 +55,31 @@ inline unsigned generate_nonce() {
     std::uniform_int_distribution<unsigned> dist(min, max);
     return dist(gen);
 }
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+static inline
+std::string get_time() {
+    auto now = std::chrono::system_clock::now();
+    return std::format("{:%Y-%m-%d %H:%M:%S}", now);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+static inline
+long get_unix_time() {
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+static inline
+std::string from_unix_time(long unix_time) {
+    const auto time_point = std::chrono::sys_time<std::chrono::seconds>{std::chrono::seconds{unix_time}};
+    return std::format("{:%Y-%m-%d %H:%M:%S}", time_point);
+}

