@@ -49,7 +49,7 @@ int main() {
     strncpy(state.implant_settings.password.text, state.builder.getPassword().c_str(), sizeof(state.implant_settings.password.text));
     strncpy(state.implant_settings.server_url.text, state.builder.getServerURL().c_str(), sizeof(state.implant_settings.server_url.text));
     strncpy(state.implant_settings.default_timeout.text, state.builder.getTimeout().c_str(), sizeof(state.implant_settings.default_timeout.text));
-    strncpy(state.implant_settings.output_file_path.text, state.client.getOutputPath().c_str(), sizeof(state.implant_settings.output_file_path.text));
+    strncpy(state.implant_settings.output_file_path.text, state.builder.getOutputDir().c_str(), sizeof(state.implant_settings.output_file_path.text));
     strncpy(state.implant_settings.service_name.text, state.builder.getServiceName().c_str(), sizeof(state.implant_settings.service_name.text));
     strncpy(state.implant_settings.service_description.text, state.builder.getServiceDesc().c_str(), sizeof(state.implant_settings.service_description.text));
 
@@ -725,8 +725,9 @@ void drawBuilderTab(WindowState& state) {
         state.builder.setTimeout(settings.default_timeout.text);
         state.builder.setServiceName(settings.service_name.text);
         state.builder.setServiceDesc(settings.service_description.text);
+        state.builder.setOutputDir(settings.output_file_path.text);
 
-        state.builder.buildImplant(settings.output_file_path.text);
+        state.builder.buildImplant();
     }
 
     fb.render();

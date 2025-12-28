@@ -26,6 +26,7 @@ public:
     void setServerURL(const std::string& server_url);
     void setServiceName(const std::string& service_name);
     void setServiceDesc(const std::string& service_description);
+    void setOutputDir(const std::string& output_dir);
 
     [[nodiscard]] std::string getUsername() const noexcept;
     [[nodiscard]] std::string getPassword() const noexcept;
@@ -33,6 +34,7 @@ public:
     [[nodiscard]] std::string getServerURL() const noexcept;
     [[nodiscard]] std::string getServiceName() const noexcept;
     [[nodiscard]] std::string getServiceDesc() const noexcept;
+    [[nodiscard]] std::string getOutputDir() const noexcept;
 
-    bool buildImplant(const std::string& output_path);
+    bool buildImplant();
 };

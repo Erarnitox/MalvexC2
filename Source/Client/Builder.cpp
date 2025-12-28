@@ -58,6 +58,13 @@ std::string Builder::getTimeout() const noexcept {
 //-------------------------------------------------
 //
 //-------------------------------------------------
+std::string Builder::getOutputDir() const noexcept {
+    return m_conf.get<std::string>("implant_output_dir", "./outputs");
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
 std::string Builder::getServiceDesc() const noexcept {
     return m_conf.get<std::string>("implant_service_desc", "Service allowing remote control");
 }
@@ -85,6 +92,13 @@ void Builder::setPassword(const std::string& password) {
     std::strncpy(m_config.password, password.c_str(), std::size(m_config.password) - 1);
     m_config.password[sizeof(m_config.password) - 1] = '\0';
     m_conf.set("implant_password", password);
+}
+
+//--------------------------------
+//
+//--------------------------------
+void Builder::setOutputDir(const std::string& output_dir) {
+    m_conf.set("implant_output_dir", output_dir);
 }
 
 //--------------------------------
@@ -126,7 +140,7 @@ void Builder::setServiceDesc(const std::string& service_description) {
 //--------------------------------
 //
 //--------------------------------
-bool Builder::buildImplant(const std::string& output_path) {
+bool Builder::buildImplant() {
     using namespace ELFIO;
     auto& log = m_log_man;
 
@@ -138,8 +152,8 @@ bool Builder::buildImplant(const std::string& output_path) {
         return false;
     }
 
-    std::string path = output_path;
-    std::filesystem::create_directories(output_path);
+    std::string path = getOutputDir();
+    std::filesystem::create_directories(path);
 
     auto output_file = std::filesystem::path(path.append("/implant_" + std::to_string(generate_nonce())));
     if (std::filesystem::exists(output_file) && std::filesystem::is_regular_file(output_file)) {
