@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Builder.hpp"
 #include "Client.hpp"
 #include <atomic>
 #include <raylib.h>
@@ -53,6 +54,8 @@ struct BuilderSettings {
     InputField default_timeout;
     InputField server_url;
     InputField output_file_path;
+    InputField service_name;
+    InputField service_description;
 };
 
 struct WindowState {
@@ -65,6 +68,7 @@ struct WindowState {
     MalvexSettings user_settings;
     BuilderSettings implant_settings;
     Client& client;
+    Builder& builder;
     std::atomic<bool> wait_for_response;
     bool login_failed;
 };

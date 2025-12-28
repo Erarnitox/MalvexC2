@@ -37,7 +37,7 @@ public:
     Client& operator=(const Client&) = delete;
     Client(Client&&) = delete;
     Client& operator=(Client&&) = delete;
-    Client(const std::string& db_path = "client.db");
+    explicit Client(const std::string& db_path = "client.db");
 
     static Client& instance(const std::string& db_path = "client.db");
 
@@ -54,6 +54,9 @@ public:
     std::string getServerUrl() const noexcept;
 
     [[nodiscard]]
+    std::string getTimeout() const noexcept;
+
+    [[nodiscard]]
     std::string getOutputPath() const noexcept;
 
     void setUsername(const std::string& username) noexcept;
@@ -61,6 +64,8 @@ public:
     void setPassword(const std::string& password) noexcept;
 
     void setServerUrl(const std::string& server_url) noexcept;
+
+    void setTimeout(const std::string& timeout) noexcept;
 
     void setOutputPath(const std::string& output_path) noexcept;
 

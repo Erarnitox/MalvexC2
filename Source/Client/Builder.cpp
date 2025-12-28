@@ -1,4 +1,5 @@
 #include "Builder.hpp"
+#include "Types.hpp"
 #include <ImplantConfig.hpp>
 
 #include <elfio/elfio.hpp>
@@ -10,9 +11,60 @@
 //--------------------------------
 //
 //--------------------------------
-Builder& Builder::instance() {
-    static Builder instance;
+Builder& Builder::instance(const std::string& db_path) {
+    static Builder instance(db_path);
     return instance;
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+Builder::Builder(const std::string& db_path) :
+    m_conf( Config::instance(db_path))
+{
+
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+std::string Builder::getUsername() const noexcept {
+    return m_conf.get<std::string>("implant_username", "vicky");
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+std::string Builder::getPassword() const noexcept {
+    return m_conf.get<std::string>("implant_password", "victim");
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+std::string Builder::getServerURL() const noexcept {
+    return m_conf.get<std::string>("implant_url", "https://127.0.0.1:3000");
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+std::string Builder::getTimeout() const noexcept {
+    return m_conf.get<std::string>("implant_timeout", "5");
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+std::string Builder::getServiceDesc() const noexcept {
+    return m_conf.get<std::string>("implant_service_desc", "Service allowing remote control");
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+std::string Builder::getServiceName() const noexcept {
+    return m_conf.get<std::string>("implant_service_name", "malvex_implant");
 }
 
 //--------------------------------
@@ -21,6 +73,7 @@ Builder& Builder::instance() {
 void Builder::setUsername(const std::string& username) {
     std::strncpy(m_config.username, username.c_str(), std::size(m_config.username) - 1);
     m_config.username[sizeof(m_config.username) - 1] = '\0';
+    m_conf.set("implant_username", username);
 }
 
 //--------------------------------
@@ -29,6 +82,7 @@ void Builder::setUsername(const std::string& username) {
 void Builder::setPassword(const std::string& password) {
     std::strncpy(m_config.password, password.c_str(), std::size(m_config.password) - 1);
     m_config.password[sizeof(m_config.password) - 1] = '\0';
+    m_conf.set("implant_password", password);
 }
 
 //--------------------------------
@@ -37,6 +91,7 @@ void Builder::setPassword(const std::string& password) {
 void Builder::setTimeout(const std::string& timeout) {
     std::strncpy(m_config.default_timeout, timeout.c_str(), std::size(m_config.default_timeout) - 1);
     m_config.default_timeout[sizeof(m_config.default_timeout) - 1] = '\0';
+    m_conf.set("implant_timeout", timeout);
 }
 
 //--------------------------------
@@ -45,6 +100,7 @@ void Builder::setTimeout(const std::string& timeout) {
 void Builder::setServerURL(const std::string& server_url) {
     std::strncpy(m_config.server_url, server_url.c_str(), std::size(m_config.server_url) - 1);
     m_config.server_url[sizeof(m_config.server_url) - 1] = '\0';
+    m_conf.set("implant_url", server_url);
 }
 
 //--------------------------------
@@ -53,6 +109,7 @@ void Builder::setServerURL(const std::string& server_url) {
 void Builder::setServiceName(const std::string& service_name) {
     std::strncpy(m_config.service_name, service_name.c_str(), std::size(m_config.service_name) - 1);
     m_config.service_name[sizeof(m_config.service_name) - 1] = '\0';
+    m_conf.set("service_name", service_name);
 }
 
 //--------------------------------
@@ -61,6 +118,7 @@ void Builder::setServiceName(const std::string& service_name) {
 void Builder::setServiceDesc(const std::string& service_description) {
     std::strncpy(m_config.service_desc, service_description.c_str(), std::size(m_config.service_desc) - 1);
     m_config.service_desc[sizeof(m_config.service_desc) - 1] = '\0';
+    m_conf.set("implant_service_desc", service_description);
 }
 
 //--------------------------------
@@ -77,13 +135,19 @@ bool Builder::buildImplant(const std::string& output_path) {
         return false;
     }
 
+    std::string path = output_path;
+    std::filesystem::create_directories(output_path);
+
+    auto output_file = std::filesystem::path(path.append("/implant_" + std::to_string(generate_nonce())));
+    if (std::filesystem::exists(output_file) && std::filesystem::is_regular_file(output_file)) {
+        std::filesystem::remove(output_file);
+    }
+
     // copy the template file to the output location
-    if (not std::filesystem::copy_file(input_file, output_path)) {
+    if (not std::filesystem::copy_file(input_file, output_file)) {
         //TODO: add logging
         return false;
     }
-
-    auto output_file = std::filesystem::path(output_path).replace_filename(input_file.filename());
 
     elfio reader;
     if (not reader.load(output_file)) {

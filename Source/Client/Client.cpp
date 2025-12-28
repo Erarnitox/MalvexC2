@@ -70,6 +70,13 @@ std::string Client::getServerUrl() const noexcept {
 //-------------------------------------------------
 //
 //-------------------------------------------------
+std::string Client::getTimeout() const noexcept {
+    return m_config.get<std::string>("timeout", "10");
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
 void Client::setUsername(const std::string& username) noexcept {
     m_config.set(Key::client_username_key, username);
     updateStatusText();
@@ -106,6 +113,13 @@ void Client::setServerUrl(const std::string& server_url) noexcept {
 //-------------------------------------------------
 void Client::setOutputPath(const std::string& output_dir) noexcept {
     m_config.set(Key::client_output_dir_key, output_dir);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+void Client::setTimeout(const std::string& timeout) noexcept {
+    m_config.set("timeout", timeout);
 }
 
 //-------------------------------------------------
