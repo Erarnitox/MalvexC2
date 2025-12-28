@@ -3,6 +3,7 @@
 #include "CommandManager.hpp"
 #include "Config.hpp"
 #include "HttpUtils.hpp"
+#include "LogDAO.hpp"
 #include "LogManager.hpp"
 #include "RESTClient.hpp"
 #include "SessionManager.hpp"
@@ -126,7 +127,7 @@ void Client::setTimeout(const std::string& timeout) noexcept {
 //
 //-------------------------------------------------
 std::string Client::getOutputPath() const noexcept {
-    return m_config.get<std::string>(Key::client_output_dir_key, "./outputs/");
+    return m_config.get<std::string>(Key::client_output_dir_key, "./outputs");
 }
 
 //-------------------------------------------------
@@ -173,6 +174,47 @@ bool Client::fetchVictims() noexcept {
         return true;
     } catch(const std::runtime_error& err) {
         m_log_man.local_log( std::format("Fetching Victims Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+bool Client::fetchLogs() noexcept {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // make request
+    try{
+        const auto log_list = m_rest_client.list<LogDAO>("api/logs");
+        m_log_man.set_list(log_list);
+        return true;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Fetching Logs Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+bool Client::sendLogBuffer() {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    // send logs to logs endpoint
+    try {
+        bool everything_good = true;
+        const auto log_buffer = m_log_man.refresh_send_buffer();
+        for(const auto& log_dao : log_buffer) {
+            const auto new_log = m_rest_client.post<LogDAO>("api/logs", log_dao);
+            if(new_log.id < 0) {
+                everything_good = false;
+            }
+        }
+
+        return everything_good;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Sending Logs Failed: {}", err.what()));
         return false;
     }
 }

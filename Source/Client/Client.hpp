@@ -109,4 +109,8 @@ public:
     [[nodiscard]] bool sendStopKeyloggerCommand(int64_t client_id);
 
     [[nodiscard]] bool sendUninstallCommand(int64_t client_id);
+
+    // Logs
+    [[nodiscard]] bool fetchLogs() noexcept;
+    [[nodiscard]] bool sendLogBuffer();
 };

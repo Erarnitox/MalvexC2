@@ -170,6 +170,11 @@ int main() {
             }
         }
 
+        // Send off the Log Buffer:
+        if (not state.client.sendLogBuffer()) {
+            LogManager::instance().local_log("Failed to send Attack logs to the Server!");
+        }
+
         // --- Status Bar ---
         Rectangle status = {0, state.res.height - 24, state.res.width, 24};
         GuiStatusBar(status, client.getStatusText());
@@ -520,6 +525,10 @@ void drawLogsTab(WindowState& state) {
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "C2 Event Log");
 
     if (GuiButton({3, 58, 120, 20}, GuiIconText(ICON_REPEAT_FILL, "Refresh Logs"))) {
+        if(not state.client.fetchLogs()) {
+            logMan.local_log("Fetching of remote Logs failed!");
+        }
+
         for(const auto& log : logMan.refresh()) {
             char newEntry[128];
             snprintf(newEntry, sizeof(newEntry), "%s\n", log.c_str());
@@ -691,7 +700,7 @@ void drawBuilderTab(WindowState& state) {
     }
 
     // File path field with browse button
-    GuiLabel({ labelX, startY + spacing*4 + 5, labelWidth, labelHeight }, "Output File:");
+    GuiLabel({ labelX, startY + spacing*4 + 5, labelWidth, labelHeight }, "Output Dir:");
     if (GuiTextBox(Rectangle{ inputX, startY + spacing*4, inputWidth - 110, inputHeight },
                     settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edit)) {
         settings.output_file_path.edit = !settings.output_file_path.edit;

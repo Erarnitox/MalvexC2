@@ -1,5 +1,7 @@
 #pragma once
 
+#include "LogDAO.hpp"
+#include <RESTClient.hpp>
 #include <string>
 #include <vector>
 
@@ -18,7 +20,12 @@ public:
     void attack_log(const std::string& log);
     std::vector<std::string> get_logs();
     std::vector<std::string> refresh();
+    std::vector<LogDAO> refresh_send_buffer();
+
+    void set_list(const std::vector<LogDAO>& log_list) noexcept;
 
 private:
-    std::vector<std::string> logs;
+    std::vector<std::string> m_local_logs;
+    std::map<UUID, LogDAO> m_attack_logs;
+    std::vector<LogDAO> m_send_buffer;
 };
