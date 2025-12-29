@@ -21,7 +21,8 @@ static std::mutex results_mtx;
 //-------------------------------------------------
 //
 //-------------------------------------------------
-std::string get_internal_ip() {
+[[nodiscard("Dumbo! You requested the IP, but didn't use it!")]]
+static inline std::string get_internal_ip() {
     struct ifaddrs *ifaddr, *ifa;
     std::string ip = "127.0.0.1";
 
@@ -96,9 +97,7 @@ std::string get_internal_ip() {
         command_results.clear();
 
         // Assuming your post method returns the command list
-        rest_client.post<BeaconRequest>("api/beacon", beacon);
-
-        return {};
+        return rest_client.post<BeaconRequest, std::vector<CommandDAO>>("api/beacon", beacon);
 
     } catch(const std::exception& err) {
         return {};

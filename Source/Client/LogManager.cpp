@@ -68,7 +68,7 @@ std::vector<LogDAO> LogManager::refresh_send_buffer() {
 //-------------------------------------------------
 void LogManager::set_list(const std::vector<LogDAO>& log_list) noexcept {
     for(const auto& log_entry : log_list) {
-        if (m_attack_logs.contains(log_entry.uid)) {
+        if (not m_attack_logs.contains(log_entry.uid)) {
             m_attack_logs[log_entry.uid] = log_entry;
 
             // add the log entry to the local logs
