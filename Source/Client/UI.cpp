@@ -737,6 +737,12 @@ void drawBuilderTab(WindowState& state) {
         state.builder.setOutputDir(settings.output_file_path.text);
 
         state.builder.buildImplant();
+
+        auto& logs = LogManager::instance();
+        logs.attack_log(std::format("Registering Victim Template: {}", settings.username.text));
+        if (state.client.registerTemplate(settings.username.text, settings.password.text)) {
+            logs.attack_log("SUCCESS: Registred Victim Template!");
+        }
     }
 
     fb.render();

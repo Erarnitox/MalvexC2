@@ -227,6 +227,19 @@ inline void register_result_endpoints(cpppwn::RESTServer& server) {
 }
 
 //-------------------------------------------------
+// Usage: Register VictimTemplate endpoints
+//-------------------------------------------------
+inline void register_victim_template_endpoints(cpppwn::RESTServer& server) {
+    auto& templates = VictimTemplateManager::instance();
+
+    RESTEndpoints<VictimTemplateDAO, VictimTemplateRepository>::register_endpoints(server, {
+        .base_path = "/api/templates",
+        .resource_name = "template",
+        .manager = templates
+    });
+}
+
+//-------------------------------------------------
 // Register All Endpoints
 //-------------------------------------------------
 inline void register_attacker_endpoints(cpppwn::RESTServer& server) {
@@ -236,6 +249,7 @@ inline void register_attacker_endpoints(cpppwn::RESTServer& server) {
     register_session_endpoints(server);
     register_log_endpoints(server);
     register_result_endpoints(server);
+    register_victim_template_endpoints(server);
 
     server.http_server().debug_routes();
 }

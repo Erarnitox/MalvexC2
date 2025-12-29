@@ -9,6 +9,7 @@
 struct ResultDAO : public IDao<ResultDAO> {
     int64_t id{0};
     UUID uid;
+    UUID command_uid;
     std::string data;
 };
 

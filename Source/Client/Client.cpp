@@ -9,6 +9,7 @@
 #include "SessionManager.hpp"
 #include "Types.hpp"
 #include "VictimManager.hpp"
+#include "VictimTemplateDAO.hpp"
 #include <print>
 #include <stdexcept>
 
@@ -250,6 +251,26 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
         return cmd.id > 0;
     } catch(const std::runtime_error& err) {
         m_log_man.local_log( std::format("Sending Timeout Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::registerTemplate(const std::string& username, const std::string& password) {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    try{
+        VictimTemplateDAO vic_temp;
+        vic_temp.username = username;
+        vic_temp.password = password;
+
+        const auto& temp = m_rest_client.post<VictimTemplateDAO>("api/templates", vic_temp);
+
+        return temp.id > 0;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Registering Template Failed: {}", err.what()));
         return false;
     }
 }
