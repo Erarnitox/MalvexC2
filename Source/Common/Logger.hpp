@@ -54,9 +54,30 @@ namespace logger {
     template<typename... Args>
     void log(LogLevel level, std::string_view prefix, std::string_view color, std::format_string<Args...> fmt, Args&&... args) {
         (void) level;
-        std::cout << std::format("[{}] {}{}{} {}\n",
-            timestamp(), color, prefix, color::RESET,
-            std::format(fmt, std::forward<Args>(args)...));
+
+        // Define specific accent colors
+        constexpr std::string_view BRACKET_COLOR = "\033[90m"; // Dark Gray
+        constexpr std::string_view TIME_COLOR    = "\033[36m"; // Cyan
+        constexpr std::string_view RESET         = "\033[0m";
+        constexpr std::string_view BOLD          = "\033[1m";
+
+        // 1. Format the user message first
+        std::string message = std::format(fmt, std::forward<Args>(args)...);
+
+        // 2. Assemble the highly colorful line
+        // Pattern: [Time] [Prefix] Message
+        std::cout << std::format(
+            "{}[{}{}{}] [ {}{}{}{} ] {}{}{}\n",
+
+            // Timestamp section: [ HH:MM:SS ]
+            BRACKET_COLOR, TIME_COLOR, timestamp(), BRACKET_COLOR,
+
+            // Prefix section: [ + ] or [ x ]
+            color, BOLD, prefix, BRACKET_COLOR,
+
+            // Message section (colored based on level)
+            color, message, RESET
+        );
     }
 
     //-------------------------------------------------

