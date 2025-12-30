@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Logger.hpp"
 #include "VictimTemplateDAO.hpp"
 #include "VictimTemplateRepository.hpp"
 #include <cpppwn.hpp>
@@ -113,7 +114,7 @@ private:
         server.post<DAO, DAO>(config.base_path,
             [&manager, resource_name](const HttpRequest& req, const DAO& item) -> DAO {
                 (void)req;
-                std::println("Creating new {}: {}", resource_name, item.to_json());
+                logger::debug("Creating new {}: {}", resource_name, item.to_json());
                 return manager.create(const_cast<DAO&>(item));
             });
     }

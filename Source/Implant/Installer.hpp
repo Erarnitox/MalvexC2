@@ -6,12 +6,14 @@
 #include <unistd.h>
 #include <limits.h>
 
+#include <Logger.hpp>
+
 inline bool installSystemService(const std::string& serviceName, const std::string& description) {
     // 1. Determine the executable's path
     char execPath[PATH_MAX];
     ssize_t len = readlink("/proc/self/exe", execPath, sizeof(execPath) - 1);
     if (len == -1) {
-        std::cerr << "Error: Could not determine executable path." << std::endl;
+        logger::error("Error: Could not determine executable path.");
         return false;
     }
     execPath[len] = '\0';
@@ -37,42 +39,41 @@ inline bool installSystemService(const std::string& serviceName, const std::stri
     // 3. Write the service file
     // NOTE: This requires root/sudo privileges to write to /etc/systemd/system/
     std::ofstream outfile(serviceFilePath);
-    if (!outfile.is_open()) {
-        std::cerr << "Error: Could not open " << serviceFilePath << " for writing. "
-                  << "This operation typically requires root/sudo privileges." << std::endl;
+    if (not outfile.is_open()) {
+        logger::warn("Error: Could not open {} for writing. This operation typically requires root/sudo privileges.", serviceFilePath);
         return false;
     }
     outfile << serviceContent.str();
     outfile.close();
 
-    std::cout << "Service file written to: " << serviceFilePath << std::endl;
+    logger::info("Service file written to: {}", serviceFilePath);
 
     // 4. Execute systemd commands
 
     // a. Reload the systemd daemon to pick up the new unit file
     std::string reloadCmd = "systemctl daemon-reload";
-    std::cout << "Executing: " << reloadCmd << std::endl;
+    logger::info("Executing: {}", reloadCmd);
     if (std::system(reloadCmd.c_str()) != 0) {
-        std::cerr << "Error: systemctl daemon-reload failed." << std::endl;
+        logger::error("Error: systemctl daemon-reload failed.");
         return false;
     }
 
     // b. Enable the service to start at boot
     std::string enableCmd = "systemctl enable " + serviceFileName;
-    std::cout << "Executing: " << enableCmd << std::endl;
+    logger::info("Executing: {}", enableCmd);
     if (std::system(enableCmd.c_str()) != 0) {
-        std::cerr << "Error: systemctl enable failed." << std::endl;
+        logger::error("Error: systemctl enable failed.");
         return false;
     }
 
     // c. Start the service immediately
     std::string startCmd = "systemctl start " + serviceFileName;
-    std::cout << "Executing: " << startCmd << std::endl;
+    logger::info("Executing: {}", startCmd);
     if (std::system(startCmd.c_str()) != 0) {
-        std::cerr << "Error: systemctl start failed." << std::endl;
+        logger::error("Error: systemctl start failed.");
         return false;
     }
 
-    std::cout << "Successfully installed and started service: " << serviceName << std::endl;
+    logger::info("Successfully installed and started service: {}", serviceName);
     return true;
 }

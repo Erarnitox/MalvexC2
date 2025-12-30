@@ -5,6 +5,7 @@
 #include "HttpUtils.hpp"
 #include "LogDAO.hpp"
 #include "LogManager.hpp"
+#include "Logger.hpp"
 #include "RESTClient.hpp"
 #include "SessionManager.hpp"
 #include "Types.hpp"
@@ -141,7 +142,7 @@ bool Client::login() noexcept {
     try{
         return m_rest_client.get<bool>("/auth");
     } catch(const std::runtime_error& err) {
-        std::println("Login Failed: {}", err.what());
+        logger::info("Login Failed: {}", err.what());
         return false;
     }
 }

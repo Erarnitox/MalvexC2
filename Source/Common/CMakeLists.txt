@@ -10,3 +10,4 @@ add_subdirectory(Config)
 
 target_link_libraries(common INTERFACE database)
 target_link_libraries(common INTERFACE config)
+target_link_libraries(common INTERFACE stdc++exp dw)

