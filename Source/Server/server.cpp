@@ -250,6 +250,34 @@ bool victim_auth_middleware(const HttpRequest& request, HttpResponse& response) 
 //-------------------------------------------------
 //
 //-------------------------------------------------
+static HttpResponse close_session_handler(const HttpRequest& req) {
+    try{
+        const auto port = std::atoi(req.query_params.at("port").c_str());
+        SessionManager::instance().stop_listener(port);
+        logger::success("Sessions Closed on Port: {}", port);
+        return HttpResponse().set_json(R"({ status: "Session closed!" })");
+    } catch (...) {
+        return HttpResponse().set_status(500);
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+static HttpResponse open_session_handler(const HttpRequest& req) {
+    try{
+        const auto port = std::atoi(req.query_params.at("port").c_str());
+        SessionManager::instance().start_listener(port);
+        logger::success("Sessions Started on Port: {}", port);
+        return HttpResponse().set_json(R"({ status: "Session started!" })");
+    } catch (...) {
+        return HttpResponse().set_status(500);
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
 void start_attacker_api(int16_t port) {
     using namespace cpppwn;
     auto& config = Config::instance(db_file);
@@ -272,31 +300,8 @@ void start_attacker_api(int16_t port) {
     });
 
     // Session endpoints
-    SessionManager sessionMan;
-
-    attacker_api.get("/open_session", [&sessionMan](const HttpRequest& req) -> HttpResponse {
-        try{
-            const auto port = std::atoi(req.query_params.at("port").c_str());
-            sessionMan.start_listener(port);
-            logger::success("New Session opened on Port: {}", port);
-            return HttpResponse().set_json(R"({ status: "Session started!" })");
-        } catch (const std::exception e) {
-            logger::error(e.what());
-            return HttpResponse().set_status(500);
-        }
-    });
-
-    attacker_api.get("/close_session", [&sessionMan](const HttpRequest& req) {
-        try{
-            const auto port = std::atoi(req.query_params.at("port").c_str());
-            sessionMan.stop_listener(port);
-            logger::success("Sessions Closed on Port: {}", port);
-            return HttpResponse().set_json(R"({ status: "Session closed!" })");
-        } catch (const std::exception e) {
-            logger::error(e.what());
-            return HttpResponse().set_status(500);
-        }
-    });
+    attacker_api.get("/open_session", open_session_handler);
+    attacker_api.get("/close_session", close_session_handler);
 
     register_attacker_endpoints(attacker_api);
 
