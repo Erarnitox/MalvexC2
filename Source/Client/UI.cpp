@@ -331,7 +331,10 @@ void drawConnectionsTab(WindowState& state) {
         if (GuiButton(btn2, TextFormat("Open Shell (Port: %d)", port))) {
             if (state.client.sendOpenSessionCommand(victim.uid, port)) {
                 logMan.attack_log(std::format("Opening Session to Client: {} on Port: {}", victim.uid, port));
-                SessionManager::instance().startSession(state.client.getServerHost(), port);
+
+                if (state.client.openSession(port)) {
+                    SessionManager::instance().startSession(state.client.getServerHost(), port);
+                }
             } else {
                 logMan.local_log("Sending Open Session Command failed!");
             }
@@ -810,7 +813,9 @@ void drawSessionsTab(WindowState& state) {
 
     //close session button
     if (GuiButton({viewRect.width - 130, viewRect.y + 2, 120, 20},  GuiIconText(ICON_CROSS, "Close Shell"))) {
-        sessionMan.close(session.uid);
+        if (state.client.closeSession(session.port)) {
+            sessionMan.close(session.uid);
+        }
     }
 
     // Terminal stuffs

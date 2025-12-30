@@ -113,6 +113,10 @@ public:
 
     [[nodiscard]] bool sendUninstallCommand(int64_t client_id);
 
+    [[nodiscard]] bool openSession(int64_t port);
+
+    [[nodiscard]] bool closeSession(int64_t port);
+
     // Logs
     [[nodiscard]] bool fetchLogs() noexcept;
     [[nodiscard]] bool sendLogBuffer();

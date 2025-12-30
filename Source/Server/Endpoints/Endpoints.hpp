@@ -191,6 +191,7 @@ inline void register_command_endpoints(cpppwn::RESTServer& server) {
 //-------------------------------------------------
 // Usage: Register Session endpoints
 //-------------------------------------------------
+/*
 inline void register_session_endpoints(cpppwn::RESTServer& server) {
     auto& sessions = SessionManager::instance();
 
@@ -199,7 +200,7 @@ inline void register_session_endpoints(cpppwn::RESTServer& server) {
         .resource_name = "session",
         .manager = sessions
     });
-}
+}*/
 
 //-------------------------------------------------
 // Usage: Register Log endpoints
@@ -247,7 +248,7 @@ inline void register_attacker_endpoints(cpppwn::RESTServer& server) {
     register_operator_endpoints(server);
     register_victim_endpoints(server);
     register_command_endpoints(server);
-    register_session_endpoints(server);
+    //register_session_endpoints(server);
     register_log_endpoints(server);
     register_result_endpoints(server);
     register_victim_template_endpoints(server);

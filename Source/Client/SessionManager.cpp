@@ -103,9 +103,8 @@ void SessionManager::close(const UUID& session_id) {
 SessionConnection::SessionConnection(std::string host, int port, std::string sid) : session_id(sid) {
     conn = std::make_unique<cpppwn::Remote>(host, port);
 
-    // Handshake: Tell the server we are an OPERATOR and want SID 'xyz'
-    // Format: OP_ATTACH <session_id>\n
-    conn->send(std::format("OP_ATTACH {}\n", session_id));
+    // identify to the server
+    conn->sendline("OPERATOR");
 }
 
 //-------------------------------------------------

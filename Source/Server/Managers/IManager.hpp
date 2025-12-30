@@ -166,6 +166,6 @@ using CommandManager = Manager<CommandDAO, CommandRepository>;
 using LogManager = Manager<LogDAO, LogRepository>;
 using OperatorManager = Manager<OperatorDAO, OperatorRepository>;
 using ResultManager = Manager<ResultDAO, ResultRepository>;
-using SessionManager = Manager<SessionDAO, SessionRepository>;
+//using SessionManager = Manager<SessionDAO, SessionRepository>;
 using VictimManager = Manager<VictimDAO, VictimRepository>;
 using VictimTemplateManager = Manager<VictimTemplateDAO, VictimTemplateRepository>;
