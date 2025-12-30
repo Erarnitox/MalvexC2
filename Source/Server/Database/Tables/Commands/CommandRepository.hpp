@@ -28,7 +28,7 @@ public:
     bool remove(int64_t id) override;
 
     [[nodiscard]]
-    std::optional<CommandDAO> get_for_client(const UUID& client_id) const;
+    std::vector<CommandDAO> get_for_client(const UUID& client_id) const;
     void commit();
 
 private:

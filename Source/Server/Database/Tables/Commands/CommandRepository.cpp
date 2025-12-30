@@ -33,46 +33,36 @@ void CommandRepository::ensure_table() {
 //
 //--------------------------------
 std::vector<CommandDAO> CommandRepository::list() const {
-    auto db = open_readonly();
+    try {
+        auto db = open_readonly();
 
-    std::vector<CommandDAO> results;
-    sqlite3* h = db.getHandle();
-    sqlite3_stmt* stmt = nullptr;
+        std::vector<CommandDAO> results;
 
-    const char* sql = "SELECT command_id, command_uid, client, prev, nonce, command, signature, status "
-                      "FROM commands ORDER BY command_id DESC;";
+        // Use the Statement wrapper (RAII)
+        SQLite::Statement query(db, "SELECT command_id, command_uid, client, prev, "
+                                    "nonce, command, signature, status FROM commands "
+                                    "ORDER BY command_id DESC");
 
-    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw SqliteException("prepare failed: " + std::string(sqlite3_errmsg(h)));
+        while (query.executeStep()) {
+            CommandDAO cmd;
+
+            cmd.id        = query.getColumn(0).getInt64();
+            cmd.uid       = query.getColumn(1).getString();
+            cmd.client    = query.getColumn(2).getString();
+            cmd.prev      = query.getColumn(3).getInt64();
+            cmd.nonce     = query.getColumn(4).getInt64();
+            cmd.command   = query.getColumn(5).getString();
+            cmd.signature = query.getColumn(6).getString();
+            cmd.status    = query.getColumn(7).getInt();
+
+            results.push_back(std::move(cmd));
+        }
+
+        return results;
+    } catch (const std::exception& e) {
+        // Log the error properly
+        throw SqliteException("Repository list failed: " + std::string(e.what()));
     }
-
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        CommandDAO cmd;
-
-        cmd.id = sqlite3_column_int64(stmt, 0);
-
-        const char* uid_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        cmd.uid = uid_ptr ? uid_ptr : "";
-
-        const char* client_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        cmd.client = client_ptr ? client_ptr : "";
-
-        cmd.prev = sqlite3_column_int64(stmt, 3);
-        cmd.nonce = sqlite3_column_int64(stmt, 4);
-
-        const char* command_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
-        cmd.command = command_ptr ? command_ptr : "";
-
-        const char* sig_ptr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
-        cmd.signature = sig_ptr ? sig_ptr : "";
-
-        cmd.status = sqlite3_column_int(stmt, 7);
-
-        results.push_back(std::move(cmd));
-    }
-
-    sqlite3_finalize(stmt);
-    return results;
 }
 
 //--------------------------------
@@ -247,34 +237,35 @@ void CommandRepository::commit() {
 //--------------------------------
 //
 //--------------------------------
-std::optional<CommandDAO> CommandRepository::get_for_client(const UUID& client_id) const {
-    auto db = open_readwrite();
+std::vector<CommandDAO> CommandRepository::get_for_client(const UUID& client_id) const {
+    try {
+        auto db = open_readonly();
 
-    std::optional<CommandDAO> opt;
-    sqlite3* h = db.getHandle();
-    sqlite3_stmt* stmt = nullptr;
-    const char* sql = "SELECT command_id, command_uid, client, prev, nonce, command, signature, status "
-                      "FROM commands WHERE client = ? LIMIT 1;";
+        std::vector<CommandDAO> results;
 
-    if (sqlite3_prepare_v2(h, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw SqliteException("prepare failed");
+        SQLite::Statement query(db, "SELECT command_id, command_uid, client, prev, "
+                                    "nonce, command, signature, status FROM commands WHERE client = ?");
+
+        query.bind(1, client_id);
+
+        while (query.executeStep()) {
+            CommandDAO cmd;
+
+            cmd.id        = query.getColumn(0).getInt64();
+            cmd.uid       = query.getColumn(1).getString();
+            cmd.client    = query.getColumn(2).getString();
+            cmd.prev      = query.getColumn(3).getInt64();
+            cmd.nonce     = query.getColumn(4).getInt64();
+            cmd.command   = query.getColumn(5).getString();
+            cmd.signature = query.getColumn(6).getString();
+            cmd.status    = query.getColumn(7).getInt();
+
+            results.push_back(std::move(cmd));
+        }
+
+        return results;
+    } catch (const std::exception& e) {
+        // Log the error properly
+        throw SqliteException("Repository list failed: " + std::string(e.what()));
     }
-
-    sqlite3_bind_text(stmt, 1, client_id.c_str(), -1, SQLITE_TRANSIENT);
-
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-        CommandDAO cmd;
-        cmd.id = sqlite3_column_int64(stmt, 0);
-        cmd.uid = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        cmd.client = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-        cmd.prev = sqlite3_column_int64(stmt, 3);
-        cmd.nonce = sqlite3_column_int64(stmt, 4);
-        cmd.command = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
-        cmd.signature = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
-        cmd.status = sqlite3_column_int(stmt, 7);
-        opt = cmd;
-    }
-
-    sqlite3_finalize(stmt);
-    return opt;
 }

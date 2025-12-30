@@ -96,7 +96,6 @@ static inline std::string get_internal_ip() {
         beacon.command_results = command_results;
         command_results.clear();
 
-        // Assuming your post method returns the command list
         return rest_client.post<BeaconRequest, std::vector<CommandDAO>>("api/beacon", beacon);
 
     } catch(const std::exception& err) {
