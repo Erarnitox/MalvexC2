@@ -56,6 +56,17 @@ inline unsigned generate_nonce() {
     return dist(gen);
 }
 
+//--------------------------------
+//
+//--------------------------------
+[[nodiscard]]
+inline uint16_t gen_port() noexcept {
+    static thread_local std::random_device rd;
+    static thread_local std::mt19937 gen(rd());
+    std::uniform_int_distribution<uint16_t> dist(4000, 9000);
+    return dist(gen);
+}
+
 //-------------------------------------------------
 //
 //-------------------------------------------------

