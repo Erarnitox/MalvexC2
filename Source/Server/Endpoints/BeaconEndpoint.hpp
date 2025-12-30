@@ -79,6 +79,12 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
 
             std::println("Amount of commands #{}", command_list.size());
 
+            // 5. Mark commands as sent
+            for (auto& cmd : command_list) {
+                cmd.status = 1;
+                commands.update(cmd.id, cmd);
+            }
+
             return HttpResponse().set_json(glz::write_json(command_list).value_or("{}"));
 
         } catch (const std::exception& e) {
