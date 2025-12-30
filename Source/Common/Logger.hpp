@@ -20,7 +20,10 @@ enum class LogLevel : int {
     NONE = 6
 };
 
-static constexpr LogLevel CURRENT_LOG_LEVEL = LogLevel::INFO;
+//-------------------------------------------------
+//
+//-------------------------------------------------
+static constexpr LogLevel CURRENT_LOG_LEVEL = LogLevel::DEBUG;
 
 //-------------------------------------------------
 //

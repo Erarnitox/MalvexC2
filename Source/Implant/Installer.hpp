@@ -40,19 +40,20 @@ inline bool installSystemService(const std::string& serviceName, const std::stri
     // NOTE: This requires root/sudo privileges to write to /etc/systemd/system/
     std::ofstream outfile(serviceFilePath);
     if (not outfile.is_open()) {
-        logger::warn("Error: Could not open {} for writing. This operation typically requires root/sudo privileges.", serviceFilePath);
+        logger::debug("Error: Could not open {} for writing. This operation typically requires root/sudo privileges.", serviceFilePath);
         return false;
     }
     outfile << serviceContent.str();
     outfile.close();
 
-    logger::info("Service file written to: {}", serviceFilePath);
+    logger::debug("Service file written to: {}", serviceFilePath);
 
     // 4. Execute systemd commands
 
     // a. Reload the systemd daemon to pick up the new unit file
     std::string reloadCmd = "systemctl daemon-reload";
-    logger::info("Executing: {}", reloadCmd);
+    logger::debug("Executing: {}", reloadCmd);
+
     if (std::system(reloadCmd.c_str()) != 0) {
         logger::error("Error: systemctl daemon-reload failed.");
         return false;
@@ -60,7 +61,8 @@ inline bool installSystemService(const std::string& serviceName, const std::stri
 
     // b. Enable the service to start at boot
     std::string enableCmd = "systemctl enable " + serviceFileName;
-    logger::info("Executing: {}", enableCmd);
+    logger::debug("Executing: {}", enableCmd);
+
     if (std::system(enableCmd.c_str()) != 0) {
         logger::error("Error: systemctl enable failed.");
         return false;
@@ -68,12 +70,13 @@ inline bool installSystemService(const std::string& serviceName, const std::stri
 
     // c. Start the service immediately
     std::string startCmd = "systemctl start " + serviceFileName;
-    logger::info("Executing: {}", startCmd);
+    logger::debug("Executing: {}", startCmd);
+
     if (std::system(startCmd.c_str()) != 0) {
         logger::error("Error: systemctl start failed.");
         return false;
     }
 
-    logger::info("Successfully installed and started service: {}", serviceName);
+    logger::debug("Successfully installed and started service: {}", serviceName);
     return true;
 }

@@ -2,7 +2,7 @@
 
 #include <ImplantConfig.hpp>
 
-MALVEX_CONFIG_SECTION ImplantConfig config  = {
+MALVEX_CONFIG_SECTION ImplantConfig config = {
     .username="vicky",
     .password="victim",
     .default_timeout="5",
