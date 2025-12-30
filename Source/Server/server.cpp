@@ -255,7 +255,7 @@ static HttpResponse close_session_handler(const HttpRequest& req) {
         const auto port = std::atoi(req.query_params.at("port").c_str());
         SessionManager::instance().stop_listener(port);
         logger::success("Sessions Closed on Port: {}", port);
-        return HttpResponse().set_json(R"({ status: "Session closed!" })");
+        return HttpResponse().set_json(R"("Session closed!")");
     } catch (...) {
         return HttpResponse().set_status(500);
     }
@@ -269,7 +269,7 @@ static HttpResponse open_session_handler(const HttpRequest& req) {
         const auto port = std::atoi(req.query_params.at("port").c_str());
         SessionManager::instance().start_listener(port);
         logger::success("Sessions Started on Port: {}", port);
-        return HttpResponse().set_json(R"({ status: "Session started!" })");
+        return HttpResponse().set_json(R"("Session started!")");
     } catch (...) {
         return HttpResponse().set_status(500);
     }

@@ -767,7 +767,7 @@ void drawBuilderTab(WindowState& state) {
 void drawSessionsTab(WindowState& state) {
     static int selected_session = -1;
     static bool commandEditMode = false;
-    static char terminalOutput[4096] = "Terminal started. Type 'help' for commands.\n\n";
+    static char terminalOutput[4096] = "Terminal started. Type 'mlvx_help' for commands.\n\n";
     static char commandInput[1024] = {0};
     static float scrollOffset = 0;
     static SessionManager& sessionMan = SessionManager::instance();
@@ -776,7 +776,7 @@ void drawSessionsTab(WindowState& state) {
 
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "Remote Shell Sessions");
 
-    static std::vector<Session> sessions = sessionMan.getSessions();
+    const std::vector<Session>& sessions = sessionMan.getSessions();
 
     Rectangle viewRect{0, 80, res.width, res.height - 90};
 
@@ -808,8 +808,8 @@ void drawSessionsTab(WindowState& state) {
         GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, originalText);
     }
 
-    Session& session = sessions.at(selected_session);
-    GuiPanel(viewRect, TextFormat("Session %d on port %d", session.id, session.port));
+    const Session& session = sessions.at(selected_session);
+    GuiPanel(viewRect, TextFormat("Session [%s] on port [%d]", session.uid.c_str(), session.port));
 
     //close session button
     if (GuiButton({viewRect.width - 130, viewRect.y + 2, 120, 20},  GuiIconText(ICON_CROSS, "Close Shell"))) {

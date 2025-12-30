@@ -128,7 +128,7 @@ void Client::setServerUrl(const std::string& server_url) noexcept {
     HttpConfig conf;
     conf.follow_redirects = true;
     conf.max_redirects = 3;
-    conf.verbose = true;
+    conf.verbose = false;
     conf.verify_ssl = false;
 
     if (server_url.ends_with("/")) {
@@ -494,9 +494,13 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
     m_rest_client.set_auth_basic(getUsername(), getPassword());
 
     try{
-        const auto& res = m_rest_client.http_client().get(std::format("{}/open_session?port={}", getServerUrl(), port));
-        return res.status_code < 300;
+        const auto endpoint = std::format("{}/open_session?port={}", getServerUrl(), port);
+        logger::info("Making Request: GET {}", endpoint);
+        const auto& res = m_rest_client.get<std::string>(std::format("open_session?port={}", port));
+        logger::success("Response: {}", res);
+        return not res.empty();
     } catch(const std::runtime_error& err) {
+        logger::warn("Opening Session on the Server Failed: {}", err.what());
         m_log_man.local_log( std::format("Opening Session on the Server Failed: {}", err.what()));
         return false;
     }
@@ -509,9 +513,10 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
     m_rest_client.set_auth_basic(getUsername(), getPassword());
 
     try{
-        const auto& res = m_rest_client.http_client().get(std::format("{}/close_session?port={}", getServerUrl(), port));
-        return res.status_code < 300;
+        const auto& res = m_rest_client.get<std::string>(std::format("close_session?port={}", port));
+        return not res.empty();
     } catch(const std::runtime_error& err) {
+        logger::warn("Closing Session on the Server Failed: {}", err.what());
         m_log_man.local_log( std::format("Closing Session on the Server Failed: {}", err.what()));
         return false;
     }
