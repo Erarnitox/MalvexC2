@@ -2,6 +2,8 @@
 
 #include "Builder.hpp"
 #include "Client.hpp"
+#include "SessionDAO.hpp"
+#include "SessionManager.hpp"
 #include <atomic>
 #include <raylib.h>
 #include <raygui.h>
@@ -12,11 +14,17 @@
 #include <array>
 #include <string>
 
+//--------------------------------
+//
+//--------------------------------
 struct Resolution {
     float width;
     float height;
 };
 
+//--------------------------------
+//
+//--------------------------------
 std::array<std::string, 5> tabs {
     GuiIconText(ICON_MONITOR, "Connections"),
     GuiIconText(ICON_TEXT_NOTES, "Logs"),
@@ -25,6 +33,9 @@ std::array<std::string, 5> tabs {
     GuiIconText(ICON_WINDOW, "Terminal")
 };
 
+//--------------------------------
+//
+//--------------------------------
 enum Tab {
     CONNECTIONS = 0,
     LOGS = 1,
@@ -33,13 +44,22 @@ enum Tab {
     TERMINAL = 4
 };
 
+//--------------------------------
+//
+//--------------------------------
 constexpr size_t MAX_INPUT_CHARS{ 256 };
 
+//--------------------------------
+//
+//--------------------------------
 struct InputField {
     char text[MAX_INPUT_CHARS];
     bool edit = false;
 };
 
+//--------------------------------
+//
+//--------------------------------
 struct MalvexSettings {
     InputField username;
     InputField password;
@@ -48,6 +68,9 @@ struct MalvexSettings {
     InputField output_file_path;
 };
 
+//--------------------------------
+//
+//--------------------------------
 struct BuilderSettings {
     InputField username;
     InputField password;
@@ -58,6 +81,9 @@ struct BuilderSettings {
     InputField service_description;
 };
 
+//--------------------------------
+//
+//--------------------------------
 struct WindowState {
     bool show_about = false;
     bool is_fullscreen = false;
@@ -73,20 +99,24 @@ struct WindowState {
     bool login_failed;
 };
 
-void run_terminal_command(const char* command, char* output, size_t outputSize) {
+//--------------------------------
+//
+//--------------------------------
+void inline run_terminal_command(const char* command, char* output, size_t outputSize, const SessionDAO& session) {
+    static SessionManager& sessionMan = SessionManager::instance();
     char tempOutput[1024];
 
-    // Simple command processing (you can expand this)
-    if (strcmp(command, "help") == 0) {
+    // Built in Commands
+    if (strcmp(command, "mlvx_help") == 0) {
         snprintf(tempOutput, sizeof(tempOutput),
                  "> %s\nAvailable commands:\n"
-                 "  help     - Show this help message\n"
-                 "  clear    - Clear terminal output\n"
-                 "  echo     - Echo back text\n"
-                 "  date     - Show current date/time\n"
-                 "  version  - Show version info\n\n",
+                 "  mlvx_help     - Show this help message\n",
                  command);
+    } else {
+        // Execute Remote Shell Commands
+        snprintf(tempOutput, sizeof(tempOutput), "> %s\n%s", command, sessionMan.execute(session, command).c_str());
     }
+
 
     // Append to output
     if (strlen(output) + strlen(tempOutput) < outputSize - 1) {

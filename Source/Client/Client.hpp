@@ -54,6 +54,9 @@ public:
     std::string getServerUrl() const noexcept;
 
     [[nodiscard]]
+    std::string getServerHost() const noexcept;
+
+    [[nodiscard]]
     std::string getTimeout() const noexcept;
 
     [[nodiscard]]
