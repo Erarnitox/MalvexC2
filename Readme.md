@@ -14,6 +14,12 @@ So it might be used as a base for your very own C2 framework. The Ccurrent Impla
 
 ![Screenshot](./Resources/Screenshot.png)
 
+## Overview
+
+[![Watch the video](https://img.youtube.com/vi/2O3r5qqjyiY/maxresdefault.jpg)](https://youtu.be/2O3r5qqjyiY)
+
+## Design Goals
+
 ## Installation
 1) Download the latest Release.zip
 2) scp the server.elf onto your Linux based C2 server
