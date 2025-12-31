@@ -23,6 +23,21 @@ enum class LogLevel : int {
 //-------------------------------------------------
 //
 //-------------------------------------------------
+constexpr inline std::string trim_string(const std::string& s) {
+    const std::string whitespace = " \t\n\r\f\v";
+
+    size_t start = s.find_first_not_of(whitespace);
+    if (start == std::string::npos) {
+        return "";
+    }
+
+    size_t end = s.find_last_not_of(whitespace);
+    return s.substr(start, end - start + 1);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
 static constexpr LogLevel CURRENT_LOG_LEVEL = LogLevel::DEBUG;
 
 //-------------------------------------------------

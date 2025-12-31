@@ -1,4 +1,5 @@
 #include "SessionManager.hpp"
+#include "Logger.hpp"
 #include "SessionDAO.hpp"
 #include "Types.hpp"
 #include <memory>
@@ -53,6 +54,7 @@ void SessionManager::startSession(const std::string& host, int64_t port) {
     session.uid = uuid;
 
     m_sessions.push_back(session);
+    m_port_to_connection[port] = uuid;
 }
 
 //-------------------------------------------------
@@ -60,6 +62,7 @@ void SessionManager::startSession(const std::string& host, int64_t port) {
 //-------------------------------------------------
 std::string SessionManager::execute(const SessionDAO& session, const std::string& cmd) {
     const auto& session_uuid = m_port_to_connection[session.port];
+    logger::debug("Trying to send Command [{}] to Session [{}]", cmd, session_uuid);
 
     if (session_uuid.empty()) return "";
 
@@ -69,6 +72,7 @@ std::string SessionManager::execute(const SessionDAO& session, const std::string
 
     if (session_conn == m_connections.end()) return "";
 
+    logger::debug("Sending Command: [{}]", cmd);
     return session_conn->get()->execute_cmd(cmd);
 }
 
@@ -112,10 +116,10 @@ SessionConnection::SessionConnection(std::string host, int port, std::string sid
 //-------------------------------------------------
 std::string SessionConnection::execute_cmd(const std::string& cmd) {
     if (conn && conn->is_alive()) {
-        conn->send(cmd);
+        conn->sendline(cmd);
     }
 
-    return conn->recvall();
+    return trim_string(conn->recvline());
 }
 
 //-------------------------------------------------

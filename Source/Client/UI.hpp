@@ -5,6 +5,7 @@
 #include "SessionDAO.hpp"
 #include "SessionManager.hpp"
 #include <atomic>
+#include <cstring>
 #include <raylib.h>
 #include <raygui.h>
 
@@ -106,6 +107,8 @@ void inline run_terminal_command(const char* command, char* output, size_t outpu
     static SessionManager& sessionMan = SessionManager::instance();
     char tempOutput[1024];
 
+    if (strnlen(command, 5) < 2) return; //empty command
+
     // Built in Commands
     if (strcmp(command, "mlvx_help") == 0) {
         snprintf(tempOutput, sizeof(tempOutput),
@@ -114,7 +117,7 @@ void inline run_terminal_command(const char* command, char* output, size_t outpu
                  command);
     } else {
         // Execute Remote Shell Commands
-        snprintf(tempOutput, sizeof(tempOutput), "> %s\n%s", command, sessionMan.execute(session, command).c_str());
+        snprintf(tempOutput, sizeof(tempOutput), "\n> %s\n%s", command, sessionMan.execute(session, command).c_str());
     }
 
 
