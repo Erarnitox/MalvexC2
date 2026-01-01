@@ -10,11 +10,11 @@
 
 Welcome to the repository of the Malvex C2 framework. It is meant as an educational C2 Framework to show you how other C2 frameworks might work and operate.
 It will also mature and be extended upon as time goes on. The goal is however to keep it as simple and easy to understand as possible.
-So it might be used as a base for your very own C2 framework. The Ccurrent Implant only supports Linux based machines
+So it might be used as a base for your very own C2 framework. The Current Implant only supports Linux based machines
 
 ![Screenshot](./Resources/Screenshot.png)
 
-## Viedeo Overview:
+## Video Overview:
 
 [![Watch the video](https://img.youtube.com/vi/2O3r5qqjyiY/maxresdefault.jpg)](https://youtu.be/2O3r5qqjyiY)
 
