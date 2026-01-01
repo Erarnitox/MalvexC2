@@ -733,6 +733,17 @@ void drawBuilderTab(WindowState& state) {
         settings.service_description.edit = !settings.service_description.edit;
     }
 
+    // Register Victim Button
+    Rectangle registerButtonRect = { inputX + 210, startY + spacing*7, 250, 30 };
+    if (GuiButton(registerButtonRect, "Register Victim User")) {
+        auto& logs = LogManager::instance();
+        logs.attack_log(std::format("Registering Victim Template: {}", settings.username.text));
+
+        if (state.client.registerTemplate(settings.username.text, settings.password.text)) {
+            logs.attack_log("SUCCESS: Registred Victim Template!");
+        }
+    }
+
     // Build button
     Rectangle saveButtonRect = { inputX, startY + spacing*7, 200, 30 };
     if (GuiButton(saveButtonRect, "Build Implant")) {
@@ -745,12 +756,6 @@ void drawBuilderTab(WindowState& state) {
         state.builder.setOutputDir(settings.output_file_path.text);
 
         state.builder.buildImplant();
-
-        auto& logs = LogManager::instance();
-        logs.attack_log(std::format("Registering Victim Template: {}", settings.username.text));
-        if (state.client.registerTemplate(settings.username.text, settings.password.text)) {
-            logs.attack_log("SUCCESS: Registred Victim Template!");
-        }
     }
 
     fb.render();
