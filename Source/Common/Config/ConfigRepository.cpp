@@ -1,4 +1,5 @@
 #include "ConfigRepository.hpp"
+#include "SQLiteCpp/Database.h"
 
 #include <SQLiteCpp/Transaction.h>
 
@@ -33,7 +34,7 @@ SQLite::Database ConfigRepository::open_readonly() const {
 //
 //--------------------------------
 SQLite::Database ConfigRepository::open_readwrite() const {
-    SQLite::Database db(db_path_, SQLite::OPEN_READWRITE);
+    SQLite::Database db(db_path_, SQLite::OPEN_CREATE | SQLite::OPEN_READWRITE);
     configure_db(db);
     return db;
 }

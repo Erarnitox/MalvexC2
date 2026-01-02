@@ -16,7 +16,7 @@ So it might be used as a base for your very own C2 framework. The Current Implan
 
 ## Video Overview:
 
-[![Watch the video](https://img.youtube.com/vi/2O3r5qqjyiY/maxresdefault.jpg)](https://youtu.be/2O3r5qqjyiY)
+[![Watch the video](https://img.youtube.com/vi/7qDOVCeM70o/maxresdefault.jpg)](https://youtu.be/7qDOVCeM70o)
 
 ## Design Goals
 Other C2 Frameworks are highly complex and hard to adapt, extend understand or port to other platforms.
