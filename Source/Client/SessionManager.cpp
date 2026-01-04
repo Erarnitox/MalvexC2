@@ -105,10 +105,25 @@ void SessionManager::close(const UUID& session_id) {
 //
 //-------------------------------------------------
 SessionConnection::SessionConnection(std::string host, int port, std::string sid) : session_id(sid) {
-    conn = std::make_unique<cpppwn::Remote>(host, port);
+    int retries = 0;
+    while (not conn && retries < 5) {
+        try {
+            logger::info("Attempting connection to {}:{} (Attempt {}/5)...", host, port, retries + 1);
+            conn = std::make_unique<cpppwn::Remote>(host, port, true, false);
+            logger::success("Session established!");
+        } catch (const std::exception& e) {
+            ++retries;
+            logger::warn("Connection failed: {}. Retrying in 2 seconds...", e.what());
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+    }
 
-    // identify to the server
-    conn->sendline("OPERATOR");
+    if (not conn) {
+        logger::error("Could not reach C2 server after 5 attempts. Exiting.");
+    } else {
+        // identify to the server
+        conn->sendline("OPERATOR");
+    }
 }
 
 //-------------------------------------------------
