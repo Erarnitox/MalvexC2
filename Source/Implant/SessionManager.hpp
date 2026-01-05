@@ -3,6 +3,7 @@
 #include "Logger.hpp"
 #include <Remote.hpp>
 #include <Shell.hpp>
+#include <chrono>
 #include <string>
 
 #include <cpppwn.hpp>
@@ -46,9 +47,10 @@ public:
                 logger::debug("Shell Command: [{}]", cmd);
                 shell.sendline(cmd);
 
-                const auto output =  trim_string(shell.recvline());
-                logger::debug("Output: [{}]", output);
-                conn.sendline(output);
+                const auto output = trim_string(shell.recv_timeout(std::chrono::milliseconds(100)));
+                logger::debug("Output [{}]: [{}]", output.size(), output);
+                conn.sendline(std::to_string(output.size()));
+                conn.send(output);
             }
         } catch (const std::exception& e) {
             logger::debug("Session [{}] encountered error: {}", session_id, e.what());

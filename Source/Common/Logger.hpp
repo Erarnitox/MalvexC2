@@ -24,7 +24,23 @@ enum class LogLevel : int {
 //-------------------------------------------------
 //
 //-------------------------------------------------
-constexpr inline std::string trim_string(const std::string& s) {
+constexpr inline std::string_view trim(std::string_view s) noexcept {
+    constexpr std::string_view whitespace = " \t\n\r\f\v";
+    const auto start = s.find_first_not_of(whitespace);
+    if (start == std::string_view::npos) {
+        return {};
+    }
+
+    s.remove_prefix(start);
+    const auto end = s.find_last_not_of(whitespace);
+    s.remove_suffix(s.size() - (end + 1));
+    return s;
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+constexpr inline std::string trim_string(const std::string& s) noexcept {
     const std::string whitespace = " \t\n\r\f\v";
 
     size_t start = s.find_first_not_of(whitespace);

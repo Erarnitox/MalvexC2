@@ -134,7 +134,18 @@ std::string SessionConnection::execute_cmd(const std::string& cmd) {
         conn->sendline(cmd);
     }
 
-    return trim_string(conn->recvline());
+    std::string_view delimiter = "_MLVX_END";
+    std::string data = conn->recvuntil(delimiter.data());
+
+    if (data.ends_with(delimiter)) {
+        data.erase(data.size() - delimiter.size());
+    }
+
+    if (data.ends_with("MLVX_NODATA")) {
+        return "<NO DATA>";
+    } else {
+        return data;
+    }
 }
 
 //-------------------------------------------------
