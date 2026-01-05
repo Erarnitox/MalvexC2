@@ -1,0 +1,21 @@
+name: CMake on a single platform
+
+on:
+  push:
+    branches: [ "Main" ]
+  pull_request:
+    branches: [ "Main" ]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure CMake
+      run: cmake --preset github
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build
+
