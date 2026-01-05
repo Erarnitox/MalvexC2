@@ -1,6 +1,7 @@
 name: Build and Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*' # Trigger only when pushed a tag like v1.0.0
@@ -21,7 +22,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libssl-dev
+          sudo apt-get install -y build-essential cmake libssl-dev libpsl-dev
 
       - name: Configure CMake
         run: cmake --preset github

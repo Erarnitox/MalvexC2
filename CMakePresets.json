@@ -18,7 +18,9 @@
           "CMAKE_INSTALL_PREFIX" : "${sourceDir}/build",
           "CMAKE_CXX_COMPILER": "clang++",
           "CMAKE_CXX_VISIBILITY_PRESET": "hidden",
-          "LOG_LEVEL": "DEBUG"
+          "LOG_LEVEL": "DEBUG",
+          "CURL_USE_LIBPSL": "OFF",
+          "BUILD_CURL_EXE": "OFF"
       }
     },
     {
@@ -33,7 +35,9 @@
           "CMAKE_INSTALL_PREFIX" : "${sourceDir}/build",
           "CMAKE_CXX_COMPILER": "clang++",
           "CMAKE_CXX_VISIBILITY_PRESET": "hidden",
-          "LOG_LEVEL": "NONE"
+          "LOG_LEVEL": "NONE",
+          "CURL_USE_LIBPSL": "OFF",
+          "BUILD_CURL_EXE": "OFF"
       }
     }
   ],
