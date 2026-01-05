@@ -58,7 +58,8 @@ add_custom_command(TARGET client POST_BUILD
 
 include(GNUInstallDirs)
 
-install(TARGETS client RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS client RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Full)
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Resources/"
-        DESTINATION "${CMAKE_INSTALL_BINDIR}/Resources")
+        DESTINATION "${CMAKE_INSTALL_BINDIR}/Resources"
+        COMPONENT Full)

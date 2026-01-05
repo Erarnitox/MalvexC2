@@ -1,21 +1,50 @@
-name: CMake on a single platform
+name: Build and Release
 
 on:
   push:
-    branches: [ "Main" ]
-  pull_request:
-    branches: [ "Main" ]
-    
+    tags:
+      - 'v*' # Trigger only when pushed a tag like v1.0.0
+
+permissions:
+  contents: write
+
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Configure CMake
-      run: cmake --preset github
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libssl-dev
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build
+      - name: Configure CMake
+        run: cmake --preset github
 
+      - name: Build Project
+        run: cmake --build build
+
+      - name: Create Package with CPack
+        working-directory: build
+        run: cpack -G ZIP
+
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          echo "Release generated from tag ${{ github.ref_name }}" > body.txt
+
+      - name: Create GitHub Release and Upload Artifact
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/*.zip
+          body_path: body.txt
+          name: "Malvex C2 ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

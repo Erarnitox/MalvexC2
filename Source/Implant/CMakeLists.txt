@@ -16,3 +16,9 @@ add_custom_command(TARGET implant POST_BUILD
         $<TARGET_FILE_DIR:client>/$<TARGET_FILE_NAME:implant>
     COMMENT "Copying implant binary to client directory"
 )
+
+# Install interface
+
+include(GNUInstallDirs)
+
+install(TARGETS implant RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Full)

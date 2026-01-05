@@ -23,3 +23,9 @@ add_custom_command(TARGET server POST_BUILD
         $<TARGET_FILE_DIR:client>/$<TARGET_FILE_NAME:server>
     COMMENT "Copying server binary to client directory"
 )
+
+# Install interface
+
+include(GNUInstallDirs)
+
+install(TARGETS server RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Full)

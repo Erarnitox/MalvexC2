@@ -47,3 +47,19 @@ else()
 endif()
 
 add_subdirectory(Source bin)
+
+# CPack Configuration
+set(CPACK_PACKAGE_NAME "MalvexC2")
+set(CPACK_PACKAGE_VENDOR "Erarnitox")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Modern C++23 C2 Framework")
+set(CPACK_PACKAGE_VERSION "0.0.1")
+
+set(CPACK_GENERATOR "ZIP")
+
+set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+set(CPACK_COMPONENTS_ALL Full)
+
+set(CPACK_STRIP_FILES TRUE)
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "MalvexC2-${CPACK_PACKAGE_VERSION}")
+
+include(CPack)
