@@ -27,7 +27,7 @@ jobs:
         run: cmake --preset github
 
       - name: Build Project
-        run: cmake --build build
+        run: cmake --build --preset github
 
       - name: Create Package with CPack
         working-directory: build
