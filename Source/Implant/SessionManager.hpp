@@ -50,7 +50,10 @@ public:
                 const auto output = trim_string(shell.recv_timeout(std::chrono::milliseconds(100)));
                 logger::debug("Output [{}]: [{}]", output.size(), output);
                 conn.sendline(std::to_string(output.size()));
-                conn.send(output);
+
+                if (output.size() > 0) {
+                    conn.send(output);
+                }
             }
         } catch (const std::exception& e) {
             logger::debug("Session [{}] encountered error: {}", session_id, e.what());
