@@ -861,7 +861,7 @@ void drawSessionsTab(WindowState& state) {
     {
         scrollOffset -= GetMouseWheelMove() * 20;
 
-        float maxScroll = textSize.y - outputRect.height;
+        float maxScroll = textSize.y - outputRect.height + 10;
         if (maxScroll < 0) maxScroll = 0;
         if (scrollOffset < 0) scrollOffset = 0;
         if (scrollOffset > maxScroll) scrollOffset = maxScroll;
@@ -871,8 +871,9 @@ void drawSessionsTab(WindowState& state) {
     GuiGroupBox(outputRect, "Session Output");
 
     // Draw scrollbar
-    Rectangle scrollBarBounds = { outputRect.x + outputRect.width - 14, outputRect.y,
-                                    14, outputRect.height };
+    static const int bar_width = 10;
+    Rectangle scrollBarBounds = { outputRect.x + outputRect.width - (bar_width + 2), outputRect.y + 2,
+                                    bar_width, outputRect.height - 4};
     float maxScroll = textSize.y - outputRect.height;
     if (maxScroll < 0) maxScroll = 0;
 
