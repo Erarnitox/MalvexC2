@@ -4,6 +4,8 @@
 > [!CAUTION]
 > **Use at your own risk:** Code in this repository might be harmful. Only run and use things you understand!
 
+[![Build and Release](https://github.com/Erarnitox/MalvexC2/actions/workflows/cmake-single-platform.yml/badge.svg)](https://github.com/Erarnitox/MalvexC2/actions/workflows/cmake-single-platform.yml)
+
 # Malvex C2
 
 <img src="./Resources/Logo.png" height="200px" width="auto" align="left" />
