@@ -59,9 +59,9 @@ consteval LogLevel compiled_log_level() {
     #if defined(LOG_LEVEL_DEBUG)
         return LogLevel::DEBUG;
     #elif defined(LOG_LEVEL_WARN)
-        return LogLevel::WARN
+        return LogLevel::WARN;
      #elif defined(LOG_LEVEL_NONE)
-        return LogLevel::NONE
+        return LogLevel::NONE;
     #endif
     #ifdef NDEBUG
         return LogLevel::ERROR;
