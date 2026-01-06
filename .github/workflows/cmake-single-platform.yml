@@ -21,7 +21,7 @@ jobs:
       - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v2
         with:
-          version: "21.1.8"
+          version: "21.1.6"
       - name: Install Dependencies
         run: |
           sudo apt-get update
