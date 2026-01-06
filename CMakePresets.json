@@ -17,10 +17,13 @@
           "CMAKE_BUILD_TYPE" : "Release",
           "CMAKE_INSTALL_PREFIX" : "${sourceDir}/build",
           "CMAKE_CXX_COMPILER": "clang++",
+          "CMAKE_C_COMPILER": "clang",
           "CMAKE_CXX_VISIBILITY_PRESET": "hidden",
           "LOG_LEVEL": "DEBUG",
           "CURL_USE_LIBPSL": "OFF",
-          "BUILD_CURL_EXE": "OFF"
+          "BUILD_CURL_EXE": "OFF",
+          "BUILD_SHARED_LIBS": "OFF",
+          "CURL_STATICLIB": "ON"
       }
     },
     {
@@ -34,10 +37,13 @@
           "CMAKE_BUILD_TYPE" : "Release",
           "CMAKE_INSTALL_PREFIX" : "${sourceDir}/build",
           "CMAKE_CXX_COMPILER": "clang++",
+          "CMAKE_C_COMPILER": "clang",
           "CMAKE_CXX_VISIBILITY_PRESET": "hidden",
           "LOG_LEVEL": "NONE",
           "CURL_USE_LIBPSL": "OFF",
-          "BUILD_CURL_EXE": "OFF"
+          "BUILD_CURL_EXE": "OFF",
+          "BUILD_SHARED_LIBS": "OFF",
+          "CURL_STATICLIB": "ON"
       }
     }
   ],
