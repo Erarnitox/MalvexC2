@@ -27,7 +27,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake libssl-dev libpsl-dev \
           libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
-          libxi-dev libgl1-mesa-dev libglu1-mesa-dev libasound2-dev
+          libxi-dev libgl1-mesa-dev libglu1-mesa-dev libasound2-dev \
+          libdw-dev
 
       - name: Configure CMake
         run: cmake --preset github
