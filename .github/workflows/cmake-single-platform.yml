@@ -19,9 +19,9 @@ jobs:
         with:
           submodules: recursive
       - name: Install LLVM and Clang
-        uses: llvm/actions/setup-llvm@main
+        uses: KyleMayes/install-llvm-action@v2
         with:
-          version: "latest"
+          version: "21.1.8"
       - name: Install Dependencies
         run: |
           sudo apt-get update
