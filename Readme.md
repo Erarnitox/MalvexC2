@@ -27,11 +27,11 @@ That way this C2 framework should offer a perfect base for your to build your fu
 Everything, the client, server and implant are written in modern C++ and are contained within the same "project"
 
 ## Installation
-1) Download the latest Release.zip
-2) scp the server.elf onto your Linux based C2 server
-3) run the server.elf and go through the setup process
-4) Extract the client directory to your Linux PC
-5) Run the client.elf from the extracted directory
+1) Download the latest [release.zip](https://github.com/Erarnitox/MalvexC2/releases/latest)
+2) scp the server onto your Linux based C2 server
+3) run the server and go through the setup process
+4) Extract the other files to your Linux PC
+5) Run the client from the extracted directory
 6) Enter your server credentials
 7) Under the "Builder" Tab in the client you can configure the implant
 8) Once configured implant is run it will reach out to the C2 server and you will have full control over it

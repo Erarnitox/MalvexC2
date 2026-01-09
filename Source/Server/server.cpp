@@ -3,7 +3,6 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 
 #include <cstdint>
-#include <exception>
 #include <iostream>
 #include <print>
 #include <thread>

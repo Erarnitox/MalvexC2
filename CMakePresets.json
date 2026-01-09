@@ -22,8 +22,7 @@
           "LOG_LEVEL": "DEBUG",
           "CURL_USE_LIBPSL": "OFF",
           "BUILD_CURL_EXE": "OFF",
-          "BUILD_SHARED_LIBS": "OFF",
-          "CURL_STATICLIB": "ON"
+          "BUILD_SHARED_LIBS": "OFF"
       }
     },
     {
@@ -42,8 +41,7 @@
           "LOG_LEVEL": "NONE",
           "CURL_USE_LIBPSL": "OFF",
           "BUILD_CURL_EXE": "OFF",
-          "BUILD_SHARED_LIBS": "OFF",
-          "CURL_STATICLIB": "ON"
+          "BUILD_SHARED_LIBS": "OFF"
       }
     }
   ],

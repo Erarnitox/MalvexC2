@@ -52,7 +52,7 @@ add_subdirectory(Source bin)
 set(CPACK_PACKAGE_NAME "MalvexC2")
 set(CPACK_PACKAGE_VENDOR "Erarnitox")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Modern C++23 C2 Framework")
-set(CPACK_PACKAGE_VERSION "0.0.1")
+set(CPACK_PACKAGE_VERSION "0.0.4")
 
 set(CPACK_GENERATOR "ZIP")
 
