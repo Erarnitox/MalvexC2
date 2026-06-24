@@ -17,7 +17,7 @@ private:
     std::atomic<bool> running{true};
 
 public:
-    SessionConnection(std::string host, int port, std::string sid);
+    SessionConnection(std::string host, int port, std::string sid, std::string username, std::string password);
     [[nodiscard]] std::string execute_cmd(const std::string& cmd);
     [[nodiscard]] std::string get_uuid() const;
     void stop();
@@ -40,7 +40,11 @@ public:
     const std::vector<SessionDAO>& getSessions() const noexcept;
     const SessionDAO getSession(int64_t id) const noexcept;
     void setList(std::vector<SessionDAO>&& session_list) noexcept;
-    void startSession(const std::string& host, int64_t port);
+    void startSession(
+        const std::string& host,
+        int64_t port,
+        const std::string& username,
+        const std::string& password);
     void close(const UUID& session_id);
     std::string execute(const SessionDAO& session, const std::string& cmd);
 

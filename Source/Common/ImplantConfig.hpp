@@ -6,7 +6,7 @@
 // Structure to hold our configuration data
 struct ImplantConfig {
     char username[64];
-    char password[64];
+    char password[256];
     char default_timeout[8];
     char server_url[256];
     char service_name[64];

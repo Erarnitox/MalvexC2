@@ -2,6 +2,7 @@
 #include "Logger.hpp"
 #include "SessionDAO.hpp"
 #include "Types.hpp"
+#include <SessionHandshake.hpp>
 #include <memory>
 
 //-------------------------------------------------
@@ -44,10 +45,19 @@ const SessionDAO SessionManager::getSession(int64_t id) const noexcept {
 //-------------------------------------------------
 //
 //-------------------------------------------------
-void SessionManager::startSession(const std::string& host, int64_t port) {
+void SessionManager::startSession(
+    const std::string& host,
+    int64_t port,
+    const std::string& username,
+    const std::string& password) {
     const UUID uuid = generate_uuid();
 
-    m_connections.emplace_back(std::make_unique<SessionConnection>(host, static_cast<int>(port), uuid));
+    m_connections.emplace_back(std::make_unique<SessionConnection>(
+        host,
+        static_cast<int>(port),
+        uuid,
+        username,
+        password));
 
     SessionDAO session;
     session.port = port;
@@ -104,7 +114,13 @@ void SessionManager::close(const UUID& session_id) {
 //-------------------------------------------------
 //
 //-------------------------------------------------
-SessionConnection::SessionConnection(std::string host, int port, std::string sid) : session_id(sid) {
+SessionConnection::SessionConnection(
+    std::string host,
+    int port,
+    std::string sid,
+    std::string username,
+    std::string password)
+    : session_id(std::move(sid)) {
     int retries = 0;
     while (not conn && retries < 5) {
         try {
@@ -121,8 +137,7 @@ SessionConnection::SessionConnection(std::string host, int port, std::string sid
     if (not conn) {
         logger::error("Could not reach C2 server after 5 attempts. Exiting.");
     } else {
-        // identify to the server
-        conn->sendline("OPERATOR");
+        session_handshake::send(*conn, session_handshake::operator_role, username, password);
     }
 }
 

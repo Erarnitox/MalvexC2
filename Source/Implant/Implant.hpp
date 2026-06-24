@@ -98,7 +98,14 @@ static inline std::string get_internal_ip() {
 
         return rest_client.post<BeaconRequest, std::vector<CommandDAO>>("api/beacon", beacon);
 
+    } catch(const cpppwn::RESTException& err) {
+        logger::warn(
+            "Beacon failed with HTTP {}: {}",
+            err.status_code,
+            err.response_body.empty() ? err.what() : err.response_body);
+        return {};
     } catch(const std::exception& err) {
+        logger::warn("Beacon failed: {}", err.what());
         return {};
     }
 }

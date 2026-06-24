@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
                 const std::string& host = cmd.command.substr(8, cmd.command.find_last_of(" ") - 8);
                 const int port = std::stoi(cmd.command.substr(cmd.command.find_last_of(" ")));
                 logger::debug("Opening Interactive Shell Session: {} Port: {}", host, port);
-                sessionMan.start_session(generate_uuid(), host, port);
+                sessionMan.start_session(generate_uuid(), host, port, config.username, config.password);
                 res.result_data = "Interactive session requested";
             } else if (cmd.command.starts_with("close")) {
                 logger::debug("Closing all Interactive Shell Sessions");

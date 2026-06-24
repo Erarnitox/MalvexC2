@@ -18,6 +18,8 @@ namespace Key {
     constexpr const char* client_server_url_key = "malvex_server_url";
     constexpr const char* client_bearer_token_key = "malvex_bearar_token";
     constexpr const char* client_output_dir_key = "malvex_out_dir";
+    constexpr const char* client_victim_api_port_key = "victim_api_port";
+    constexpr const char* client_implant_url_key = "implant_url";
 }
 
 class Config {

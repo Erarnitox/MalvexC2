@@ -49,6 +49,19 @@ std::string PasswordCredentialService::resolve_for_storage(
 //--------------------------------
 bool PasswordCredentialService::verify(const std::string& plaintext, const std::string& stored_value) const {
     if (hasher_->is_hashed(stored_value)) {
+        if (hasher_->is_hashed(plaintext)) {
+            if (plaintext.size() != stored_value.size()) {
+                return false;
+            }
+
+            unsigned char mismatch = 0;
+            for (std::size_t i = 0; i < plaintext.size(); ++i) {
+                mismatch |= static_cast<unsigned char>(plaintext[i] ^ stored_value[i]);
+            }
+
+            return mismatch == 0;
+        }
+
         return hasher_->verify(plaintext, stored_value);
     }
 

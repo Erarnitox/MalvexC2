@@ -284,13 +284,25 @@ inline void register_victim_template_endpoints(cpppwn::RESTServer& server) {
         return templates.get(*id);
     });
 
-    server.post<VictimTemplateCreateRequest, VictimTemplateDAO>("/api/templates",
-        [&templates](const HttpRequest& req, const VictimTemplateCreateRequest& item) -> VictimTemplateDAO {
+    server.post<VictimTemplateCreateRequest, VictimTemplateCreatedResponse>("/api/templates",
+        [&templates](const HttpRequest& req, const VictimTemplateCreateRequest& item) -> VictimTemplateCreatedResponse {
             (void)req;
-            VictimTemplateDAO template_dao;
-            template_dao.username = item.username;
-            template_dao.password = item.password;
-            return templates.create(template_dao);
+            try {
+                VictimTemplateDAO template_dao;
+                template_dao.username = item.username;
+                template_dao.password = item.password;
+                const auto created = templates.create(template_dao);
+
+                VictimTemplateCreatedResponse response;
+                response.id = created.id;
+                response.uid = created.uid;
+                response.username = created.username;
+                response.password_credential = created.password_hash;
+                return response;
+            } catch (const std::exception& e) {
+                logger::error("Failed to create victim template: {}", e.what());
+                throw;
+            }
         });
 
     server.del("/api/template", [&templates](const HttpRequest& req) {

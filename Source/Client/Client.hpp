@@ -57,6 +57,9 @@ public:
     std::string getServerHost() const noexcept;
 
     [[nodiscard]]
+    std::string getVictimBeaconUrl() const noexcept;
+
+    [[nodiscard]]
     std::string getTimeout() const noexcept;
 
     [[nodiscard]]

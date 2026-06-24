@@ -24,6 +24,13 @@ struct VictimTemplateCreateRequest {
     std::string password;
 };
 
+struct VictimTemplateCreatedResponse {
+    int64_t id{0};
+    UUID uid;
+    std::string username;
+    std::string password_credential;
+};
+
 //--------------------------------
 //
 //--------------------------------
@@ -43,6 +50,17 @@ struct glz::meta<VictimTemplateCreateRequest> {
     static constexpr auto value = object(
         "username", &T::username,
         "password", &T::password
+    );
+};
+
+template <>
+struct glz::meta<VictimTemplateCreatedResponse> {
+    using T = VictimTemplateCreatedResponse;
+    static constexpr auto value = object(
+        "victim_template_id", &T::id,
+        "victim_template_uid", &T::uid,
+        "username", &T::username,
+        "password_credential", &T::password_credential
     );
 };
 

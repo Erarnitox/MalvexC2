@@ -7,9 +7,12 @@
 #include <string>
 
 class Builder {
-    ImplantConfig m_config;
+    ImplantConfig m_config{};
     Config& m_conf;
     LogManager& m_log_man;
+
+    void syncConfigFromStorage();
+    [[nodiscard]] uint16_t getVictimApiPort() const noexcept;
 
 public:
     Builder(const Builder&) = delete;
