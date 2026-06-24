@@ -19,6 +19,7 @@ add_executable(client
 
     # Headers for IDE
     "UI.hpp"
+    "UiLayout.hpp"
     "Client.hpp"
     "Builder.hpp"
     "CommandManager.hpp"

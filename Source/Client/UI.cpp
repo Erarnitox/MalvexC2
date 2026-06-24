@@ -5,6 +5,7 @@
 #include "FileBrowser.hpp"
 #include "SessionDAO.hpp"
 #include "SessionManager.hpp"
+#include "UiLayout.hpp"
 #include <Types.hpp>
 
 #include <raylib.h>
@@ -28,6 +29,61 @@
 #elif defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
+
+namespace {
+
+void apply_malvex_theme() {
+    GuiLoadStyleDark();
+
+    const int text_padding = 10;
+    const int border_width = 1;
+
+    const int controls[] = {
+        DEFAULT, LABEL, BUTTON, TOGGLE, SLIDER, PROGRESSBAR, CHECKBOX,
+        COMBOBOX, DROPDOWNBOX, TEXTBOX, VALUEBOX, LISTVIEW, COLORPICKER,
+        SCROLLBAR, STATUSBAR,
+    };
+
+    for (const int control : controls) {
+        GuiSetStyle(control, TEXT_PADDING, text_padding);
+        GuiSetStyle(control, BORDER_WIDTH, border_width);
+    }
+
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 16);
+    GuiSetStyle(DEFAULT, TEXT_LINE_SPACING, 4);
+    GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt({28, 28, 34, 255}));
+    GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, ColorToInt({42, 42, 52, 255}));
+    GuiSetStyle(DEFAULT, BASE_COLOR_FOCUSED, ColorToInt({56, 56, 70, 255}));
+    GuiSetStyle(DEFAULT, BASE_COLOR_PRESSED, ColorToInt({72, 72, 88, 255}));
+    GuiSetStyle(DEFAULT, BORDER_COLOR_NORMAL, ColorToInt({90, 90, 110, 255}));
+    GuiSetStyle(DEFAULT, BORDER_COLOR_FOCUSED, ColorToInt({180, 60, 90, 255}));
+    GuiSetStyle(DEFAULT, LINE_COLOR, ColorToInt({70, 70, 86, 255}));
+    GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, ColorToInt({230, 230, 240, 255}));
+    GuiSetStyle(DEFAULT, TEXT_COLOR_FOCUSED, ColorToInt({255, 255, 255, 255}));
+
+    GuiSetStyle(BUTTON, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
+    GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+    GuiSetStyle(TEXTBOX, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+    GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+}
+
+void draw_panel_title(Rectangle bounds, const char* title) {
+    if (title != nullptr && title[0] != '\0') {
+        GuiLabel({bounds.x + ui::kPadding, bounds.y + 8.0f, bounds.width - ui::kPadding * 2.0f, 22.0f}, title);
+    }
+}
+
+void draw_malvex_panel(Rectangle bounds, const char* title, Color fill, Color border) {
+    ui::draw_panel_frame(bounds, fill, border);
+    draw_panel_title(bounds, title);
+}
+
+void draw_malvex_section_header(Rectangle content, const char* title) {
+    GuiLabel({content.x, content.y + 4.0f, content.width, 24.0f}, title);
+    ui::draw_section_divider(content);
+}
+
+} // namespace
 
 // function prototypes
 void drawConnectionsTab(WindowState& res);
@@ -74,20 +130,28 @@ int main() {
     strncpy(state.implant_settings.service_description.text, state.builder.getServiceDesc().c_str(), sizeof(state.implant_settings.service_description.text));
 
 
-    Resolution old_res = state.res;
+    ui::Resolution old_res = state.res;
     auto& client = Client::instance();
 
-    const std::string title{ GuiIconText(ICON_DEMON, "Malvex C2 - GUI Client") };
+    const std::string title_bar_label = GuiIconText(ICON_DEMON, "Malvex C2 - GUI Client");
 
     // Set up the window
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(state.res.width, state.res.height, title.c_str());
+    InitWindow(state.res.width, state.res.height, "Malvex C2 - GUI Client");
     SetTargetFPS(30);
-    GuiLoadStyleDark();
+    apply_malvex_theme();
     const auto bg_color = GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR));
+    const Color panel_fill{36, 36, 46, 255};
+    const Color panel_border{90, 90, 110, 255};
 
-    // Set custom font
+    // Set custom font (must be after theme load, before drawing)
     state.font = LoadFont("Resources/Font.ttf");
+    if (state.font.texture.id == 0) {
+        TraceLog(LOG_WARNING, "Failed to load Resources/Font.ttf, using default font");
+        state.font = GetFontDefault();
+    } else {
+        SetTextureFilter(state.font.texture, TEXTURE_FILTER_BILINEAR);
+    }
     GuiSetFont(state.font);
 
     // Check if we already have a bearer token
@@ -100,31 +164,35 @@ int main() {
         BeginDrawing();
         ClearBackground(bg_color);
 
-        // Update Resoulution
         state.res = {
             static_cast<float>(GetScreenWidth()),
             static_cast<float>(GetScreenHeight())
         };
 
         // --- Menu Bar ---
-        GuiDummyRec({0, 0, state.res.width, 24}, nullptr); // Background
-        if(GuiButton({8, 4, 80, 16}, GuiIconText(ICON_INFO, "About"))) {
+        const auto title_bounds = ui::title_bar(state.res);
+        DrawRectangleRec(title_bounds, {32, 32, 40, 255});
+
+        if (GuiButton({ui::kPadding, 8, 90, 22}, GuiIconText(ICON_INFO, "About"))) {
             state.show_about = true;
         }
 
-        GuiLabel({state.res.width/2 - 100, 4, 200, 16}, title.c_str());
+        const int title_align = GuiGetStyle(LABEL, TEXT_ALIGNMENT);
+        GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
+        GuiLabel({0.0f, 8.0f, state.res.width, 22.0f}, title_bar_label.c_str());
+        GuiSetStyle(LABEL, TEXT_ALIGNMENT, title_align);
 
-        if (GuiButton({state.res.width - 20, 4, 16, 16,}, "X")) {
+        if (GuiButton({state.res.width - ui::kPadding - 24, 8, 24, 22}, "X")) {
             break;
         }
 
-        if (GuiButton({state.res.width - 130, 4, 100, 16,}, GuiIconText(ICON_CURSOR_SCALE_FILL, "Fullscreen"))) {
+        if (GuiButton({state.res.width - ui::kPadding - 130, 8, 120, 22}, GuiIconText(ICON_CURSOR_SCALE_FILL, "Fullscreen"))) {
             state.is_fullscreen = not state.is_fullscreen;
 
             if (state.is_fullscreen) {
                 int m = GetCurrentMonitor();
                 old_res = state.res;
-                Resolution new_res{
+                ui::Resolution new_res{
                     static_cast<float>(GetMonitorWidth(m)),
                     static_cast<float>(GetMonitorHeight(m))
                 };
@@ -144,30 +212,34 @@ int main() {
             drawAbout(state);
         } else {
             // --- Tab Bar ---
-            Rectangle tabBar = {0, 28, state.res.width, 28};
-            GuiGroupBox(tabBar, nullptr);
+            const auto tab_bar = ui::tab_bar(state.res);
+            ui::draw_rounded_rect(tab_bar, panel_fill, panel_border);
 
-            float tabWidth = tabBar.width / tabs.size();
+            const float tab_gap = 6.0f;
+            const float tab_width = (tab_bar.width - tab_gap * (tabs.size() + 1)) / static_cast<float>(tabs.size());
+
             for (size_t i = 0; i < tabs.size(); i++) {
-                Rectangle r{ tabWidth * i, 28, tabWidth, 28 };
+                Rectangle tab_button{
+                    tab_bar.x + tab_gap + static_cast<float>(i) * (tab_width + tab_gap),
+                    tab_bar.y + 6.0f,
+                    tab_width,
+                    tab_bar.height - 12.0f,
+                };
 
-                //highlight currently selected tab
-                int originalBase = GuiGetStyle(BUTTON, BASE_COLOR_NORMAL);
-                int originalText = GuiGetStyle(BUTTON, TEXT_COLOR_NORMAL);
+                int original_base = GuiGetStyle(BUTTON, BASE_COLOR_NORMAL);
+                int original_text = GuiGetStyle(BUTTON, TEXT_COLOR_NORMAL);
 
-                // Apply active colors
-                if (state.current_tab == (Tab)i) {
-                    GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(RED));
-                    GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, ColorToInt(YELLOW));
+                if (state.current_tab == static_cast<Tab>(i)) {
+                    GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt({150, 30, 70, 255}));
+                    GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, ColorToInt({255, 230, 120, 255}));
                 }
 
-                if (GuiButton(r, tabs.at(i).c_str())) {
-                    state.current_tab = (Tab)i;
+                if (GuiButton(tab_button, tabs.at(i).c_str())) {
+                    state.current_tab = static_cast<Tab>(i);
                 }
 
-                //restore original style
-                GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, originalBase);
-                GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, originalText);
+                GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, original_base);
+                GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, original_text);
             }
 
             // --- Active Tab ---
@@ -196,8 +268,9 @@ int main() {
         }
 
         // --- Status Bar ---
-        Rectangle status = {0, state.res.height - 24, state.res.width, 24};
-        GuiStatusBar(status, client.getStatusText());
+        const auto status_bounds = ui::status_bar(state.res);
+        ui::draw_rounded_rect(status_bounds, panel_fill, panel_border);
+        GuiStatusBar(ui::inset(status_bounds, 4.0f), client.getStatusText());
 
         EndDrawing();
     }
@@ -221,70 +294,86 @@ void drawConnectionsTab(WindowState& state) {
     static auto port = gen_port();
 
     const auto& res{ state.res };
+    const Color panel_fill{36, 36, 46, 255};
+    const Color panel_border{90, 90, 110, 255};
 
-    GuiLabel({res.width/2 - 100, 50, 200, 30}, "List of Victim Connections");
+    const auto page = ui::content_area(res);
+    draw_malvex_section_header(page, "List of Victim Connections");
+    auto body = ui::section_content(page);
 
-    if (GuiButton({3, 58, 120, 20}, GuiIconText(ICON_REPEAT_FILL, "Refresh List"))) {
-        if(Client::instance().fetchVictims()) {
+    if (GuiButton(ui::toolbar_button(body.x, body.y, 150), GuiIconText(ICON_REPEAT_FILL, "Refresh List"))) {
+        if (Client::instance().fetchVictims()) {
             logMan.local_log("Fetched Victims from Server");
         } else {
             logMan.local_log("Refreshing the Victim List failed!");
         }
     }
 
-    Rectangle tableRect{0, 80, res.width, res.height - 90};
-    GuiPanel(tableRect, "");
+    Rectangle table_panel{
+        body.x,
+        body.y + ui::kControlHeight + ui::kGap,
+        body.width,
+        std::max(0.0f, body.height - ui::kControlHeight - ui::kGap),
+    };
+    ui::draw_panel_frame(table_panel, panel_fill, panel_border);
 
-    // Table header
+    const auto table_body = ui::panel_body(table_panel, false);
+
     const char* headers[] = {
         "ID", "Hostname", "LAN", "WAN", "OS",
         "Username", "Status"
     };
     constexpr int colCount = 7;
 
-    float colWidth = (tableRect.width-10) / colCount;
+    const float col_width = table_body.width / colCount;
+    constexpr float row_height = 28.0f;
 
     for (int i = 0; i < colCount; i++) {
-        Rectangle r{tableRect.x + i * colWidth, tableRect.y, colWidth, 24};
-        GuiDrawRectangle(r, 1, GRAY, BLACK);
-        GuiLabel(r, headers[i]);
+        Rectangle header_cell{
+            table_body.x + i * col_width,
+            table_body.y,
+            col_width,
+            row_height,
+        };
+        ui::draw_rounded_rect(header_cell, {52, 52, 64, 255}, {70, 70, 86, 255});
+        GuiLabel(ui::inset(header_cell, 6.0f), headers[i]);
     }
 
-    float panelTop = tableRect.y + 26;
-    Rectangle panelRect {
-        0,
-        panelTop,
-        res.width,
-        res.height - panelTop
+    Rectangle panelRect{
+        table_body.x,
+        table_body.y + row_height + 4.0f,
+        table_body.width,
+        std::max(0.0f, table_body.height - row_height - 4.0f),
     };
 
-    // Detect hovered row
     Vector2 mouse = GetMousePosition();
 
-    // Convert mouse into panel local coordinates
     if (not menuVisible && CheckCollisionPointRec(mouse, panelRect)) {
         float localY = mouse.y - panelRect.y - scroll.y;
         if (localY >= 0 && localY < content.height) {
-            hoveredRow = (int)(localY / 25);
-            if (hoveredRow >= 50)
+            hoveredRow = static_cast<int>(localY / row_height);
+            if (hoveredRow >= 50) {
                 hoveredRow = -1;
+            }
         }
     }
 
     GuiScrollPanel(panelRect, nullptr, content, &scroll, &view);
 
-    BeginScissorMode(panelRect.x, panelRect.y, panelRect.width, panelRect.height);
+    BeginScissorMode(
+        static_cast<int>(panelRect.x),
+        static_cast<int>(panelRect.y),
+        static_cast<int>(panelRect.width),
+        static_cast<int>(panelRect.height));
 
     auto& client = Client::instance();
     const auto& victims = client.getVictims();
 
-    colWidth = (tableRect.width-10) / colCount;
-    for (size_t client_id{ 0 }; client_id < victims.size(); ++client_id) {
-        auto line_color = client_id % 2 == 0 ? Color{150, 20, 70, 255} : DARKGRAY;
+    for (size_t client_id{0}; client_id < victims.size(); ++client_id) {
+        auto line_color = client_id % 2 == 0 ? Color{58, 58, 72, 255} : Color{46, 46, 58, 255};
 
-        // Hover highlight
         if (static_cast<int>(client_id) == hoveredRow) {
-            line_color = RED;
+            line_color = {150, 30, 70, 255};
         }
 
         const auto& vic{ victims[client_id] };
@@ -299,9 +388,14 @@ void drawConnectionsTab(WindowState& state) {
         };
 
         for (int i = 0; i < colCount; ++i) {
-            Rectangle r{tableRect.x + i * colWidth, tableRect.y + scroll.y + 26 + (25*client_id), colWidth, 24};
-            GuiDrawRectangle(r, 1, BLACK, line_color);
-            GuiLabel(r, values[i].c_str());
+            Rectangle cell{
+                table_body.x + i * col_width,
+                table_body.y + row_height + 4.0f + scroll.y + row_height * static_cast<float>(client_id),
+                col_width,
+                row_height,
+            };
+            ui::draw_rounded_rect(cell, line_color, {40, 40, 50, 255}, 0.0f);
+            GuiLabel(ui::inset(cell, 6.0f), values[i].c_str());
         }
     }
 
@@ -312,7 +406,7 @@ void drawConnectionsTab(WindowState& state) {
     }
 
     if (menuVisible && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        Rectangle menuArea{menuPos.x, menuPos.y, 300, 500};
+        Rectangle menuArea{menuPos.x, menuPos.y, 320, 500};
         if (not CheckCollisionPointRec(mouse, menuArea)) {
             menuVisible = false;
         }
@@ -321,18 +415,26 @@ void drawConnectionsTab(WindowState& state) {
     EndScissorMode();
 
     if (menuVisible && selectedRow >= 0) {
-        const auto btn_height{ 30 };
-        Rectangle menuRect{menuPos.x, menuPos.y, 300, btn_height*9 + 10};
-        GuiPanel(menuRect, GuiIconText(ICON_DEMON, TextFormat("Attack Victim #%d", selectedRow)));
+        const auto btn_height = ui::kControlHeight + 4.0f;
+        Rectangle menuRect{menuPos.x, menuPos.y, 320, btn_height * 9 + ui::kPadding * 2};
+        draw_malvex_panel(
+            menuRect,
+            GuiIconText(ICON_DEMON, TextFormat("Attack Victim #%d", selectedRow)),
+            panel_fill,
+            panel_border);
 
-        Rectangle btn1{menuRect.x + 10, menuRect.y + btn_height*1, 280, 25};
-        Rectangle btn2{menuRect.x + 10, menuRect.y + btn_height*2, 280, 25};
-        Rectangle btn3{menuRect.x + 10, menuRect.y + btn_height*3, 280, 25};
-        Rectangle btn4{menuRect.x + 10, menuRect.y + btn_height*4, 280, 25};
-        Rectangle btn5{menuRect.x + 10, menuRect.y + btn_height*5, 280, 25};
-        Rectangle btn6{menuRect.x + 10, menuRect.y + btn_height*6, 280, 25};
-        Rectangle btn7{menuRect.x + 10, menuRect.y + btn_height*7, 280, 25};
-        Rectangle btn8{menuRect.x + 10, menuRect.y + btn_height*8, 280, 25};
+        const float menu_x = menuRect.x + ui::kPadding;
+        const float menu_y = menuRect.y + 40.0f;
+        const float menu_w = menuRect.width - ui::kPadding * 2.0f;
+
+        Rectangle btn1{menu_x, menu_y + btn_height * 0, menu_w, ui::kControlHeight};
+        Rectangle btn2{menu_x, menu_y + btn_height * 1, menu_w, ui::kControlHeight};
+        Rectangle btn3{menu_x, menu_y + btn_height * 2, menu_w, ui::kControlHeight};
+        Rectangle btn4{menu_x, menu_y + btn_height * 3, menu_w, ui::kControlHeight};
+        Rectangle btn5{menu_x, menu_y + btn_height * 4, menu_w, ui::kControlHeight};
+        Rectangle btn6{menu_x, menu_y + btn_height * 5, menu_w, ui::kControlHeight};
+        Rectangle btn7{menu_x, menu_y + btn_height * 6, menu_w, ui::kControlHeight};
+        Rectangle btn8{menu_x, menu_y + btn_height * 7, menu_w, ui::kControlHeight};
 
         const auto timeout = std::atol(state.user_settings.default_timeout.text);
         const auto victim = victims[selectedRow];
@@ -420,54 +522,57 @@ void drawConnectionsTab(WindowState& state) {
 //-------------------------------------------------
 void drawLogin(WindowState& state) {
     static const Texture2D texture = LoadTexture("Resources/Logo.png");
+    const Color panel_fill{36, 36, 46, 255};
+    const Color panel_border{90, 90, 110, 255};
 
-    Rectangle popupRect = { state.res.width/2 - 300, state.res.height/2 - 130, 600, 250 };
-    GuiPanel(popupRect, GuiIconText(ICON_DEMON, "Connect to MalvexC2 Server"));
+    Rectangle popupRect = ui::centered_popup(state.res, 640, 320);
+    draw_malvex_panel(popupRect, GuiIconText(ICON_DEMON, "Connect to MalvexC2 Server"), panel_fill, panel_border);
 
-    // Draw image inside popup
-    float imageX = popupRect.x + 10;
-    float imageY = popupRect.y + 40;
-    float imageWidth = 200;
-    float imageHeight = 200;
+    const float imageX = popupRect.x + ui::kPadding;
+    const float imageY = popupRect.y + 48.0f;
+    const float imageWidth = 180.0f;
+    const float imageHeight = 180.0f;
 
     DrawTexturePro(
         texture,
-        Rectangle{ 0, 0, (float)texture.width, (float)texture.height },
-        Rectangle{ imageX, imageY, imageWidth, imageHeight },
-        Vector2{ 0, 0 },
+        Rectangle{0, 0, static_cast<float>(texture.width), static_cast<float>(texture.height)},
+        Rectangle{imageX, imageY, imageWidth, imageHeight},
+        Vector2{0, 0},
         0.0f,
-        WHITE
-    );
+        WHITE);
+
+    const float form_x = popupRect.x + 220.0f;
+    const float form_w = popupRect.width - 236.0f;
 
     if (state.wait_for_response) {
-        GuiTextBox(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 },
-            const_cast<char*>("Connecting! Please Stand by ..."), 0, false);
+        GuiTextBox(
+            Rectangle{form_x, popupRect.y + popupRect.height - 72.0f, form_w, ui::kControlHeight},
+            const_cast<char*>("Connecting! Please Stand by ..."),
+            0,
+            false);
         return;
     }
 
-    // Username field
-    GuiLabel(Rectangle{ popupRect.x + 250, popupRect.y + 40, 90, 20 }, "Username:");
-    if (GuiTextBox(Rectangle{ popupRect.x + 350, popupRect.y + 40, 200, 20 },
-        state.user_settings.username.text, MAX_INPUT_CHARS, state.user_settings.username.edit)) {
-            state.user_settings.username.edit = not state.user_settings.username.edit;
+    ui::FormLayout form{{form_x, popupRect.y + 52.0f, form_w, 170.0f}, 90.0f};
+
+    GuiLabel(form.label_rect(), "Username:");
+    if (GuiTextBox(form.field_rect(), state.user_settings.username.text, MAX_INPUT_CHARS, state.user_settings.username.edit)) {
+        state.user_settings.username.edit = not state.user_settings.username.edit;
+    }
+    form.next_row();
+
+    GuiLabel(form.label_rect(), "Password:");
+    if (GuiTextBox(form.field_rect(), state.user_settings.password.text, MAX_INPUT_CHARS, state.user_settings.password.edit)) {
+        state.user_settings.password.edit = not state.user_settings.password.edit;
+    }
+    form.next_row();
+
+    GuiLabel(form.label_rect(), "Server:");
+    if (GuiTextBox(form.field_rect(), state.user_settings.server_url.text, MAX_INPUT_CHARS, state.user_settings.server_url.edit)) {
+        state.user_settings.server_url.edit = not state.user_settings.server_url.edit;
     }
 
-    // Password field
-    GuiLabel(Rectangle{ popupRect.x + 250, popupRect.y + 10 + 30*2, 90, 20 }, "Password:");
-    if (GuiTextBox(Rectangle{ popupRect.x + 350, popupRect.y + 10 + 30*2, 200, 20 },
-        state.user_settings.password.text, MAX_INPUT_CHARS, state.user_settings.password.edit)) {
-            state.user_settings.password.edit = not state.user_settings.password.edit;
-    }
-
-    // Server URL field
-    GuiLabel(Rectangle{ popupRect.x + 250, popupRect.y + 10 + 30*3, 90, 20 }, "Server:");
-    if (GuiTextBox(Rectangle{ popupRect.x + 350, popupRect.y + 10 + 30*3, 200, 20 },
-        state.user_settings.server_url.text, MAX_INPUT_CHARS, state.user_settings.server_url.edit)) {
-            state.user_settings.server_url.edit = not state.user_settings.server_url.edit;
-    }
-
-    // Login Button
-    if (GuiButton(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 90, 300, 30 }, "Login")) {
+    if (GuiButton(Rectangle{form_x, popupRect.y + popupRect.height - 72.0f, form_w, ui::kControlHeight}, "Login")) {
         state.client.setUsername(state.user_settings.username.text);
         state.client.setPassword(state.user_settings.password.text);
         state.client.setServerUrl(state.user_settings.server_url.text);
@@ -485,11 +590,8 @@ void drawLogin(WindowState& state) {
     }
 
     if (state.login_failed) {
-        GuiLabel(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Login Failed!");
-    }
-
-    // Local Server Button
-    if (not state.login_failed && GuiButton(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Start Local Server")) {
+        GuiLabel(Rectangle{form_x, popupRect.y + popupRect.height - 36.0f, form_w, 24.0f}, "Login Failed!");
+    } else if (GuiButton(Rectangle{form_x, popupRect.y + popupRect.height - 36.0f, form_w, ui::kControlHeight}, "Start Local Server")) {
         state.client.setServerUrl("https://127.0.0.1:1337");
         state.client.setUsername(state.user_settings.username.text);
         state.client.setPassword(state.user_settings.password.text);
@@ -505,34 +607,34 @@ void drawLogin(WindowState& state) {
 //-------------------------------------------------
 void drawAbout(WindowState& state) {
     static const Texture2D texture = LoadTexture("Resources/Logo.png");
+    const Color panel_fill{36, 36, 46, 255};
+    const Color panel_border{90, 90, 110, 255};
 
-    Rectangle popupRect = { state.res.width/2 - 300, state.res.height/2 - 130, 600, 250 };
-    GuiPanel(popupRect, GuiIconText(ICON_DEMON, "About MalvexC2"));
+    Rectangle popupRect = ui::centered_popup(state.res, 640, 320);
+    draw_malvex_panel(popupRect, GuiIconText(ICON_DEMON, "About MalvexC2"), panel_fill, panel_border);
 
-    // Draw image inside popup
-    float imageX = popupRect.x + 10;
-    float imageY = popupRect.y + 40;
-    float imageWidth = 200;
-    float imageHeight = 200;
+    const float imageX = popupRect.x + ui::kPadding;
+    const float imageY = popupRect.y + 48.0f;
+    const float imageWidth = 180.0f;
+    const float imageHeight = 180.0f;
 
     DrawTexturePro(
         texture,
-        Rectangle{ 0, 0, (float)texture.width, (float)texture.height },
-        Rectangle{ imageX, imageY, imageWidth, imageHeight },
-        Vector2{ 0, 0 },
+        Rectangle{0, 0, static_cast<float>(texture.width), static_cast<float>(texture.height)},
+        Rectangle{imageX, imageY, imageWidth, imageHeight},
+        Vector2{0, 0},
         0.0f,
-        WHITE
-    );
+        WHITE);
 
     // Draw text below image
     const char* popupText =
-        "MalvexC2 was written by Erarnitox\n"
-        "For Educational Purposes only!\n"
-        "This should never be used for anything\n"
-        "It is only an example Project!\n\n"
+        "MalvexC2 was written by Erarnitox\n\n\n\n"
+        "For Educational Purposes only!\n\n\n\n"
+        "This should never be used for anything\n\n\n\n"
+        "It is only an example Project!\n\n\n\n\n\n\n\n"
         "SUBSCRIBE TO ERARNITOX ON YOUTUBE!";
 
-    GuiLabel({ popupRect.x + 270, popupRect.y + 100, 300, 30 }, popupText);
+    GuiLabel({ popupRect.x + 270, popupRect.y + 300, 300, 30 }, popupText);
 
     // Close button
     if (GuiButton(Rectangle{ popupRect.x + 250, popupRect.y + popupRect.height - 50, 300, 30 }, "Close")) {
@@ -544,17 +646,20 @@ void drawAbout(WindowState& state) {
 //
 //-------------------------------------------------
 void drawLogsTab(WindowState& state) {
-    static const size_t MAX_LOG_SIZE{ 4096 };
+    static const size_t MAX_LOG_SIZE{4096};
     static char logText[MAX_LOG_SIZE] = "Log started...\n";
-    static Vector2 scrollOffset = { 0, 0 };
-    static Rectangle logBounds = { 0, 0, 0, 0 };
+    static Vector2 scrollOffset = {0, 0};
+    static Rectangle logBounds = {0, 0, 0, 0};
     static LogManager& logMan = LogManager::instance();
+    const Color panel_fill{36, 36, 46, 255};
+    const Color panel_border{90, 90, 110, 255};
 
-    auto& res = state.res;
+    const auto& res = state.res;
+    const auto page = ui::content_area(res);
+    draw_malvex_section_header(page, "C2 Event Log");
+    auto body = ui::section_content(page);
 
-    GuiLabel({res.width/2 - 100, 50, 200, 30}, "C2 Event Log");
-
-    if (GuiButton({3, 58, 120, 20}, GuiIconText(ICON_REPEAT_FILL, "Refresh Logs"))) {
+    if (GuiButton(ui::toolbar_button(body.x, body.y, 150), GuiIconText(ICON_REPEAT_FILL, "Refresh Logs"))) {
         if(not state.client.fetchLogs()) {
             logMan.local_log("Fetching of remote Logs failed!");
         }
@@ -569,31 +674,35 @@ void drawLogsTab(WindowState& state) {
         }
     }
 
-    Rectangle viewRect{0, 80, res.width, res.height - 90};
-    GuiPanel(viewRect, "");
+    Rectangle log_panel{
+        body.x,
+        body.y + ui::kControlHeight + ui::kGap,
+        body.width,
+        std::max(0.0f, body.height - ui::kControlHeight - ui::kGap),
+    };
+    ui::draw_panel_frame(log_panel, panel_fill, panel_border);
+    const auto log_body = ui::panel_body(log_panel, false);
 
-    // Use GuiScrollPanel for scrollable content
     GuiScrollPanel(
-        viewRect,
-        NULL,  // No title
-        Rectangle{ 0, 0, viewRect.width - 20, 2000 },  // Content area (height estimated)
+        log_body,
+        NULL,
+        Rectangle{0, 0, log_body.width - 20.0f, 2000.0f},
         &scrollOffset,
-        &logBounds
-    );
+        &logBounds);
 
-    // Draw the log text with scissor mode (clipping)
     BeginScissorMode(
-        (int)viewRect.x,
-        (int)viewRect.y,
-        (int)viewRect.width,
-        (int)viewRect.height
-    );
+        static_cast<int>(log_body.x),
+        static_cast<int>(log_body.y),
+        static_cast<int>(log_body.width),
+        static_cast<int>(log_body.height));
 
-    DrawTextEx(state.font, logText, Vector2{
-                 (viewRect.x + 5),
-                 (viewRect.y + 5 + scrollOffset.y)
-                }, 16, 1, RAYWHITE
-            );
+    DrawTextEx(
+        state.font,
+        logText,
+        Vector2{log_body.x + ui::kPadding, log_body.y + ui::kPadding + scrollOffset.y},
+        16.0f,
+        1.0f,
+        RAYWHITE);
 
     EndScissorMode();
 }
@@ -602,69 +711,55 @@ void drawLogsTab(WindowState& state) {
 //
 //-------------------------------------------------
 void drawSettingsTab(WindowState& state) {
-    static FileBrowser fb{ FileBrowser::Mode::SELECT_DIRECTORY };
+    static FileBrowser fb{FileBrowser::Mode::SELECT_DIRECTORY};
+    const Color panel_fill{36, 36, 46, 255};
+    const Color panel_border{90, 90, 110, 255};
 
     auto& settings = state.user_settings;
-
     const auto& res = state.res;
 
-    GuiLabel({res.width/2 - 100, 50, 200, 30}, "Malvex Settings");
+    const auto page = ui::content_area(res);
+    draw_malvex_section_header(page, "Malvex Settings");
 
-    Rectangle tabRect{0, 80, res.width, res.height - 90};
-    GuiPanel(tabRect, "");
+    Rectangle form_panel = ui::section_content(page);
+    ui::draw_panel_frame(form_panel, panel_fill, panel_border);
 
-    float labelX = tabRect.x + 10;
-    float labelWidth = 100;
-    float inputX = tabRect.x + labelWidth + 5;
-    float labelHeight = 20;
-    float inputWidth = tabRect.width - inputX - 10;
-    float inputHeight = 20;
-    float startY = tabRect.y + 50;
-    float spacing = labelHeight + 10;
+    ui::FormLayout form{ui::panel_body(form_panel, false)};
 
-    // Username field
-    GuiLabel({labelX, startY + 5, labelWidth, labelHeight }, "Username:");
-    if (GuiTextBox(Rectangle{ inputX, startY, inputWidth, inputHeight },
-                    settings.username.text, MAX_INPUT_CHARS, settings.username.edit)) {
+    GuiLabel(form.label_rect(), "Username:");
+    if (GuiTextBox(form.field_rect(), settings.username.text, MAX_INPUT_CHARS, settings.username.edit)) {
         settings.username.edit = !settings.username.edit;
     }
+    form.next_row();
 
-    // Password field
-    GuiLabel({labelX, startY + 5 + spacing, labelWidth, labelHeight }, "Password:");
-    if (GuiTextBox(Rectangle{ inputX, startY + spacing, inputWidth, inputHeight },
-                    settings.password.text, MAX_INPUT_CHARS, settings.password.edit)) {
+    GuiLabel(form.label_rect(), "Password:");
+    if (GuiTextBox(form.field_rect(), settings.password.text, MAX_INPUT_CHARS, settings.password.edit)) {
         settings.password.edit = !settings.password.edit;
     }
+    form.next_row();
 
-    // Timeout field
-    GuiLabel({labelX, startY + 5 + spacing*2, labelWidth, labelHeight }, "Timeout:");
-    if (GuiTextBox(Rectangle{ inputX, startY + spacing*2, inputWidth, inputHeight },
-                    settings.default_timeout.text, MAX_INPUT_CHARS, settings.default_timeout.edit)) {
+    GuiLabel(form.label_rect(), "Timeout:");
+    if (GuiTextBox(form.field_rect(), settings.default_timeout.text, MAX_INPUT_CHARS, settings.default_timeout.edit)) {
         settings.default_timeout.edit = !settings.default_timeout.edit;
     }
+    form.next_row();
 
-    // Server URL field
-    GuiLabel({labelX, startY + 5 + spacing*3, labelWidth, labelHeight }, "Server:");
-    if (GuiTextBox(Rectangle{ inputX, startY + spacing*3, inputWidth, inputHeight },
-                    settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edit)) {
+    GuiLabel(form.label_rect(), "Server:");
+    if (GuiTextBox(form.field_rect(), settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edit)) {
         settings.server_url.edit = !settings.server_url.edit;
     }
+    form.next_row();
 
-    // File path field with browse button
-    GuiLabel({ labelX, startY + spacing*4 + 5, labelWidth, labelHeight }, "Output Dir:");
-    if (GuiTextBox(Rectangle{ inputX, startY + spacing*4, inputWidth - 110, inputHeight },
-                    settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edit)) {
+    GuiLabel(form.label_rect(), "Output Dir:");
+    if (GuiTextBox(form.field_rect(0.72f), settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edit)) {
         settings.output_file_path.edit = !settings.output_file_path.edit;
     }
-
-    // Browse button
-    if (GuiButton(Rectangle{ inputX + inputWidth - 100, startY + spacing*4, 100, inputHeight },"Browse...")) {
+    if (GuiButton({form.field_rect().x + form.field_rect(0.72f).width + ui::kGap, form.field_rect().y, form.field_rect().width * 0.28f - ui::kGap, form.row_height}, "Browse...")) {
         fb.open();
     }
+    form.next_row();
 
-    // Save button
-    Rectangle saveButtonRect = { inputX, startY + spacing*5, 200, 30 };
-    if (GuiButton(saveButtonRect, "Save Settings")) {
+    if (GuiButton({form.field_x, form.cursor_y, 220.0f, ui::kControlHeight}, "Save Settings")) {
         state.client.setUsername(settings.username.text);
         state.client.setPassword(settings.password.text);
         state.client.setServerUrl(settings.server_url.text);
@@ -682,51 +777,42 @@ void drawSettingsTab(WindowState& state) {
 //
 //-------------------------------------------------
 void drawBuilderTab(WindowState& state) {
-    static FileBrowser fb{ FileBrowser::Mode::SELECT_DIRECTORY };
+    static FileBrowser fb{FileBrowser::Mode::SELECT_DIRECTORY};
     static bool server_url_was_editing = false;
+    const Color panel_fill{36, 36, 46, 255};
+    const Color panel_border{90, 90, 110, 255};
 
     auto& settings = state.implant_settings;
     const auto& res = state.res;
 
-    GuiLabel({res.width/2 - 100, 50, 200, 30}, "Implant Builder");
+    const auto page = ui::content_area(res);
+    draw_malvex_section_header(page, "Implant Builder");
 
-    Rectangle tabRect{0, 80, res.width, res.height - 90};
-    GuiPanel(tabRect, "");
+    Rectangle form_panel = ui::section_content(page);
+    ui::draw_panel_frame(form_panel, panel_fill, panel_border);
 
-    float labelX = tabRect.x + 10;
-    float labelWidth = 100;
-    float inputX = tabRect.x + labelWidth + 5;
-    float labelHeight = 20;
-    float inputWidth = tabRect.width - inputX - 10;
-    float inputHeight = 20;
-    float startY = tabRect.y + 50;
-    float spacing = labelHeight + 10;
+    ui::FormLayout form{ui::panel_body(form_panel, false)};
 
-    // Username field
-    GuiLabel({labelX, startY + 5, labelWidth, labelHeight }, "Username:");
-    if (GuiTextBox(Rectangle{ inputX, startY, inputWidth, inputHeight },
-                    settings.username.text, MAX_INPUT_CHARS, settings.username.edit)) {
+    GuiLabel(form.label_rect(), "Username:");
+    if (GuiTextBox(form.field_rect(), settings.username.text, MAX_INPUT_CHARS, settings.username.edit)) {
         settings.username.edit = !settings.username.edit;
     }
+    form.next_row();
 
-    // Password field
-    GuiLabel({labelX, startY + 5 + spacing, labelWidth, labelHeight }, "Password:");
-    if (GuiTextBox(Rectangle{ inputX, startY + spacing, inputWidth, inputHeight },
-                    settings.password.text, MAX_INPUT_CHARS, settings.password.edit)) {
+    GuiLabel(form.label_rect(), "Password:");
+    if (GuiTextBox(form.field_rect(), settings.password.text, MAX_INPUT_CHARS, settings.password.edit)) {
         settings.password.edit = !settings.password.edit;
     }
+    form.next_row();
 
-    // Timeout field
-    GuiLabel({labelX, startY + 5 + spacing*2, labelWidth, labelHeight }, "Timeout:");
-    if (GuiTextBox(Rectangle{ inputX, startY + spacing*2, inputWidth, inputHeight },
-                    settings.default_timeout.text, MAX_INPUT_CHARS, settings.default_timeout.edit)) {
+    GuiLabel(form.label_rect(), "Timeout:");
+    if (GuiTextBox(form.field_rect(), settings.default_timeout.text, MAX_INPUT_CHARS, settings.default_timeout.edit)) {
         settings.default_timeout.edit = !settings.default_timeout.edit;
     }
+    form.next_row();
 
-    // Server URL field
-    GuiLabel({labelX, startY + 5 + spacing*3, labelWidth, labelHeight }, "Server:");
-    if (GuiTextBox(Rectangle{ inputX, startY + spacing*3, inputWidth, inputHeight },
-                    settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edit)) {
+    GuiLabel(form.label_rect(), "Server:");
+    if (GuiTextBox(form.field_rect(), settings.server_url.text, MAX_INPUT_CHARS, settings.server_url.edit)) {
         settings.server_url.edit = !settings.server_url.edit;
     }
     if (server_url_was_editing && !settings.server_url.edit) {
@@ -736,36 +822,30 @@ void drawBuilderTab(WindowState& state) {
         settings.server_url.text[sizeof(settings.server_url.text) - 1] = '\0';
     }
     server_url_was_editing = settings.server_url.edit;
+    form.next_row();
 
-    // File path field with browse button
-    GuiLabel({ labelX, startY + spacing*4 + 5, labelWidth, labelHeight }, "Output Dir:");
-    if (GuiTextBox(Rectangle{ inputX, startY + spacing*4, inputWidth - 110, inputHeight },
-                    settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edit)) {
+    GuiLabel(form.label_rect(), "Output Dir:");
+    if (GuiTextBox(form.field_rect(0.72f), settings.output_file_path.text, MAX_INPUT_CHARS, settings.output_file_path.edit)) {
         settings.output_file_path.edit = !settings.output_file_path.edit;
     }
-
-    // Browse button
-    if (GuiButton(Rectangle{ inputX + inputWidth - 100, startY + spacing*4, 100, inputHeight },"Browse...")) {
+    if (GuiButton({form.field_rect().x + form.field_rect(0.72f).width + ui::kGap, form.field_rect().y, form.field_rect().width * 0.28f - ui::kGap, form.row_height}, "Browse...")) {
         fb.open();
     }
+    form.next_row();
 
-    // Service Name
-    GuiLabel({labelX, startY + 5 + spacing*5, labelWidth, labelHeight }, "Service:");
-    if (GuiTextBox(Rectangle{ inputX, startY + spacing*5, inputWidth, inputHeight },
-                    settings.service_name.text, MAX_INPUT_CHARS, settings.service_name.edit)) {
+    GuiLabel(form.label_rect(), "Service:");
+    if (GuiTextBox(form.field_rect(), settings.service_name.text, MAX_INPUT_CHARS, settings.service_name.edit)) {
         settings.service_name.edit = !settings.service_name.edit;
     }
+    form.next_row();
 
-    // Service Description
-    GuiLabel({labelX, startY + 5 + spacing*6, labelWidth, labelHeight }, "Description:");
-    if (GuiTextBox(Rectangle{ inputX, startY + spacing*6, inputWidth, inputHeight },
-                    settings.service_description.text, MAX_INPUT_CHARS, settings.service_description.edit)) {
+    GuiLabel(form.label_rect(), "Description:");
+    if (GuiTextBox(form.field_rect(), settings.service_description.text, MAX_INPUT_CHARS, settings.service_description.edit)) {
         settings.service_description.edit = !settings.service_description.edit;
     }
+    form.next_row();
 
-    // Register Victim Button
-    Rectangle registerButtonRect = { inputX + 210, startY + spacing*7, 250, 30 };
-    if (GuiButton(registerButtonRect, "Register Victim User")) {
+    if (GuiButton({form.field_x + 230.0f, form.cursor_y, 250.0f, ui::kControlHeight}, "Register Victim User")) {
         auto& logs = LogManager::instance();
         state.builder.setServerURL(settings.server_url.text);
         const auto saved_url = state.builder.getServerURL();
@@ -779,9 +859,7 @@ void drawBuilderTab(WindowState& state) {
         }
     }
 
-    // Build button
-    Rectangle saveButtonRect = { inputX, startY + spacing*7, 200, 30 };
-    if (GuiButton(saveButtonRect, "Build Implant")) {
+    if (GuiButton({form.field_x, form.cursor_y, 220.0f, ui::kControlHeight}, "Build Implant")) {
         state.builder.setUsername(settings.username.text);
         if (!state.builder.getPassword().starts_with("$pbkdf2-sha256$")) {
             state.builder.setPassword(settings.password.text);
@@ -815,10 +893,12 @@ void drawSessionsTab(WindowState& state) {
     static SessionBridgeState last_reported_state = SessionBridgeState::Closed;
     static size_t last_session_count = 0;
     static SessionManager& sessionMan = SessionManager::instance();
+    const Color panel_fill{36, 36, 46, 255};
+    const Color panel_border{90, 90, 110, 255};
 
     const auto& res = state.res;
-
-    GuiLabel({res.width/2 - 100, 50, 200, 30}, "Remote Shell Sessions");
+    const auto page = ui::content_area(res);
+    draw_malvex_section_header(page, "Remote Shell Sessions");
 
     const std::vector<SessionDAO>& sessions = sessionMan.getSessions();
 
@@ -831,38 +911,46 @@ void drawSessionsTab(WindowState& state) {
     }
     last_session_count = sessions.size();
 
-    Rectangle viewRect{0, 80, res.width, res.height - 90};
+    auto body = ui::section_content(page);
 
-    // if there are no sessions currently
-    if(sessions.empty()) {
-        GuiPanel(viewRect, TextFormat("Currently there are no active Sessions!"));
+    if (sessions.empty()) {
+        draw_malvex_panel(body, "Currently there are no active Sessions!", panel_fill, panel_border);
         selected_session = -1;
         last_reported_state = SessionBridgeState::Closed;
         return;
-    } else if(selected_session < 0 || selected_session >= static_cast<int>(sessions.size())) {
+    }
+
+    if (selected_session < 0 || selected_session >= static_cast<int>(sessions.size())) {
         selected_session = 0;
     }
 
-    for(size_t i{ 0 }; i < sessions.size(); ++i) {
-        //highlight currently selected session
-        int originalBase = GuiGetStyle(BUTTON, BASE_COLOR_NORMAL);
-        int originalText = GuiGetStyle(BUTTON, TEXT_COLOR_NORMAL);
+    float session_chip_x = body.x;
+    for (size_t i = 0; i < sessions.size(); ++i) {
+        int original_base = GuiGetStyle(BUTTON, BASE_COLOR_NORMAL);
+        int original_text = GuiGetStyle(BUTTON, TEXT_COLOR_NORMAL);
 
-        // Apply active colors
-        if (selected_session == (int)i) {
-            GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(RED));
-            GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, ColorToInt(YELLOW));
+        if (selected_session == static_cast<int>(i)) {
+            GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt({150, 30, 70, 255}));
+            GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, ColorToInt({255, 230, 120, 255}));
         }
 
-        if (GuiButton({3 + (23*(float)i), 58, 20, 20},  TextFormat("%d", (int)i))) {
-            selected_session = (int)i;
+        const Rectangle chip{session_chip_x, body.y, 34.0f, ui::kControlHeight};
+        if (GuiButton(chip, TextFormat("%d", static_cast<int>(i)))) {
+            selected_session = static_cast<int>(i);
             last_reported_state = SessionBridgeState::Closed;
         }
 
-        //restore original style
-        GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, originalBase);
-        GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, originalText);
+        GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, original_base);
+        GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, original_text);
+        session_chip_x += chip.width + 6.0f;
     }
+
+    Rectangle session_panel{
+        body.x,
+        body.y + ui::kControlHeight + ui::kGap,
+        body.width,
+        std::max(0.0f, body.height - ui::kControlHeight - ui::kGap),
+    };
 
     const SessionDAO& session = sessions.at(selected_session);
     const auto bridge_state = sessionMan.getBridgeState(session);
@@ -921,108 +1009,111 @@ void drawSessionsTab(WindowState& state) {
         last_reported_state = bridge_state;
     }
 
-    GuiPanel(viewRect, TextFormat("Session [%s] on port [%d]", session.uid.c_str(), session.port));
-    DrawText(status_text, (int)viewRect.x + 12, (int)viewRect.y + 24, 16, status_color);
+    draw_malvex_panel(
+        session_panel,
+        TextFormat("Session [%s] on port [%d]", session.uid.c_str(), session.port),
+        panel_fill,
+        panel_border);
 
-    //close session button
-    if (GuiButton({viewRect.width - 130, viewRect.y + 2, 120, 20},  GuiIconText(ICON_CROSS, "Close Shell"))) {
+    DrawTextEx(
+        state.font,
+        status_text,
+        {session_panel.x + ui::kPadding, session_panel.y + 34.0f},
+        16.0f,
+        1.0f,
+        status_color);
+
+    if (GuiButton(
+            {session_panel.x + session_panel.width - ui::kPadding - 130.0f, session_panel.y + 8.0f, 130.0f, ui::kControlHeight},
+            GuiIconText(ICON_CROSS, "Close Shell"))) {
         if (state.client.closeSession(session.port)) {
             sessionMan.close(session.uid);
             last_reported_state = SessionBridgeState::Closed;
         }
     }
 
-    // Terminal stuffs
-    if (commandEditMode && session_ready)
-    {
-        /*
-        if (IsKeyPressed(KEY_UP))
-        {
-            if (history.currentIndex > 0)
-            {
-                history.currentIndex--;
-                strcpy(commandInput, history.commands[history.currentIndex]);
-            }
-        }
-        else if (IsKeyPressed(KEY_DOWN))
-        {
-            if (history.currentIndex < history.count - 1)
-            {
-                history.currentIndex++;
-                strcpy(commandInput, history.commands[history.currentIndex]);
-            }
-            else if (history.currentIndex == history.count - 1)
-            {
-                history.currentIndex = history.count;
-                commandInput[0] = '\0';
-            }
-        }*/
-    }
+    const auto panel_body = ui::panel_body(session_panel, true);
+    const float command_bar_height = ui::kControlHeight + ui::kPadding;
 
-    // Calculate text height for scrolling
-    Vector2 textSize = MeasureTextEx(guiFont, terminalOutput, 16, 1);
+    Rectangle outputRect{
+        panel_body.x,
+        panel_body.y + 20.0f,
+        panel_body.width,
+        std::max(0.0f, panel_body.height - command_bar_height - 28.0f),
+    };
 
-    // Output area
-    Rectangle outputRect = { viewRect.x + 10, viewRect.y + 56, viewRect.width - 20, viewRect.height - 116 };
+    ui::draw_rounded_rect(outputRect, {24, 24, 32, 255}, {60, 60, 74, 255});
+    DrawTextEx(state.font, "Session Output", {outputRect.x + ui::kPadding, outputRect.y - 18.0f}, 14.0f, 1.0f, LIGHTGRAY);
 
-    // Handle scrolling
-    if (CheckCollisionPointRec(GetMousePosition(), outputRect))
-    {
-        scrollOffset -= GetMouseWheelMove() * 20;
+    Vector2 textSize = MeasureTextEx(state.font, terminalOutput, 16.0f, 1.0f);
 
-        float maxScroll = textSize.y - outputRect.height + 10;
+    if (CheckCollisionPointRec(GetMousePosition(), outputRect)) {
+        scrollOffset -= GetMouseWheelMove() * 20.0f;
+
+        float maxScroll = textSize.y - outputRect.height + 10.0f;
         if (maxScroll < 0) maxScroll = 0;
         if (scrollOffset < 0) scrollOffset = 0;
         if (scrollOffset > maxScroll) scrollOffset = maxScroll;
     }
 
-    // Terminal output area
-    GuiGroupBox(outputRect, "Session Output");
-
-    // Draw scrollbar
     static const int bar_width = 10;
-    Rectangle scrollBarBounds = { outputRect.x + outputRect.width - (bar_width + 2), outputRect.y + 2,
-                                    bar_width, outputRect.height - 4};
+    Rectangle scrollBarBounds{
+        outputRect.x + outputRect.width - (bar_width + ui::kPadding),
+        outputRect.y + ui::kPadding,
+        static_cast<float>(bar_width),
+        outputRect.height - ui::kPadding * 2.0f,
+    };
     float maxScroll = textSize.y - outputRect.height;
     if (maxScroll < 0) maxScroll = 0;
 
-    if (maxScroll > 0)
-    {
-        GuiScrollBar(scrollBarBounds, (int)scrollOffset, 0, (int)maxScroll);
+    if (maxScroll > 0) {
+        GuiScrollBar(scrollBarBounds, static_cast<int>(scrollOffset), 0, static_cast<int>(maxScroll));
     }
 
-    // Draw terminal output with clipping
-    BeginScissorMode((int)outputRect.x, (int)outputRect.y,
-                    (int)outputRect.width - 18, (int)outputRect.height);
+    BeginScissorMode(
+        static_cast<int>(outputRect.x),
+        static_cast<int>(outputRect.y),
+        static_cast<int>(outputRect.width - bar_width - ui::kPadding),
+        static_cast<int>(outputRect.height));
 
-    DrawTextEx(state.font,
-                terminalOutput,
-                Vector2{ outputRect.x + 5, outputRect.y + 5 - scrollOffset },
-                16,
-                1,
-                PINK);  // Green terminal text
+    DrawTextEx(
+        state.font,
+        terminalOutput,
+        Vector2{outputRect.x + ui::kPadding, outputRect.y + ui::kPadding - scrollOffset},
+        16.0f,
+        1.0f,
+        {240, 140, 180, 255});
 
     EndScissorMode();
 
-    // Command prompt area
-    DrawText(">", 10, state.res.height - 60, 30, RED);
+    Rectangle command_bar{
+        panel_body.x,
+        panel_body.y + panel_body.height - command_bar_height,
+        panel_body.width,
+        command_bar_height,
+    };
 
-    Rectangle commandRect = { 30, res.height - 60, res.width - 200, 30 };
+    DrawTextEx(state.font, ">", {command_bar.x, command_bar.y + 4.0f}, 24.0f, 1.0f, {150, 30, 70, 255});
+
+    const float button_width = 64.0f;
+    Rectangle commandRect{
+        command_bar.x + 24.0f,
+        command_bar.y,
+        command_bar.width - button_width * 2.0f - ui::kGap * 3.0f - 24.0f,
+        ui::kControlHeight,
+    };
 
     if (!session_ready) {
         GuiDisable();
     }
 
-    // Execute button
-    if (GuiButton(Rectangle{ res.width - 150, res.height - 60, 55, 30 }, "Run") ||
-       GuiTextBox(commandRect, commandInput, 1024, commandEditMode && session_ready)) {
+    if (GuiButton({command_bar.x + command_bar.width - button_width * 2.0f - ui::kGap, command_bar.y, button_width, ui::kControlHeight}, "Run") ||
+        GuiTextBox(commandRect, commandInput, 1024, commandEditMode && session_ready)) {
         if (session_ready && strlen(commandInput) > 0) {
-            //AddToHistory(&history, commandInput);
             run_terminal_command(commandInput, terminalOutput, 4096, session);
             commandInput[0] = '\0';
 
-            // Auto-scroll to bottom after command
-            Vector2 newTextSize = MeasureTextEx(guiFont, terminalOutput, 16, 1);
+            Vector2 newTextSize = MeasureTextEx(state.font, terminalOutput, 16.0f, 1.0f);
             float newMaxScroll = newTextSize.y - outputRect.height;
             if (newMaxScroll > 0) {
                 scrollOffset = newMaxScroll;
@@ -1031,14 +1122,13 @@ void drawSessionsTab(WindowState& state) {
         commandEditMode = session_ready;
     }
 
-    if (!session_ready) {
-        GuiEnable();
-    }
-
-    // Clear button
-    if (GuiButton(Rectangle{ res.width - 75, res.height - 60, 55, 30 }, "Clear")) {
+    if (GuiButton({command_bar.x + command_bar.width - button_width, command_bar.y, button_width, ui::kControlHeight}, "Clear")) {
         terminalOutput[0] = '\0';
         strcat(terminalOutput, "Terminal cleared.\n\n");
         scrollOffset = 0;
+    }
+
+    if (!session_ready) {
+        GuiEnable();
     }
 }

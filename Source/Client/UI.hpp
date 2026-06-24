@@ -4,6 +4,7 @@
 #include "Client.hpp"
 #include "SessionDAO.hpp"
 #include "SessionManager.hpp"
+#include "UiLayout.hpp"
 #include <atomic>
 #include <cstring>
 #include <raylib.h>
@@ -11,14 +12,6 @@
 
 #include <array>
 #include <string>
-
-//--------------------------------
-//
-//--------------------------------
-struct Resolution {
-    float width;
-    float height;
-};
 
 //--------------------------------
 //
@@ -85,7 +78,7 @@ struct BuilderSettings {
 struct WindowState {
     bool show_about = false;
     bool is_fullscreen = false;
-    Resolution res;
+    ui::Resolution res;
     Font font;
     Tab current_tab;
     bool is_connected;
