@@ -9,6 +9,8 @@ namespace session_handshake {
 
 inline constexpr const char* operator_role = "OPERATOR";
 inline constexpr const char* implant_role = "IMPLANT";
+inline constexpr const char* bridge_waiting = "WAITING";
+inline constexpr const char* bridge_ready = "READY";
 
 inline std::string trim_line(std::string value) {
     const std::string whitespace = " \t\n\r\f\v";

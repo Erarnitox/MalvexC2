@@ -106,6 +106,14 @@ void inline run_terminal_command(const char* command, char* output, size_t outpu
 
     if (strnlen(command, 5) < 2) return; //empty command
 
+    if (sessionMan.getBridgeState(session) != SessionBridgeState::Ready) {
+        snprintf(tempOutput, sizeof(tempOutput), "\n> %s\n<Session not ready>\n", command);
+        if (strlen(output) + strlen(tempOutput) < outputSize - 1) {
+            strcat(output, tempOutput);
+        }
+        return;
+    }
+
     // Built in Commands
     if (strcmp(command, "mlvx_help") == 0) {
         snprintf(tempOutput, sizeof(tempOutput),
