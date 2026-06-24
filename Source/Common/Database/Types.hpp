@@ -3,6 +3,10 @@
 #include <string>
 #include <chrono>
 #include <cstdint>
+#include <sstream>
+#include <iomanip>
+#include <format>
+#include <limits>
 
 using UUID = std::string;
 using TimePoint = size_t; // unix timestamp

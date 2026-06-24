@@ -26,6 +26,8 @@ public:
     std::optional<OperatorDAO> upsert(const std::string& username, const std::string& password);
     bool remove(const std::string& username);
 
+    bool update_password_hash(int64_t id, const std::string& password_hash);
+
     void commit();
 
 private:

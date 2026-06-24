@@ -1,5 +1,5 @@
 set(BUILD_RAYLIB_AUDIO OFF CACHE BOOL "" FORCE)
-CPMAddPackage("gh:raysan5/raylib#5.5")
+CPMAddPackage("gh:raysan5/raylib#6.0")
 CPMAddPackage("gh:raysan5/raygui#4.0")
 CPMAddPackage("gh:serge1/ELFIO#Release_3.12")
 

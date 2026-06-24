@@ -12,6 +12,23 @@
 #include <thread>
 #include <vector>
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnarrowing"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnarrowing"
+#endif
+
+#define RAYGUI_STYLE_DARK
+#include <styles/dark/style_dark.h>
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+
 // function prototypes
 void drawConnectionsTab(WindowState& res);
 void drawSettingsTab(WindowState& state);
@@ -258,7 +275,8 @@ void drawConnectionsTab(WindowState& state) {
 
     BeginScissorMode(panelRect.x, panelRect.y, panelRect.width, panelRect.height);
 
-    const auto& victims = Client::instance().getVictims();
+    auto& client = Client::instance();
+    const auto& victims = client.getVictims();
 
     colWidth = (tableRect.width-10) / colCount;
     for (size_t client_id{ 0 }; client_id < victims.size(); ++client_id) {

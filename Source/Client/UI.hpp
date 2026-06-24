@@ -9,9 +9,6 @@
 #include <raylib.h>
 #include <raygui.h>
 
-#define RAYGUI_STYLE_DARK
-#include <styles/dark/style_dark.h>
-
 #include <array>
 #include <string>
 

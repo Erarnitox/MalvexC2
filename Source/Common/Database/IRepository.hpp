@@ -43,7 +43,7 @@ protected:
     }
 
     SQLite::Database open_readwrite() const {
-        SQLite::Database db(db_path_, SQLite::OPEN_READWRITE);
+        SQLite::Database db(db_path_, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
         configure_db(db);
         return db;
     }

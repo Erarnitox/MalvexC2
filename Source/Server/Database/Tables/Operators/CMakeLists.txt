@@ -5,5 +5,5 @@ add_library(operator_repo STATIC
     OperatorRepository.hpp
 )
 
-target_link_libraries(operator_repo PRIVATE database)
+target_link_libraries(operator_repo PUBLIC database crypto)
 target_include_directories(operator_repo PUBLIC "${CMAKE_CURRENT_LIST_DIR}")

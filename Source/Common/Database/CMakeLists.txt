@@ -9,6 +9,8 @@ CPMAddPackage(
 
 add_library(database STATIC
     "Database.cpp"
+    "OperatorDAO.cpp"
+    "VictimTemplateDAO.cpp"
 
     # headers for IDEs
     "Database.hpp"

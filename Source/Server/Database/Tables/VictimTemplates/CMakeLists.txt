@@ -5,5 +5,5 @@ add_library(victim_template_repo STATIC
     VictimTemplateRepository.hpp
 )
 
-target_link_libraries(victim_template_repo PRIVATE database)
+target_link_libraries(victim_template_repo PUBLIC database crypto)
 target_include_directories(victim_template_repo PUBLIC "${CMAKE_CURRENT_LIST_DIR}")

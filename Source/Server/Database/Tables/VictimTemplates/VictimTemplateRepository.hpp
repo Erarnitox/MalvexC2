@@ -23,6 +23,8 @@ public:
 
     std::optional<VictimTemplateDAO> get_username(const std::string& username);
 
+    bool update_password_hash(int64_t id, const std::string& password_hash);
+
     void commit();
 
 private:

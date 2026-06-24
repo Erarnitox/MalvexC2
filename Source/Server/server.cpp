@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <print>
 #include <thread>
 
@@ -15,6 +16,8 @@
 #include "Types.hpp"
 #include "Config.hpp"
 #include "VictimTemplateRepository.hpp"
+#include "OperatorAuthenticator.hpp"
+#include "VictimTemplateAuthenticator.hpp"
 
 #include <Endpoints.hpp>
 #include <BeaconEndpoint.hpp>
@@ -22,12 +25,18 @@
 static inline const std::string db_file{ "server.db" };
 bool is_locally_run = false;
 
+std::unique_ptr<IOperatorAuthenticator> g_operator_authenticator;
+std::unique_ptr<IVictimTemplateAuthenticator> g_victim_template_authenticator;
+
 // function protos
 void initial_setup();
 void start_attacker_api(int16_t port);
 void start_victim_api(int16_t port);
 
 int main(int argc, char* argv[]) {
+    g_operator_authenticator = std::make_unique<OperatorAuthenticator>(db_file);
+    g_victim_template_authenticator = std::make_unique<VictimTemplateAuthenticator>(db_file);
+
     // Load / Initialize Cofnig
     auto& config = Config::instance(db_file);
 
@@ -124,29 +133,28 @@ void initial_setup() {
 //-------------------------------------------------
 //
 //-------------------------------------------------
-bool basic_auth_middleware(const HttpRequest& request, HttpResponse& response) {
-    // Get Authorization header
-    auto auth_header = request.get_header("Authorization");
-    OperatorRepository operator_repo(db_file);
+namespace {
 
-    // Check if Authorization header exists
+[[nodiscard]] bool parse_basic_credentials(
+    const HttpRequest& request,
+    HttpResponse& response,
+    std::string& username,
+    std::string& password) {
+    auto auth_header = request.get_header("Authorization");
+
     if (auth_header.empty()) {
         response.set_status(401);
         response.set_json(R"({"message":"Unauthorized: Authentication required"})");
-        std::println("Unauthorized: Authentication required");
         return false;
     }
 
-    // Check if it's Basic auth
     const std::string basic_prefix = "Basic ";
     if (auth_header.substr(0, basic_prefix.length()) != basic_prefix) {
         response.set_status(401);
         response.set_json(R"({"message":"Unauthorized: Invalid authentication method"})");
-        std::println("Unauthorized: Invalid authentication method");
         return false;
     }
 
-    // Extract and decode base64 credentials
     std::string encoded_credentials = auth_header.substr(basic_prefix.length());
     std::string decoded_credentials;
 
@@ -155,34 +163,39 @@ bool basic_auth_middleware(const HttpRequest& request, HttpResponse& response) {
     } catch (...) {
         response.set_status(401);
         response.set_json(R"({"message":"Unauthorized: Invalid credentials format"})");
-        std::println("Unauthorized: Invalid credentials format");
         return false;
     }
 
-    // Parse username:password
     size_t colon_pos = decoded_credentials.find(':');
     if (colon_pos == std::string::npos) {
         response.set_status(401);
         response.set_json(R"({"message":"Unauthorized: Invalid credentials format"})");
-        std::println("Unauthorized: Invalid credentials format");
         return false;
     }
 
-    std::string username = decoded_credentials.substr(0, colon_pos);
-    std::string password = decoded_credentials.substr(colon_pos + 1);
+    username = decoded_credentials.substr(0, colon_pos);
+    password = decoded_credentials.substr(colon_pos + 1);
+    return true;
+}
 
-    // Authenticate
-    const auto usr = operator_repo.get_username(username);
-    auto auth_result = usr.has_value() && usr->password == password;
+} // namespace
 
-    if (not auth_result) {
+bool basic_auth_middleware(const HttpRequest& request, HttpResponse& response) {
+    std::string username;
+    std::string password;
+
+    if (!parse_basic_credentials(request, response, username, password)) {
+        std::println("Unauthorized: Authentication required");
+        return false;
+    }
+
+    if (!g_operator_authenticator->authenticate(username, password)) {
         response.set_status(401);
         response.set_json(R"({"message":"Unauthorized: Invalid username or password"})");
-        std::println("Unauthorized: Invalid username or password [{}:{}] != [{}:{}]", username, password, usr->username, usr->password);
+        std::println("Unauthorized: Invalid credentials for operator [{}]", username);
         return false;
     }
 
-    // Authentication successful
     return true;
 }
 
@@ -190,59 +203,19 @@ bool basic_auth_middleware(const HttpRequest& request, HttpResponse& response) {
 //
 //-------------------------------------------------
 bool victim_auth_middleware(const HttpRequest& request, HttpResponse& response) {
+    std::string username;
+    std::string password;
 
-    // Get Authorization header
-    auto auth_header = request.get_header("Authorization");
-    VictimTemplateRepository victim_template_repo(db_file);
-
-    // Check if Authorization header exists
-    if (auth_header.empty()) {
-        response.set_status(401);
-        response.set_json(R"({"message":"Unauthorized: Authentication required"})");
+    if (!parse_basic_credentials(request, response, username, password)) {
         return false;
     }
 
-    // Check if it's Basic auth
-    const std::string basic_prefix = "Basic ";
-    if (auth_header.substr(0, basic_prefix.length()) != basic_prefix) {
-        response.set_status(401);
-        response.set_json(R"({"message":"Unauthorized: Invalid authentication method"})");
-        return false;
-    }
-
-    // Extract and decode base64 credentials
-    std::string encoded_credentials = auth_header.substr(basic_prefix.length());
-    std::string decoded_credentials;
-
-    try {
-        decoded_credentials = base64_decode(encoded_credentials);
-    } catch (...) {
-        response.set_status(401);
-        response.set_json(R"({"message":"Unauthorized: Invalid credentials format"})");
-        return false;
-    }
-
-    // Parse username:password
-    size_t colon_pos = decoded_credentials.find(':');
-    if (colon_pos == std::string::npos) {
-        response.set_status(401);
-        response.set_json(R"({"message":"Unauthorized: Invalid credentials format"})");
-        return false;
-    }
-
-    std::string username = decoded_credentials.substr(0, colon_pos);
-    std::string password = decoded_credentials.substr(colon_pos + 1);
-
-    // Authenticate
-    auto auth_result = victim_template_repo.get_username(username)->password == password;
-
-    if (not auth_result) {
+    if (!g_victim_template_authenticator->authenticate(username, password)) {
         response.set_status(401);
         response.set_json(R"({"message":"Unauthorized: Invalid username or password"})");
         return false;
     }
 
-    // Authentication successful
     return true;
 }
 
