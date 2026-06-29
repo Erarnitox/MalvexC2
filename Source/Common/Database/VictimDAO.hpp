@@ -18,6 +18,20 @@ struct VictimDAO : public IDao<VictimDAO> {
     int status{0};
 };
 
+inline constexpr TimePoint kVictimOnlineThresholdSeconds = 300;
+
+inline int compute_victim_status(TimePoint last_update, TimePoint now = static_cast<TimePoint>(get_unix_time())) {
+    if (last_update == 0) {
+        return 0;
+    }
+
+    return (now - last_update) <= kVictimOnlineThresholdSeconds ? 1 : 0;
+}
+
+inline void refresh_victim_status(VictimDAO& victim) {
+    victim.status = compute_victim_status(victim.last_update);
+}
+
 //--------------------------------
 //
 //--------------------------------

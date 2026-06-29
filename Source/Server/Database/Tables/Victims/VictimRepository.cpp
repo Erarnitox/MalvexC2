@@ -81,6 +81,8 @@ std::vector<VictimDAO> VictimRepository::list() const {
 
         victim.status = sqlite3_column_int(stmt, 8);
 
+        refresh_victim_status(victim);
+
         results.push_back(std::move(victim));
     }
 
@@ -118,6 +120,7 @@ std::optional<VictimDAO> VictimRepository::get(int64_t id) const {
         victim.operating_system = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
         victim.last_update = sqlite3_column_int64(stmt, 7);
         victim.status = sqlite3_column_int(stmt, 8);
+        refresh_victim_status(victim);
         opt = victim;
     }
 
@@ -155,6 +158,7 @@ std::optional<VictimDAO> VictimRepository::get(const UUID& uid) const {
         victim.operating_system = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
         victim.last_update = sqlite3_column_int64(stmt, 7);
         victim.status = sqlite3_column_int(stmt, 8);
+        refresh_victim_status(victim);
         opt = victim;
     }
 
@@ -200,6 +204,7 @@ VictimDAO VictimRepository::create(const VictimDAO& victim) {
     VictimDAO result = victim;
     result.id = id;
     result.uid = uid;
+    refresh_victim_status(result);
     return result;
 }
 

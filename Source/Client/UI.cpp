@@ -370,13 +370,17 @@ void drawConnectionsTab(WindowState& state) {
     const auto& victims = client.getVictims();
 
     for (size_t client_id{0}; client_id < victims.size(); ++client_id) {
-        auto line_color = client_id % 2 == 0 ? Color{58, 58, 72, 255} : Color{46, 46, 58, 255};
+        const auto& vic{ victims[client_id] };
+        const bool is_online = vic.status == 1;
+
+        auto line_color = is_online
+            ? (client_id % 2 == 0 ? Color{58, 58, 72, 255} : Color{46, 46, 58, 255})
+            : (client_id % 2 == 0 ? Color{40, 40, 44, 255} : Color{34, 34, 38, 255});
 
         if (static_cast<int>(client_id) == hoveredRow) {
-            line_color = {150, 30, 70, 255};
+            line_color = is_online ? Color{150, 30, 70, 255} : Color{58, 58, 64, 255};
         }
 
-        const auto& vic{ victims[client_id] };
         const std::string values[colCount]{
             std::to_string(vic.id),
             vic.hostname,
@@ -384,8 +388,13 @@ void drawConnectionsTab(WindowState& state) {
             vic.external_ip,
             vic.operating_system,
             vic.username,
-            vic.status == 1 ? "ONLINE" : "OFFLINE"
+            is_online ? "ONLINE" : "OFFLINE"
         };
+
+        const int original_label_text = GuiGetStyle(LABEL, TEXT_COLOR_NORMAL);
+        if (!is_online) {
+            GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt({110, 110, 118, 255}));
+        }
 
         for (int i = 0; i < colCount; ++i) {
             Rectangle cell{
@@ -394,9 +403,12 @@ void drawConnectionsTab(WindowState& state) {
                 col_width,
                 row_height,
             };
-            ui::draw_rounded_rect(cell, line_color, {40, 40, 50, 255}, 0.0f);
+            const Color border_color = is_online ? Color{40, 40, 50, 255} : Color{52, 52, 56, 255};
+            ui::draw_rounded_rect(cell, line_color, border_color, 0.0f);
             GuiLabel(ui::inset(cell, 6.0f), values[i].c_str());
         }
+
+        GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, original_label_text);
     }
 
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && hoveredRow >= 0) {
