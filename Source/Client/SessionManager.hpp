@@ -46,6 +46,8 @@ public:
         std::string password);
     ~SessionConnection();
 
+    void discard_pending_output();
+    void discard_pending_output_unlocked();
     [[nodiscard]] std::string execute_cmd(const std::string& cmd);
     [[nodiscard]] std::string get_uuid() const;
     [[nodiscard]] SessionBridgeState get_bridge_state() const noexcept;
@@ -74,6 +76,7 @@ public:
         const std::string& username,
         const std::string& password);
     void close(const UUID& session_id);
+    void discardPendingOutput(const SessionDAO& session);
     std::string execute(const SessionDAO& session, const std::string& cmd);
     [[nodiscard]] SessionBridgeState getBridgeState(const SessionDAO& session) const noexcept;
 

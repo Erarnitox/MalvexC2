@@ -2,6 +2,7 @@
 
 #include <Remote.hpp>
 
+#include <chrono>
 #include <optional>
 #include <string>
 
@@ -22,6 +23,32 @@ inline std::string trim_line(std::string value) {
 
     const auto end = value.find_last_not_of(whitespace);
     return value.substr(start, end - start + 1);
+}
+
+inline void clear_recv_buffer(cpppwn::Remote& conn) {
+    if (!conn.is_alive()) {
+        return;
+    }
+
+    try {
+        int empty_reads = 0;
+        int attempt = 0;
+        while (empty_reads < 2 && attempt < 32) {
+            const auto drained = conn.recv_timeout(
+                attempt == 0 ? std::chrono::milliseconds(0) : std::chrono::milliseconds(50));
+            ++attempt;
+            if (drained.empty()) {
+                ++empty_reads;
+            } else {
+                empty_reads = 0;
+            }
+        }
+    } catch (const std::exception&) {
+        try {
+            (void)conn.recv_timeout(std::chrono::milliseconds(0));
+        } catch (const std::exception&) {
+        }
+    }
 }
 
 struct Credentials {

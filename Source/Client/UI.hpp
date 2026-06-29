@@ -113,7 +113,10 @@ void inline run_terminal_command(const char* command, char* output, size_t outpu
                  "> %s\nAvailable commands:\n"
                  "  mlvx_help     - Show this help message\n",
                  command);
+    } else if (strcmp(command, "clear") == 0 || strcmp(command, "cls")) {
+        //TODO: clear the output buffer
     } else {
+        sessionMan.discardPendingOutput(session);
         // Execute Remote Shell Commands
         snprintf(tempOutput, sizeof(tempOutput), "\n> %s\n%s", command, sessionMan.execute(session, command).c_str());
     }

