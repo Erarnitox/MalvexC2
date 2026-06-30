@@ -290,4 +290,9 @@ SessionBridgeState SessionConnection::get_bridge_state() const noexcept {
 void SessionConnection::stop() {
     running = false;
     bridge_state = SessionBridgeState::Closed;
+
+    std::lock_guard lock(conn_mutex);
+    if (conn && conn->is_alive()) {
+        conn->close();
+    }
 }

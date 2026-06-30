@@ -1,5 +1,6 @@
 #include <raylib.h>
 #include "UiLayout.hpp"
+#include "UiShared.hpp"
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -53,6 +54,20 @@ void apply_malvex_theme() {
     GuiSetStyle(LABEL, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetStyle(TEXTBOX, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
     GuiSetStyle(STATUSBAR, TEXT_ALIGNMENT, TEXT_ALIGN_LEFT);
+
+    // Bright neon-green text for typed input (login, settings, terminal command, etc.)
+    using ui::theme::kInputText;
+    using ui::theme::kInputTextFocused;
+    using ui::theme::kInputTextActive;
+    using ui::theme::kInputTextDisabled;
+    using ui::theme::kInputBorderFocused;
+
+    GuiSetStyle(TEXTBOX, TEXT_COLOR_NORMAL, ColorToInt(kInputText));
+    GuiSetStyle(TEXTBOX, TEXT_COLOR_FOCUSED, ColorToInt(kInputTextFocused));
+    GuiSetStyle(TEXTBOX, TEXT_COLOR_PRESSED, ColorToInt(kInputTextActive));
+    GuiSetStyle(TEXTBOX, TEXT_COLOR_DISABLED, ColorToInt(kInputTextDisabled));
+    GuiSetStyle(TEXTBOX, BORDER_COLOR_FOCUSED, ColorToInt(kInputBorderFocused));
+    GuiSetStyle(TEXTBOX, BORDER_COLOR_PRESSED, ColorToInt(kInputBorderFocused));
 }
 
 void draw_panel_title(Rectangle bounds, const char* title) {

