@@ -1,11 +1,14 @@
 #pragma once
 
 #include <Model.hpp>
+#include <mutex>
+#include <vector>
 
 class VictimManager {
+    mutable std::mutex m_mtx;
     std::vector<Victim> m_victims;
+
 public:
-    // Delete copy and move constructors/assignments (singleton pattern)
     VictimManager(const VictimManager&) = delete;
     VictimManager& operator=(const VictimManager&) = delete;
     VictimManager(VictimManager&&) = delete;

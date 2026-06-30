@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <limits.h>
 
-#include <Logger.hpp>
+#include "Util/SafeLogger.hpp"
 
 inline bool installSystemService(const std::string& serviceName, const std::string& description) {
     // 1. Determine the executable's path

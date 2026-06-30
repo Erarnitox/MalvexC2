@@ -1,5 +1,6 @@
 #pragma once
 
+#include "UiShared.hpp"
 #include <raylib.h>
 #include <string>
 #include <vector>
@@ -215,7 +216,7 @@ private:
             };
 
             int max_scroll = std::max(0, static_cast<int>(entries_.size()) - visible_items);
-            GuiScrollBar(scrollbar_rect, scroll_index_, 0, max_scroll);
+            scroll_index_ = ui_scroll_bar(scrollbar_rect, scroll_index_, 0, max_scroll);
         }
 
         // Draw file list with clipping

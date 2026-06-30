@@ -6,11 +6,19 @@ CPMAddPackage("gh:serge1/ELFIO#Release_3.12")
 add_library(raygui INTERFACE)
 target_include_directories(raygui SYSTEM INTERFACE ${raygui_SOURCE_DIR}/src)
 target_include_directories(raygui SYSTEM INTERFACE ${raygui_SOURCE_DIR})
-target_compile_definitions(raygui INTERFACE RAYGUI_IMPLEMENTATION)
 
 add_executable(client
     "UI.cpp"
+    "UiTheme.cpp"
+    "UiConnectionsTab.cpp"
+    "UiLogsTab.cpp"
+    "UiSettingsTab.cpp"
+    "UiBuilderTab.cpp"
+    "UiTerminalTab.cpp"
+    "UiLogin.cpp"
+    "UiAbout.cpp"
     "Client.cpp"
+    "RestGateway.cpp"
     "Builder.cpp"
     "CommandManager.cpp"
     "LogManager.cpp"
@@ -19,8 +27,11 @@ add_executable(client
 
     # Headers for IDE
     "UI.hpp"
+    "UiShared.hpp"
     "UiLayout.hpp"
     "Client.hpp"
+    "ClientNamespaces.hpp"
+    "RestGateway.hpp"
     "Builder.hpp"
     "CommandManager.hpp"
     "LogManager.hpp"

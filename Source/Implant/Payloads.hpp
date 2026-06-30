@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Logger.hpp>
+#include "Util/SafeLogger.hpp"
 
 #include <atomic>
 #include <exception>

@@ -2,12 +2,12 @@
 
 #include "LogDAO.hpp"
 #include <RESTClient.hpp>
+#include <mutex>
 #include <string>
 #include <vector>
 
 class LogManager {
 public:
-    // Delete copy and move constructors/assignments (singleton pattern)
     LogManager(const LogManager&) = delete;
     LogManager& operator=(const LogManager&) = delete;
     LogManager(LogManager&&) = delete;
@@ -25,6 +25,7 @@ public:
     void set_list(const std::vector<LogDAO>& log_list) noexcept;
 
 private:
+    mutable std::mutex m_mtx;
     std::vector<std::string> m_local_logs;
     std::map<UUID, LogDAO> m_attack_logs;
     std::vector<LogDAO> m_send_buffer;

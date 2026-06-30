@@ -22,6 +22,7 @@ struct glz::meta<ResultDAO> {
     static constexpr auto value = object(
         "result_id", &T::id,
         "result_uid", &T::uid,
+        "command_uid", &T::command_uid,
         "data", &T::data
     );
 };

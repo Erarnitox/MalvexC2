@@ -4,10 +4,15 @@
 
 #include <atomic>
 #include <cpppwn.hpp>
+#include <cstdint>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
+
+inline constexpr std::size_t kMaxBridgeOutputBytes = 16 * 1024 * 1024;
 
 enum class SessionBridgeState {
     Connecting,
@@ -81,6 +86,7 @@ public:
     [[nodiscard]] SessionBridgeState getBridgeState(const SessionDAO& session) const noexcept;
 
 private:
+    mutable std::mutex m_mtx;
     std::vector<SessionDAO> m_sessions;
     std::vector<std::unique_ptr<SessionConnection>> m_connections;
     std::map<int64_t, UUID> m_port_to_connection;

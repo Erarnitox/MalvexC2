@@ -11,12 +11,13 @@
 #include <raygui.h>
 
 #include <array>
+#include <format>
 #include <string>
 
 //--------------------------------
 //
 //--------------------------------
-std::array<std::string, 5> tabs {
+inline std::array<std::string, 5> tabs {
     GuiIconText(ICON_MONITOR, "Connections"),
     GuiIconText(ICON_TEXT_NOTES, "Logs"),
     GuiIconText(ICON_GEAR, "Settings"),
@@ -93,37 +94,25 @@ struct WindowState {
 //--------------------------------
 //
 //--------------------------------
-void inline run_terminal_command(const char* command, char* output, size_t outputSize, const SessionDAO& session) {
+inline void run_terminal_command(const char* command, std::string& output, const SessionDAO& session) {
     static SessionManager& sessionMan = SessionManager::instance();
-    char tempOutput[1024];
 
-    if (strnlen(command, 5) < 2) return; //empty command
+    if (strnlen(command, 5) < 2) return;
 
     if (sessionMan.getBridgeState(session) != SessionBridgeState::Ready) {
-        snprintf(tempOutput, sizeof(tempOutput), "\n> %s\n<Session not ready>\n", command);
-        if (strlen(output) + strlen(tempOutput) < outputSize - 1) {
-            strcat(output, tempOutput);
-        }
+        output += std::format("\n> {}\n<Session not ready>\n", command);
         return;
     }
 
-    // Built in Commands
     if (strcmp(command, "mlvx_help") == 0) {
-        snprintf(tempOutput, sizeof(tempOutput),
-                 "> %s\nAvailable commands:\n"
-                 "  mlvx_help     - Show this help message\n",
-                 command);
-    } else if (strcmp(command, "clear") == 0 || strcmp(command, "cls")) {
-        //TODO: clear the output buffer
+        output += std::format(
+            "> {}\nAvailable commands:\n"
+            "  mlvx_help     - Show this help message\n",
+            command);
+    } else if (strcmp(command, "clear") == 0 || strcmp(command, "cls") == 0) {
+        output.clear();
     } else {
         sessionMan.discardPendingOutput(session);
-        // Execute Remote Shell Commands
-        snprintf(tempOutput, sizeof(tempOutput), "\n> %s\n%s", command, sessionMan.execute(session, command).c_str());
-    }
-
-
-    // Append to output
-    if (strlen(output) + strlen(tempOutput) < outputSize - 1) {
-        strcat(output, tempOutput);
+        output += std::format("\n> {}\n{}", command, sessionMan.execute(session, command));
     }
 }

