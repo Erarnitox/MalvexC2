@@ -83,11 +83,20 @@ int main() {
         GuiLabel({0.0f, 8.0f, state.res.width, 22.0f}, title_bar_label.c_str());
         GuiSetStyle(LABEL, TEXT_ALIGNMENT, title_align);
 
-        if (GuiButton({state.res.width - ui::kPadding - 24, 8, 24, 22}, "X")) {
+        constexpr float title_button_y = 8.0f;
+        constexpr float title_button_h = 22.0f;
+        constexpr float close_button_w = 24.0f;
+        constexpr float fullscreen_button_w = 120.0f;
+        const float close_button_x = state.res.width - ui::kPadding - close_button_w;
+        const float fullscreen_button_x = close_button_x - ui::kGap - fullscreen_button_w;
+
+        if (GuiButton({close_button_x, title_button_y, close_button_w, title_button_h}, "X")) {
             break;
         }
 
-        if (GuiButton({state.res.width - ui::kPadding - 130, 8, 120, 22}, GuiIconText(ICON_CURSOR_SCALE_FILL, "Fullscreen"))) {
+        if (GuiButton(
+                {fullscreen_button_x, title_button_y, fullscreen_button_w, title_button_h},
+                GuiIconText(ICON_CURSOR_SCALE_FILL, "Fullscreen"))) {
             state.is_fullscreen = not state.is_fullscreen;
 
             if (state.is_fullscreen) {
