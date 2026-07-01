@@ -3,6 +3,9 @@
 #include "Util/SafeLogger.hpp"
 #include "UrlUtils.hpp"
 
+#include <Utils.hpp>
+#include <HttpUtils.hpp>
+
 namespace {
 
 [[nodiscard]] malvex::Error from_exception(const std::exception& err, malvex::ErrorCode code) {
@@ -12,7 +15,8 @@ namespace {
 } // namespace
 
 RestGateway::RestGateway(std::string base_url)
-    : m_rest_client(std::move(base_url), HttpConfig{}) {}
+    : m_rest_client(strip_trailing_slash(base_url), HttpConfig{}),
+      m_base_url(strip_trailing_slash(std::move(base_url))) {}
 
 void RestGateway::configure(
     const std::string& base_url,
@@ -25,6 +29,7 @@ void RestGateway::configure(
     conf.verify_ssl = false;
 
     m_rest_client = cpppwn::RESTClient(strip_trailing_slash(base_url), conf);
+    m_base_url = strip_trailing_slash(base_url);
     m_username = username;
     m_password = password;
     apply_auth();
@@ -111,6 +116,23 @@ malvex::Result<std::string> RestGateway::close_session(int64_t port) {
     apply_auth();
     try {
         return m_rest_client.get<std::string>(std::format("close_session?port={}", port));
+    } catch (const std::exception& err) {
+        return std::unexpected(from_exception(err, malvex::ErrorCode::Network));
+    }
+}
+
+malvex::Result<bool> RestGateway::delete_victim(int64_t victim_id) {
+    apply_auth();
+    try {
+        const std::string url = std::format("{}/api/victim?id={}", m_base_url, victim_id);
+        HttpHeaders headers;
+        headers["Authorization"] = "Basic " + base64_encode(m_username + ":" + m_password);
+
+        const auto response = m_rest_client.http_client().del(url, headers);
+        if (!response.ok()) {
+            throw cpppwn::RESTException(response.status_code, response.status_message, response.body);
+        }
+        return true;
     } catch (const std::exception& err) {
         return std::unexpected(from_exception(err, malvex::ErrorCode::Network));
     }

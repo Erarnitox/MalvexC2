@@ -29,9 +29,11 @@ public:
         const VictimTemplateCreateRequest& request);
     [[nodiscard]] malvex::Result<std::string> open_session(int64_t port);
     [[nodiscard]] malvex::Result<std::string> close_session(int64_t port);
+    [[nodiscard]] malvex::Result<bool> delete_victim(int64_t victim_id);
 
 private:
     cpppwn::RESTClient m_rest_client;
+    std::string m_base_url;
     std::string m_username;
     std::string m_password;
 

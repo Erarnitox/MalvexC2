@@ -32,3 +32,39 @@ const Victim VictimManager::getVictim(int64_t id) const noexcept {
 
     return Victim{};
 }
+
+bool VictimManager::removeVictim(const UUID& uid) noexcept {
+    if (uid.empty()) {
+        return false;
+    }
+
+    std::lock_guard lock(m_mtx);
+    const auto it = std::find_if(m_victims.begin(), m_victims.end(), [&uid](const Victim& victim) {
+        return victim.uid == uid;
+    });
+
+    if (it == m_victims.end()) {
+        return false;
+    }
+
+    m_victims.erase(it);
+    return true;
+}
+
+bool VictimManager::removeVictim(int64_t id) noexcept {
+    if (id <= 0) {
+        return false;
+    }
+
+    std::lock_guard lock(m_mtx);
+    const auto it = std::find_if(m_victims.begin(), m_victims.end(), [id](const Victim& victim) {
+        return victim.id == id;
+    });
+
+    if (it == m_victims.end()) {
+        return false;
+    }
+
+    m_victims.erase(it);
+    return true;
+}
