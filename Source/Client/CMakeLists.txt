@@ -21,6 +21,10 @@ add_executable(client
     "Client.cpp"
     "RestGateway.cpp"
     "Builder.cpp"
+    "Packer/DecryptorCodegen.cpp"
+    "Packer/ElfPacker.cpp"
+    "Packer/ImplantPacker.cpp"
+    "Packer/MetamorphicPacker.cpp"
     "CommandManager.cpp"
     "ResultManager.cpp"
     "ResultDecoders.cpp"
@@ -80,3 +84,27 @@ install(TARGETS client RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT Ful
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Resources/"
         DESTINATION "${CMAKE_INSTALL_BINDIR}/Resources"
         COMPONENT Full)
+
+if(BUILD_TESTING)
+    add_executable(metamorphic_pack_smoke
+        tests/pack_smoke.cpp
+        Packer/DecryptorCodegen.cpp
+        Packer/ElfPacker.cpp
+        Packer/ImplantPacker.cpp
+        Packer/MetamorphicPacker.cpp
+    )
+    target_link_libraries(metamorphic_pack_smoke PRIVATE common elfio)
+    target_include_directories(metamorphic_pack_smoke PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    add_test(NAME metamorphic_pack_smoke
+        COMMAND metamorphic_pack_smoke "${CMAKE_BINARY_DIR}/bin/Client/implant")
+
+    add_executable(pack_modes_test
+        tests/pack_modes_test.cpp
+        Packer/DecryptorCodegen.cpp
+        Packer/ElfPacker.cpp
+        Packer/ImplantPacker.cpp
+        Packer/MetamorphicPacker.cpp
+    )
+    target_link_libraries(pack_modes_test PRIVATE common elfio)
+    target_include_directories(pack_modes_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()

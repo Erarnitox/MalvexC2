@@ -35,6 +35,7 @@ int main() {
     static_cast<void>(malvex::safe_copy(state.implant_settings.output_file_path.text, sizeof(state.implant_settings.output_file_path.text), state.builder.getOutputDir()));
     static_cast<void>(malvex::safe_copy(state.implant_settings.service_name.text, sizeof(state.implant_settings.service_name.text), state.builder.getServiceName()));
     static_cast<void>(malvex::safe_copy(state.implant_settings.service_description.text, sizeof(state.implant_settings.service_description.text), state.builder.getServiceDesc()));
+    state.implant_settings.pack_mode = state.builder.getPackModeIndex();
 
     ui::Resolution old_res = state.res;
     auto& client = Client::instance();

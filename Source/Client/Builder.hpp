@@ -3,6 +3,7 @@
 #include "Config.hpp"
 #include "LogManager.hpp"
 #include <ImplantConfig.hpp>
+#include <Metamorphic/PackMode.hpp>
 
 #include <string>
 
@@ -30,6 +31,8 @@ public:
     void setServiceName(const std::string& service_name);
     void setServiceDesc(const std::string& service_description);
     void setOutputDir(const std::string& output_dir);
+    void setPackMode(metamorphic::PackMode mode);
+    void setPackModeIndex(int index);
 
     [[nodiscard]] std::string getUsername() const noexcept;
     [[nodiscard]] std::string getPassword() const noexcept;
@@ -38,6 +41,8 @@ public:
     [[nodiscard]] std::string getServiceName() const noexcept;
     [[nodiscard]] std::string getServiceDesc() const noexcept;
     [[nodiscard]] std::string getOutputDir() const noexcept;
+    [[nodiscard]] metamorphic::PackMode getPackMode() const noexcept;
+    [[nodiscard]] int getPackModeIndex() const noexcept;
 
     bool buildImplant();
 };

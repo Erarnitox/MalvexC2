@@ -5,6 +5,7 @@
 #include "SessionDAO.hpp"
 #include "SessionManager.hpp"
 #include "UiLayout.hpp"
+#include <Metamorphic/PackMode.hpp>
 #include <atomic>
 #include <cstring>
 #include <raylib.h>
@@ -56,6 +57,7 @@ struct BuilderSettings {
     InputField output_file_path;
     InputField service_name;
     InputField service_description;
+    int pack_mode{metamorphic::pack_mode_to_index(metamorphic::PackMode::FullMetamorphic)};
 };
 
 struct WindowState {

