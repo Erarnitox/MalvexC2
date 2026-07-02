@@ -20,10 +20,39 @@ void BeaconState::add_result(CommandResult result) {
     pending_results_.push_back(std::move(result));
 }
 
+void BeaconState::add_results(std::vector<CommandResult> results) {
+    std::lock_guard lock(mtx_);
+    for (auto& result : results) {
+        pending_results_.push_back(std::move(result));
+    }
+}
+
+void BeaconState::enqueue_chunks(std::vector<CommandResult> chunks) {
+    if (chunks.size() <= 1) {
+        if (!chunks.empty()) {
+            add_result(std::move(chunks.front()));
+        }
+        return;
+    }
+
+    add_result(std::move(chunks.front()));
+
+    std::lock_guard lock(mtx_);
+    for (std::size_t i = 1; i < chunks.size(); ++i) {
+        chunk_queue_.push_back(std::move(chunks[i]));
+    }
+}
+
 std::vector<CommandResult> BeaconState::take_results() {
     std::lock_guard lock(mtx_);
     auto results = std::move(pending_results_);
     pending_results_.clear();
+
+    while (!chunk_queue_.empty() && results.size() < 8) {
+        results.push_back(std::move(chunk_queue_.front()));
+        chunk_queue_.pop_front();
+    }
+
     return results;
 }
 

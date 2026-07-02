@@ -9,6 +9,7 @@ public:
     virtual ~IVictimService() = default;
     virtual VictimDAO upsert_from_beacon(const VictimDAO& victim) = 0;
     virtual std::optional<VictimDAO> get_by_uid(const UUID& uid) = 0;
+    virtual bool remove_by_uid(const UUID& uid) = 0;
 };
 
 class VictimService final : public IVictimService {
@@ -35,6 +36,14 @@ public:
 
     std::optional<VictimDAO> get_by_uid(const UUID& uid) override {
         return manager_.get_by_uid(uid);
+    }
+
+    bool remove_by_uid(const UUID& uid) override {
+        const auto victim = manager_.get_by_uid(uid);
+        if (!victim.has_value()) {
+            return false;
+        }
+        return manager_.remove(victim->id);
     }
 
 private:

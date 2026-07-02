@@ -14,6 +14,12 @@
 
 inline constexpr std::size_t kMaxBridgeOutputBytes = 16 * 1024 * 1024;
 
+struct SessionTransferResult {
+    bool success = false;
+    std::string message;
+    std::string data;
+};
+
 enum class SessionBridgeState {
     Connecting,
     WaitingForVictim,
@@ -54,6 +60,8 @@ public:
     void discard_pending_output();
     void discard_pending_output_unlocked();
     [[nodiscard]] std::string execute_cmd(const std::string& cmd);
+    [[nodiscard]] SessionTransferResult download_file(const std::string& remote_filename);
+    [[nodiscard]] SessionTransferResult upload_file(const std::string& remote_filename, const std::string& data);
     [[nodiscard]] std::string get_uuid() const;
     [[nodiscard]] SessionBridgeState get_bridge_state() const noexcept;
     void stop();
@@ -83,6 +91,11 @@ public:
     void close(const UUID& session_id);
     void discardPendingOutput(const SessionDAO& session);
     std::string execute(const SessionDAO& session, const std::string& cmd);
+    [[nodiscard]] SessionTransferResult downloadFile(const SessionDAO& session, const std::string& remote_filename);
+    [[nodiscard]] SessionTransferResult uploadFile(
+        const SessionDAO& session,
+        const std::string& remote_filename,
+        const std::string& data);
     [[nodiscard]] SessionBridgeState getBridgeState(const SessionDAO& session) const noexcept;
 
 private:

@@ -6,6 +6,7 @@
 #include <vector>
 #include <filesystem>
 #include <algorithm>
+#include <cstring>
 
 namespace fs = std::filesystem;
 
@@ -30,6 +31,16 @@ public:
     void open() {
         is_open_ = true;
         refresh_entries();
+    }
+
+    void set_suggested_filename(const std::string& filename) {
+        suggested_filename_ = filename;
+        std::strncpy(filename_buffer_, filename.c_str(), sizeof(filename_buffer_) - 1);
+        filename_buffer_[sizeof(filename_buffer_) - 1] = '\0';
+    }
+
+    void set_title(const std::string& title) {
+        title_ = title;
     }
 
     // Close the file browser
@@ -66,7 +77,7 @@ public:
         float y = (GetScreenHeight() - height) / 2;
 
         Rectangle browser_rect = { x, y, width, height };
-        GuiPanel(browser_rect, "Select File");
+        GuiPanel(browser_rect, title_.c_str());
 
         // Current path display
         float padding = 10;
@@ -108,11 +119,9 @@ public:
         if (mode_ == Mode::SAVE_FILE) {
             GuiLabel(Rectangle{ x + padding, y_offset, 80, line_height }, "File Name:");
 
-            static char filename_buffer[256] = "";
             if (GuiTextBox(Rectangle{ x + padding + 90, y_offset,
                                      width - 200 - padding, line_height },
-                          filename_buffer, 256, true)) {
-                // Text box clicked
+                          filename_buffer_, 256, true)) {
             }
 
             y_offset += line_height + 5;
@@ -135,7 +144,21 @@ public:
 
         if (GuiButton(Rectangle{ x + width - button_width - padding,
                                 buttons_y, button_width, 30 }, button_text)) {
-            if (selected_index_ >= 0 && selected_index_ < static_cast<int>(entries_.size())) {
+            if (mode_ == Mode::SAVE_FILE) {
+                if (filename_buffer_[0] != '\0') {
+                    selected_path_ = (current_path_ / filename_buffer_).string();
+                    close();
+                } else if (selected_index_ >= 0 && selected_index_ < static_cast<int>(entries_.size())) {
+                    auto& entry = entries_[selected_index_];
+                    if (entry.is_directory) {
+                        selected_path_ = entry.path.string();
+                        close();
+                    } else {
+                        selected_path_ = entry.path.string();
+                        close();
+                    }
+                }
+            } else if (selected_index_ >= 0 && selected_index_ < static_cast<int>(entries_.size())) {
                 auto& entry = entries_[selected_index_];
 
                 if (entry.is_directory && mode_ != Mode::SELECT_DIRECTORY) {
@@ -301,4 +324,7 @@ private:
     int scroll_index_;
     int selected_index_;
     std::string selected_path_;
+    std::string suggested_filename_;
+    std::string title_ = "Select File";
+    char filename_buffer_[256]{};
 };

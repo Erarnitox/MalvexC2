@@ -4,6 +4,7 @@
 #include <glaze/glaze.hpp>
 
 #include "Endpoints.hpp"
+#include "ResultService.hpp"
 #include "Util/SafeLogger.hpp"
 
 std::optional<int64_t> extract_id(const HttpRequest& req, const std::string& param) {
@@ -163,10 +164,36 @@ void register_log_endpoints(cpppwn::RESTServer& server) {
 
 void register_result_endpoints(cpppwn::RESTServer& server) {
     auto& results = ResultManager::instance();
+
     RESTEndpoints<ResultDAO, ResultRepository>::register_endpoints(server, {
         .base_path = "/api/results",
         .resource_name = "result",
         .manager = results
+    });
+
+    server.get("/api/results/filter", [&results](const HttpRequest& req) {
+        ResultService result_service(results);
+        try {
+            if (req.query_params.contains("victim_uid")) {
+                const auto& victim_uid = req.query_params.at("victim_uid");
+                auto items = result_service.list_for_victim(victim_uid);
+                return HttpResponse().set_json(to_json_array(items));
+            }
+
+            if (req.query_params.contains("command_uid")) {
+                const auto& command_uid = req.query_params.at("command_uid");
+                if (auto item = result_service.get_result_for_command(command_uid)) {
+                    return HttpResponse().set_json(item->to_json());
+                }
+                return error_response(404, "result not found");
+            }
+
+            auto items = results.get_all();
+            return HttpResponse().set_json(to_json_array(items));
+        } catch (const std::exception& e) {
+            logger::warn("Result filter failed: {}", e.what());
+            return error_response(500, "Internal Server Error");
+        }
     });
 }
 

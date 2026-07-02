@@ -11,7 +11,10 @@
 struct CommandResult {
     std::string command_uid;
     std::string result_data;
-    int status;  // 0 = pending, 1 = success, 2 = failed
+    int status{1};  // 0 = in-progress, 1 = success, 2 = failed
+    std::string kind;
+    int chunk_index{0};
+    int chunk_total{1};
 };
 
 //-------------------------------------------------
@@ -23,7 +26,10 @@ struct glz::meta<CommandResult> {
     static constexpr auto value = glz::object(
         "command_uid", &T::command_uid,
         "result_data", &T::result_data,
-        "status", &T::status
+        "status", &T::status,
+        "kind", &T::kind,
+        "chunk_index", &T::chunk_index,
+        "chunk_total", &T::chunk_total
     );
 };
 

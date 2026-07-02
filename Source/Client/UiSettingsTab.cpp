@@ -55,6 +55,8 @@ void drawSettingsTab(WindowState& state) {
         state.client.setUsername(settings.username.text);
         state.client.setPassword(settings.password.text);
         state.client.setServerUrl(settings.server_url.text);
+        state.client.setTimeout(settings.default_timeout.text);
+        state.client.setOutputPath(settings.output_file_path.text);
     }
 
     fb.render();

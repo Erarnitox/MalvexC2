@@ -3,6 +3,7 @@
 #include "SessionDAO.hpp"
 #include "Types.hpp"
 #include <SessionHandshake.hpp>
+#include <SessionTransfer.hpp>
 #include <memory>
 
 SessionManager& SessionManager::instance() {
@@ -136,6 +137,67 @@ std::string SessionManager::execute(const SessionDAO& session, const std::string
     logger::debug("Trying to send Command [{}] to Session [{}]", cmd, session_uuid);
     logger::debug("Sending Command: [{}]", cmd);
     return (*connection_ptr)->execute_cmd(cmd);
+}
+
+SessionTransferResult SessionManager::downloadFile(const SessionDAO& session, const std::string& remote_filename) {
+    std::unique_ptr<SessionConnection>* connection_ptr = nullptr;
+    UUID session_uuid;
+
+    {
+        std::lock_guard lock(m_mtx);
+        const auto port_it = m_port_to_connection.find(session.port);
+        if (port_it == m_port_to_connection.end()) {
+            return {.success = false, .message = "Session not found", .data = {}};
+        }
+
+        session_uuid = port_it->second;
+        const auto session_conn = std::find_if(
+            m_connections.begin(),
+            m_connections.end(),
+            [session_uuid](const std::unique_ptr<SessionConnection>& sess_ptr) -> bool {
+                return session_uuid == sess_ptr->get_uuid();
+            });
+
+        if (session_conn == m_connections.end()) {
+            return {.success = false, .message = "Session not found", .data = {}};
+        }
+
+        connection_ptr = &(*session_conn);
+    }
+
+    return (*connection_ptr)->download_file(remote_filename);
+}
+
+SessionTransferResult SessionManager::uploadFile(
+    const SessionDAO& session,
+    const std::string& remote_filename,
+    const std::string& data) {
+    std::unique_ptr<SessionConnection>* connection_ptr = nullptr;
+    UUID session_uuid;
+
+    {
+        std::lock_guard lock(m_mtx);
+        const auto port_it = m_port_to_connection.find(session.port);
+        if (port_it == m_port_to_connection.end()) {
+            return {.success = false, .message = "Session not found", .data = {}};
+        }
+
+        session_uuid = port_it->second;
+        const auto session_conn = std::find_if(
+            m_connections.begin(),
+            m_connections.end(),
+            [session_uuid](const std::unique_ptr<SessionConnection>& sess_ptr) -> bool {
+                return session_uuid == sess_ptr->get_uuid();
+            });
+
+        if (session_conn == m_connections.end()) {
+            return {.success = false, .message = "Session not found", .data = {}};
+        }
+
+        connection_ptr = &(*session_conn);
+    }
+
+    return (*connection_ptr)->upload_file(remote_filename, data);
 }
 
 void SessionManager::close(const UUID& session_id) {
@@ -277,6 +339,75 @@ std::string SessionConnection::execute_cmd(const std::string& cmd) {
     }
 
     return conn->recv(static_cast<std::size_t>(size));
+}
+
+namespace {
+
+SessionTransferResult read_transfer_response(cpppwn::Remote& conn) {
+    const auto size = std::atol(trim_string(conn.recvline()).c_str());
+    if (size <= 0) {
+        return {.success = false, .message = "<NO DATA>", .data = {}};
+    }
+
+    if (static_cast<std::size_t>(size) > kMaxBridgeOutputBytes) {
+        return {.success = false, .message = "<Output exceeds maximum allowed size>", .data = {}};
+    }
+
+    const auto payload = conn.recv(static_cast<std::size_t>(size));
+    if (session_transfer::is_error_payload(payload)) {
+        return {.success = false, .message = payload, .data = {}};
+    }
+
+    return {.success = true, .message = payload, .data = payload};
+}
+
+} // namespace
+
+SessionTransferResult SessionConnection::download_file(const std::string& remote_filename) {
+    std::lock_guard lock(conn_mutex);
+    if (bridge_state != SessionBridgeState::Ready) {
+        return {.success = false, .message = "<Session not ready>", .data = {}};
+    }
+
+    if (!conn || !conn->is_alive()) {
+        bridge_state = SessionBridgeState::Closed;
+        return {.success = false, .message = "<Session disconnected>", .data = {}};
+    }
+
+    if (!session_transfer::is_valid_filename(remote_filename)) {
+        return {.success = false, .message = "ERROR: invalid filename", .data = {}};
+    }
+
+    discard_pending_output_unlocked();
+    conn->sendline(session_transfer::build_download_command(remote_filename));
+    return read_transfer_response(*conn);
+}
+
+SessionTransferResult SessionConnection::upload_file(const std::string& remote_filename, const std::string& data) {
+    std::lock_guard lock(conn_mutex);
+    if (bridge_state != SessionBridgeState::Ready) {
+        return {.success = false, .message = "<Session not ready>", .data = {}};
+    }
+
+    if (!conn || !conn->is_alive()) {
+        bridge_state = SessionBridgeState::Closed;
+        return {.success = false, .message = "<Session disconnected>", .data = {}};
+    }
+
+    if (!session_transfer::is_valid_filename(remote_filename)) {
+        return {.success = false, .message = "ERROR: invalid filename", .data = {}};
+    }
+
+    if (data.empty() || data.size() > session_transfer::kMaxTransferBytes) {
+        return {.success = false, .message = "ERROR: invalid upload size", .data = {}};
+    }
+
+    discard_pending_output_unlocked();
+    conn->sendline(session_transfer::build_upload_command(remote_filename, data.size()));
+    conn->send(data);
+    auto result = read_transfer_response(*conn);
+    result.data.clear();
+    return result;
 }
 
 std::string SessionConnection::get_uuid() const {

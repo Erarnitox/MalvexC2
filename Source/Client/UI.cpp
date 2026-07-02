@@ -17,7 +17,9 @@ int main() {
         .client=Client::instance(),
         .builder=Builder::instance(),
         .wait_for_response=false,
-        .login_failed=false
+        .login_failed=false,
+        .highlight_command_uid=std::nullopt,
+        .artifacts_poll_counter=0
     };
 
     static_cast<void>(malvex::safe_copy(state.user_settings.username.text, sizeof(state.user_settings.username.text), state.client.getUsername()));
@@ -163,6 +165,9 @@ int main() {
                 case Tab::BUILDER:
                     drawBuilderTab(state);
                     break;
+                case Tab::ARTIFACTS:
+                    drawArtifactsTab(state);
+                    break;
                 case Tab::TERMINAL:
                     drawSessionsTab(state);
                     break;
@@ -171,6 +176,10 @@ int main() {
 
         if (not state.client.sendLogBuffer()) {
             LogManager::instance().local_log("Failed to send Attack logs to the Server!");
+        }
+
+        if (state.is_connected) {
+            static_cast<void>(state.client.pollResults());
         }
 
         const auto status_bounds = ui::status_bar(state.res);

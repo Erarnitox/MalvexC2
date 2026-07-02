@@ -13,3 +13,8 @@ target_link_libraries(common INTERFACE database)
 target_link_libraries(common INTERFACE config)
 target_link_libraries(common INTERFACE crypto)
 target_link_libraries(common INTERFACE stdc++exp dw)
+
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

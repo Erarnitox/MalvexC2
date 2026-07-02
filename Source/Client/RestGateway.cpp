@@ -91,6 +91,44 @@ malvex::Result<CommandDAO> RestGateway::post_command(const CommandDAO& command) 
     }
 }
 
+malvex::Result<std::vector<ResultDAO>> RestGateway::fetch_results() {
+    apply_auth();
+    try {
+        return m_rest_client.list<ResultDAO>("api/results");
+    } catch (const std::exception& err) {
+        return std::unexpected(from_exception(err, malvex::ErrorCode::Network));
+    }
+}
+
+malvex::Result<std::vector<ResultDAO>> RestGateway::fetch_results_for_victim(const UUID& victim_uid) {
+    apply_auth();
+    try {
+        return m_rest_client.list<ResultDAO>(
+            std::format("api/results/filter?victim_uid={}", victim_uid));
+    } catch (const std::exception& err) {
+        return std::unexpected(from_exception(err, malvex::ErrorCode::Network));
+    }
+}
+
+malvex::Result<std::optional<ResultDAO>> RestGateway::fetch_result_for_command(const UUID& command_uid) {
+    apply_auth();
+    try {
+        return m_rest_client.get<std::optional<ResultDAO>>(
+            std::format("api/results/filter?command_uid={}", command_uid));
+    } catch (const std::exception& err) {
+        return std::unexpected(from_exception(err, malvex::ErrorCode::Network));
+    }
+}
+
+malvex::Result<std::vector<CommandDAO>> RestGateway::fetch_commands() {
+    apply_auth();
+    try {
+        return m_rest_client.list<CommandDAO>("api/commands");
+    } catch (const std::exception& err) {
+        return std::unexpected(from_exception(err, malvex::ErrorCode::Network));
+    }
+}
+
 malvex::Result<VictimTemplateCreatedResponse> RestGateway::register_template(
     const VictimTemplateCreateRequest& request) {
     apply_auth();

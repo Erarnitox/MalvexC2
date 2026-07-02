@@ -3,6 +3,7 @@
 #include "Util/Expected.hpp"
 #include "CommandDAO.hpp"
 #include "LogDAO.hpp"
+#include "ResultDAO.hpp"
 #include "VictimDAO.hpp"
 #include "VictimTemplateDAO.hpp"
 #include "Model.hpp"
@@ -25,6 +26,10 @@ public:
     [[nodiscard]] malvex::Result<std::vector<LogDAO>> fetch_logs();
     [[nodiscard]] malvex::Result<LogDAO> post_log(const LogDAO& log);
     [[nodiscard]] malvex::Result<CommandDAO> post_command(const CommandDAO& command);
+    [[nodiscard]] malvex::Result<std::vector<ResultDAO>> fetch_results();
+    [[nodiscard]] malvex::Result<std::vector<ResultDAO>> fetch_results_for_victim(const UUID& victim_uid);
+    [[nodiscard]] malvex::Result<std::optional<ResultDAO>> fetch_result_for_command(const UUID& command_uid);
+    [[nodiscard]] malvex::Result<std::vector<CommandDAO>> fetch_commands();
     [[nodiscard]] malvex::Result<VictimTemplateCreatedResponse> register_template(
         const VictimTemplateCreateRequest& request);
     [[nodiscard]] malvex::Result<std::string> open_session(int64_t port);
